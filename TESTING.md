@@ -171,3 +171,29 @@ Docs: [`docs/SETUP.md`](docs/SETUP.md) B5 and `ONLINE_MATCHMAKING.md` inside the
 * [x] Real game 2026-11-15 5:57 AM Pacific Time: cab 1 (ServerId 1) and cab 2 (ServerId 2) searched
   Online Tag with the shared code and were paired immediately; they then entered Mix Match as a duo
   and waited for two more humans (expected under `NoCpuPartner`).
+
+## Security hardening and 4-cabinet online tag (2026-11-15)
+
+Docs: [`docs/SECURITY.md`](docs/SECURITY.md). Card-server patch commits 27–28 (now 28 commits). 251 matchmaker
+unit tests pass; `cross_server_tag_e2e.py` 53/53 (adds `/tag` secret 401s, rate-limit 429s, source binding,
+masked card list, single-card login re-check, and "no access code / chip id in either server's log").
+
+* [x] Deployed to the VPS matchmaker (`PublicMatchmaker`: `/` and `/ui` → 403 from the internet, `/tag` without
+  the secret → 401) and two LAN card servers (`LanOnly`, ServerId 1 on :28080 for cab 1, ServerId 2 on :28090 for
+  cabs 2–4), all sharing one `OnlineTag.TagSecret`.
+* [x] **Real game 2026-11-15 7:33 AM Pacific Time — 4 cabinets on one PC:** team "BIG TEST" = cab 1 (card server
+  ServerId 1) + cab 2 (ServerId 2), a **cross-server** partner code; team "LITTLE TEST" = cabs 3 + 4, both on
+  ServerId 2 (**same-server** partner code). Both pairs formed in Online Tag, the two duos then formed **one 2v2
+  room**, and several games were completed.
+* [x] First attempt (6:58 AM PT) explained by the logs, not a server bug: BIG TEST paired and waited in the team
+  queue; one LITTLE TEST cabinet picked Team mode with a CPU partner instead of Online Tag (never placed under
+  `NoCpuPartner`), so its partner's Online Tag search timed out after 90 s. The new `TAG-WAIT` line now names this
+  case ("partner not searching" / "partner is in the queue … but cannot pair").
+* [x] WebUI: a tab left open for another card no longer sends that card's chip id with the current access code
+  (was a 500 "Card Profile is invalid" at 6:53 AM PT); it asks to log in again.
+* [x] Logs: WebUI request paths are masked (`/ui/team/getTeams/<masked:20>/<masked:32>`); older logs on the test
+  PC were scrubbed in place.
+* Hardware note: **4 cabinets at 480p on one PC crashed Windows (out of video memory)** at 7:00 AM PT. Game set to
+  **240p** and every Live Monitor to **144p** worked for the 7:33 test. `bngrw.dll`'s resolution list is
+  144p / 240p / 480p / 720p / 1080p — **360p is not offered**. A Live Monitor at 720p uses more video memory than
+  the game at 480p.

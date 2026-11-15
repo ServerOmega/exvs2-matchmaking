@@ -48,9 +48,22 @@ Players can't match - read the server log (window or Logs\log-<date>.txt)
 Online tag
 ----------
   No team to pick in the game  -> make the team on the card website first (Customize -> Teams), then re-insert
-                                  the card. If the list stays empty, the host can try "TagStatus": 1 in the
-                                  "OnlineTag" section of server.json (restart the server).
-  Both search but never pair   -> both partners must use the SAME card server and search within ~90 s.
+                                  the card. "TagStatus" in the "OnlineTag" section of server.json must be 1
+                                  (the default since v0.3.0-pre; restart the server after changing it).
+  Both search but never pair   -> both partners must pick Online Tag (not Team / Mix) and search within ~90 s.
+                                  Matchmaker log "TAG-WAIT ... waiting for partner N: partner not searching"
+                                  = the partner never started an Online Tag search; "... is in the queue as
+                                  node=... but cannot pair" = the partner searched another mode.
+  "Create a code" / "Join" fails, card server log "The matchmaker refused this card server: OnlineTag.TagSecret"
+                               -> the card server's TagSecret is missing or differs from the matchmaker's.
+
+Security refusals (v0.4.0-pre) - log line "SEC-REFUSE <status> ..."
+-------------------------------------------------------------------
+  403  the source is not allowed by "AccessMode": the card website from the internet on a PublicMatchmaker
+       server (correct), a VPN range missing from "ExtraAllowedCidrs", or a player using a public host as
+       their card server (Way 1) - use Way 2, a VPN, or (not recommended) AccessMode "Open".
+  401  /tag without the right TagSecret (see Online tag above).
+  429  too many requests from one IP (/match 1200/min, /tag 240/min) - a script or a broken client.
 
 Settings reference (server\Configurations\server.json -> CardServerConfig)
 --------------------------------------------------------------------------

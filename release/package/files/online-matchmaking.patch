@@ -1,7 +1,7 @@
 From 46f2cf5f59c4858078e5c4d44e3d60923d7e15c1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/26] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/28] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2328,7 +2328,7 @@ index 0000000..3b81d9a
 From 59a8ceaba76b4a9c00743b17e00ecb7abdc89ed3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/26] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/28] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2366,7 +2366,7 @@ index da8f5ea..3029cb0 100644
 From c10e1826eccd88272306b1f2f71b16126626baba Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/26] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/28] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2598,7 +2598,7 @@ index bda49e2..a9c56ab 100644
 From 9295ed8babeb0d6e6651d2c6790f26f1b85b6061 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/26] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/28] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2657,7 +2657,7 @@ index 872d2b3..4ef4c22 100644
 From 060e241c15c6a6ede6d3c0a9e267f1122e06afdd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/26] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/28] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2685,7 +2685,7 @@ index 90e35a8..5fad533 100644
 From a6cdb59e736f93bbb922a85b637ee0b9888254fc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/26] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/28] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3036,7 +3036,7 @@ index 3b81d9a..b5b7cbb 100644
 From 679ae7d833acb2a84183f4844568c34134ac5adf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/26] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/28] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3110,7 +3110,7 @@ index 2a72884..65ee897 100644
 From 4ecdd01d345a51c3a5560a882691a6e492be2c03 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/26] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/28] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3601,7 +3601,7 @@ index 0000000..f7c4beb
 From e460603df7dd164e85b3ed5cd456994a819a2601 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/26] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/28] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4043,7 +4043,7 @@ index 27c6cb7..94b83aa 100644
 From dcf1e9cf9fddc8862ad034846ebf1a1fb167a3d5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/26] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/28] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4139,7 +4139,7 @@ index 3709ff7..f37e4f8 100644
 From 0e7ec86f35d24461efb049eb1ae6b3eae7015728 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/26] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/28] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4219,7 +4219,7 @@ index 65ee897..81e88cd 100644
 From bb1f1c02bf7ac969890bdb686027ca10f450e7c8 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/26] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/28] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4749,7 +4749,7 @@ index 0000000..a4934f4
 From 581a1ce4c65e127e280234709143633cc1c9b7ee Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/26] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/28] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5398,7 +5398,7 @@ index b5b7cbb..74e757b 100644
 From 79b9fb419883b19d6a806e5b0bd07ca083e36acc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/26] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/28] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5884,7 +5884,7 @@ index 0000000..310cbdf
 From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 10:09:10 -0800
-Subject: [PATCH 15/26] Results-hang timing (logging only, default on):
+Subject: [PATCH 15/28] Results-hang timing (logging only, default on):
  RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
  to its next request; LogResultGap config; 5 tests
 
@@ -6127,7 +6127,7 @@ index 0000000..e276bd6
 From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 22:31:13 -0800
-Subject: [PATCH 16/26] Rolling fill timer: FillAfter restarts on each new
+Subject: [PATCH 16/28] Rolling fill timer: FillAfter restarts on each new
  compatible joiner
 
 FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
@@ -6551,7 +6551,7 @@ index 9942148..f189356 100644
 From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:10:30 -0800
-Subject: [PATCH 17/26] In-store fill override: InStoreFillAfterSeconds (60) /
+Subject: [PATCH 17/28] In-store fill override: InStoreFillAfterSeconds (60) /
  InStoreMaxFillWaitSeconds (120) for worlds 15/16
 
 2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
@@ -6768,7 +6768,7 @@ index 0000000..1eb99cd
 From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:17:43 -0800
-Subject: [PATCH 18/26] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+Subject: [PATCH 18/28] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
  2-client rooms, group 0 vs 1, matched at once
 
 Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
@@ -7067,7 +7067,7 @@ index 0000000..d09631a
 From c4b215d7c66e8b483ec14dbff820408bf865ec66 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 01:51:07 -0800
-Subject: [PATCH 19/26] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
+Subject: [PATCH 19/28] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
  own room after the fill timer
 
 After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
@@ -7210,7 +7210,7 @@ index a4934f4..f4c137c 100644
 From 693f911920c2dddb364016c35dc7cb79e0166b60 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 02:22:56 -0800
-Subject: [PATCH 20/26] NoCpuPartner: 2v2 worlds only form full 4-human rooms
+Subject: [PATCH 20/28] NoCpuPartner: 2v2 worlds only form full 4-human rooms
  (no solo ever gets a CPU partner)
 
 3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
@@ -7622,7 +7622,7 @@ index 0000000..dc76a5d
 From 6a14d730bbf0b85d5cfa78ca382a3c596ec48a3b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:45 -0800
-Subject: [PATCH 21/26] SoftWait no longer delays a complete 4-human room
+Subject: [PATCH 21/28] SoftWait no longer delays a complete 4-human room
  (v12-softfull)
 
 Same-flag (veteran / win-rate) 4-human rooms are still preferred. If none
@@ -7935,7 +7935,7 @@ index dc76a5d..43a422b 100644
 From 89312727284e25d7aded05c668fefafd54ddf52f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:50 -0800
-Subject: [PATCH 22/26] Ship 3-second fill timers as the default (NoCpuPartner
+Subject: [PATCH 22/28] Ship 3-second fill timers as the default (NoCpuPartner
  stays on)
 
 FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
@@ -8002,7 +8002,7 @@ index 545589a..04d3865 100644
 From 905b051e1058ad4967bedd178e8ede04df7d7889 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:55 -0800
-Subject: [PATCH 23/26] Add tools/vps: deploy the matchmaker to a Linux VPS
+Subject: [PATCH 23/28] Add tools/vps: deploy the matchmaker to a Linux VPS
 
 deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
 worktree) and installs it as systemd service exvs2-mm. Existing VPS
@@ -8317,7 +8317,7 @@ index 0000000..294f8aa
 From ecdccc9195516a7a604ef7a7e374512f23dc9d17 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:32:01 -0800
-Subject: [PATCH 24/26] Disclaimer: 2v2 matches only form with at least 4 human
+Subject: [PATCH 24/28] Disclaimer: 2v2 matches only form with at least 4 human
  players
 
 In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
@@ -8366,7 +8366,7 @@ index 0b51d79..5aa47c4 100644
 From e64c1ed0f1424c4b322cbd4e7023e0f77b399049 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 25/26] Add cross-server online tag with shared partner codes
+Subject: [PATCH 25/28] Add cross-server online tag with shared partner codes
  and settings sync
 
 Players on different card servers can form an online-tag team by exchanging
@@ -11414,7 +11414,7 @@ index b6da67c..7a7a67f 100644
 From b368843e325e0442b605002e7e821f9f19f60fe7 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 26/26] Default OnlineTag.TagStatus to 1 so the in-game list is
+Subject: [PATCH 26/28] Default OnlineTag.TagStatus to 1 so the in-game list is
  selectable
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11513,6 +11513,2687 @@ index 0000000..8d2841f
 +        Assert.True(new OnlineTagConfigurations().SendTagTeams);
 +    }
 +}
+-- 
+2.47.3
+
+From fc5eb57f5ec924c26a85a662646eef4a84f92414 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 07:36:31 -0800
+Subject: [PATCH 27/28] Security hardening: public allowlist, /tag shared
+ secret, source binding, expiry, rate limits, masking
+
+- SecurityGuardMiddleware (Security.AccessMode): PublicMatchmaker answers
+  only /match, /mms and /tag from the internet (WebUI and card APIs are
+  loopback-only, 403); LanOnly card servers answer loopback/private
+  networks only (ExtraAllowedCidrs to widen).
+- /tag requires the X-Tag-Secret header (OnlineTag.TagSecret, never in
+  the repo; deploy.sh --tag-secret-file); 401 without it.
+- Per-IP token-bucket rate limits: /match 1200/min burst 300, /tag
+  240/min burst 60 (429).
+- Matchmaker.BindNodesToSource: CheckMatching/CancelMatching from a
+  different source than the node's EntryMatching are refused (SRC-WARN).
+- TagInviteStore.RegisterSearch keeps only codes the pilot created or
+  joined; open codes expire after 7 days, joined codes after 90.
+- Logs mask public IPv4 (a.b.x.x) and partner codes (AB******).
+- WebUI card list no longer returns chip ids (masked hint ****1234);
+  authorize returns the chip id only after the access code matched.
+- tools/vps: apply-security-config.py, UMask=0077, server.json 0640.
+229 unit tests pass.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  47 ++
+ .../Common/TagInvite/HttpTagInviteClient.cs   |  38 +-
+ Server-Infinite/Configurations/server.json    |  16 +-
+ .../Controllers/TagInviteController.cs        |  10 +-
+ .../Controllers/UI/CardController.cs          |   2 +-
+ .../Match/MatchingQueueCommandHandlers.cs     |  26 +-
+ .../Card/GetAllBareboneCardCommandHandler.cs  |  19 +-
+ .../PostCardAuthorizationCommandHandler.cs    |  20 +-
+ Server-Infinite/Lobbies/IpRateLimiter.cs      |  54 +++
+ Server-Infinite/Lobbies/LogMask.cs            |  30 ++
+ Server-Infinite/Lobbies/NetworkAccess.cs      | 126 ++++++
+ .../Lobbies/Serilog/NetworkMaskEnricher.cs    |  26 ++
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  35 +-
+ Server-Infinite/Matchmaking/TagInviteStore.cs | 100 ++++-
+ .../Middlewares/SecurityGuardMiddleware.cs    |  96 +++++
+ .../Models/Config/CardServerConfig.cs         |   3 +
+ .../Models/Config/OnlineTagConfigurations.cs  |  19 +
+ .../Models/Config/SecurityConfigurations.cs   |  47 ++
+ Server-Infinite/Program.cs                    |  33 +-
+ .../Matchmaking.Tests.csproj                  |   2 +
+ Tests/Matchmaking.Tests/SecurityTests.cs      | 408 ++++++++++++++++++
+ WebUIInfinite/Client/Pages/Cards.razor        |   2 +-
+ .../Client/Pages/Dialogs/CardAuthDialog.razor |  12 +-
+ .../Dto/Response/BareboneCardProfile.cs       |   5 +
+ .../Dto/Response/CardAuthorizationResponse.cs |   7 +
+ tools/vps/README.md                           |  14 +-
+ tools/vps/apply-security-config.py            |  27 ++
+ tools/vps/deploy.sh                           |  37 +-
+ tools/vps/exvs2-mm.service                    |   2 +
+ tools/vps/server.vps.json                     |  13 +
+ 30 files changed, 1217 insertions(+), 59 deletions(-)
+ create mode 100644 Server-Infinite/Lobbies/IpRateLimiter.cs
+ create mode 100644 Server-Infinite/Lobbies/NetworkAccess.cs
+ create mode 100644 Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs
+ create mode 100644 Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+ create mode 100644 Server-Infinite/Models/Config/SecurityConfigurations.cs
+ create mode 100644 Tests/Matchmaking.Tests/SecurityTests.cs
+ create mode 100644 WebUIInfinite/Shared/Dto/Response/CardAuthorizationResponse.cs
+ create mode 100755 tools/vps/apply-security-config.py
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index a045fd7..25c0e1a 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -256,6 +256,53 @@ exvs2-lobbies `server-sketch/loadtest/hangfix_e2e.py`.
+   (ms) is the RTT above which hole punching fails with "RTT out of limit"; `ThresholdDelayedFrame` the input-delay
+   frames above which a match counts as delayed. Same values on every server of a group.
+ 
++## Security hardening (2026-11-15)
++
++Config: `CardServerConfig.Security` and `CardServerConfig.OnlineTag` in `Configurations/server.json`.
++
++- **Who can connect** (`Security.AccessMode`). Middleware runs before the WebUI, static files and every controller.
++  It uses the real connection address and never trusts `X-Forwarded-For`.
++  - `LanOnly` is the default, for a card server. Every path answers only loopback, 10/8, 172.16/12, 192.168/16,
++    169.254/16, ::1, fc00::/7 and fe80::/10, plus `ExtraAllowedCidrs` (for example `100.64.0.0/10` for Tailscale or
++    `26.0.0.0/8` for Radmin). Other sources get 403 with no body. Nothing changes in Windows Firewall or TinyWall.
++  - `PublicMatchmaker` is for the VPS. The internet can reach only `/match`, `/mms` and `/tag`. The WebUI, `/ui`,
++    `/sys`, `/game`, uploads, swagger and static files answer loopback only, so use an SSH tunnel for admin.
++  - `Open` is the upstream behaviour. Not recommended.
++- **`/tag` shared secret** (`OnlineTag.TagSecret`, header `X-Tag-Secret`). The matchmaker and every card server that
++  uses it must have the same value. Every `/tag` call without it gets 401, including
++  `GET /tag/invites/{code}` and `GET /tag/invites/for/{pilotId}`, and LAN callers need it too. With no secret set,
++  `/tag` answers LAN sources only. Keep the secret out of git: put it in the local `server.json` (restrict the file's
++  permissions) or the environment variable `CardServerConfig__OnlineTag__TagSecret`. The startup config dump leaves
++  it out. `/tag/register` keeps only codes that the given pilot created or joined.
++- **`/match` hardening.** Cabinets call `/match` directly and send no secret, so `/match` stays public but is
++  hardened. With `Security.BindMatchNodesToSourceIp` (default on), CheckMatching and CancelMatching for a node are
++  honoured only from the source IP that sent that node's EntryMatching. A stranger who guesses node ids gets
++  `ERR_MATCH_NOENTRY` and cannot read the room roster (peer IPs), and their cancel is ignored and logged as
++  `SRC-WARN`. Cabinets behind one NAT share an IP, so this is safe for shops and homes. Replies are unchanged
++  otherwise: the game needs the room's client list to connect.
++- **Rate limits.** Each source IP gets a token bucket. `/match` and `/mms` allow 1200 requests per minute with a
++  burst of 300; a cabinet polls about every 3 s, so 16 or more cabinets behind one IP never hit it. `/tag` allows
++  240 per minute with a burst of 60. Over the limit, the reply is 429 with `Retry-After: 5`. Loopback is exempt
++  unless `ExemptLoopbackFromRateLimit` is false.
++- **Partner codes expire.** An unjoined code expires after `OnlineTag.OpenCodeExpiryDays` (default 7) since it was
++  created or last shown with "Create a code"; LoadCard does not keep it alive. A joined team code expires after
++  `JoinedCodeExpiryDays` (default 90) with no LoadCard, Teams tab or settings save from either partner. 0 means
++  never. Expired codes and their world-5 registrations are removed from `tag_invites.json`. New codes come from a
++  CSPRNG.
++- **Logs** (`Security.MaskNetworkInLog`, default on). Every log property is masked: public IPv4 becomes `a.b.x.x`
++  and partner codes become `AB******`. That covers matchmaker lines, the "Request is" dump and request paths.
++  Private and loopback IPs are kept for LAN diagnostics.
++- **WebUI card list.** `/ui/card/getAll` no longer returns chip ids, only `chipIdHint` (`********1234`). The access
++  code dialog sends the card id and access code to `/ui/card/authorize`, which returns the chip id only when the code
++  matches (constant-time compare). Customize, View and the Teams tab then work as before. Search matches player names
++  partially but chip ids only in full, so it cannot be used to recover chip ids.
++- **VPS.** `tools/vps/deploy.sh` keeps `tag_invites.json` and `tag_server_id.txt` and backs up `tag_invites.json`
++  before each upload. It sets `AccessMode=PublicMatchmaker` if missing, takes `--tag-secret-file` (sent over SSH
++  stdin, never printed), and makes `server.json` mode 0640 root:exvs2mm. The service runs with `UMask=0077`.
++- Tests: `Tests/Matchmaking.Tests/SecurityTests.cs`. `cross_server_tag_e2e.py` (exvs2-lobbies) runs the
++  cross-server pair with a per-run secret and also checks the 401s, the card list without chip ids, the authorize
++  flow, the `/tag` 429s and that logs contain no code, secret or public IP.
++
+ ## Known gaps / risks
+ * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
+ * Malformed protobuf bodies on `/match` get HTTP 500 from the model binder (the real cabinet never sends them).
+diff --git a/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs b/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs
+index c68605c..7100444 100644
+--- a/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs
++++ b/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs
+@@ -10,17 +10,20 @@ public sealed class HttpTagInviteClient : ITagInviteClient
+     private readonly HttpClient _http;
+     private readonly string _base;
+ 
+-    public HttpTagInviteClient(HttpClient http, string inviteBaseUrl)
++    public HttpTagInviteClient(HttpClient http, string inviteBaseUrl, string? sharedSecret = null)
+     {
+         _http = http;
+         _base = inviteBaseUrl.TrimEnd('/');
+         _http.Timeout = TimeSpan.FromSeconds(8);
++        // security hardening 2026-11-15: the matchmaker's /tag API requires OnlineTag.TagSecret in this header.
++        if (!string.IsNullOrEmpty(sharedSecret))
++            _http.DefaultRequestHeaders.TryAddWithoutValidation(ServerInfinite.Lobbies.NetworkAccess.TagSecretHeader, sharedSecret);
+     }
+ 
+     public async Task<string> CreateAsync(uint creatorPilotId, string creatorName, CancellationToken ct = default)
+     {
+         var r = await _http.PostAsJsonAsync($"{_base}/invites", new { pilotId = creatorPilotId, name = creatorName }, ct);
+-        r.EnsureSuccessStatusCode();
++        await EnsureOk(r, ct);
+         var body = await r.Content.ReadFromJsonAsync<CreateBody>(Json, ct)
+                    ?? throw new InvalidOperationException("Empty create-invite response.");
+         if (string.IsNullOrWhiteSpace(body.Code))
+@@ -34,6 +37,7 @@ public sealed class HttpTagInviteClient : ITagInviteClient
+             new { code, pilotId = partnerPilotId, name = partnerName }, ct);
+         if (!r.IsSuccessStatusCode)
+         {
++            await EnsureAuthorized(r);
+             var err = await ReadError(r, ct);
+             throw new InvalidOperationException(err ?? $"Join failed ({(int)r.StatusCode}).");
+         }
+@@ -46,14 +50,14 @@ public sealed class HttpTagInviteClient : ITagInviteClient
+     {
+         var r = await _http.GetAsync($"{_base}/invites/{Uri.EscapeDataString(TagInviteStore.Normalize(code))}", ct);
+         if (r.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+-        r.EnsureSuccessStatusCode();
++        await EnsureOk(r, ct);
+         return await r.Content.ReadFromJsonAsync<TagInvite>(Json, ct);
+     }
+ 
+     public async Task<IReadOnlyList<TagInvite>> ForPilotAsync(uint wirePilotId, CancellationToken ct = default)
+     {
+         var r = await _http.GetAsync($"{_base}/invites/for/{wirePilotId}", ct);
+-        r.EnsureSuccessStatusCode();
++        await EnsureOk(r, ct);
+         var list = await r.Content.ReadFromJsonAsync<List<TagInvite>>(Json, ct);
+         return list ?? (IReadOnlyList<TagInvite>)Array.Empty<TagInvite>();
+     }
+@@ -61,7 +65,7 @@ public sealed class HttpTagInviteClient : ITagInviteClient
+     public async Task RegisterSearchAsync(uint amId, IEnumerable<string> codes, CancellationToken ct = default)
+     {
+         var r = await _http.PostAsJsonAsync($"{_base}/register", new { amId, codes = codes.ToArray() }, ct);
+-        r.EnsureSuccessStatusCode();
++        await EnsureOk(r, ct);
+     }
+ 
+     public async Task<TagInvite> UpdateSettingsAsync(string code, uint byPilotId, TagTeamSettings settings, CancellationToken ct = default)
+@@ -80,6 +84,7 @@ public sealed class HttpTagInviteClient : ITagInviteClient
+             }, ct);
+         if (!r.IsSuccessStatusCode)
+         {
++            await EnsureAuthorized(r);
+             var err = await ReadError(r, ct);
+             throw new InvalidOperationException(err ?? $"Update settings failed ({(int)r.StatusCode}).");
+         }
+@@ -87,6 +92,29 @@ public sealed class HttpTagInviteClient : ITagInviteClient
+                ?? throw new InvalidOperationException("Empty settings response.");
+     }
+ 
++    /// <summary>401 / 403 / 429 from the matchmaker's security guard become a readable message (no secret in it).</summary>
++    private static Task EnsureAuthorized(HttpResponseMessage r)
++    {
++        switch ((int)r.StatusCode)
++        {
++            case 401:
++                throw new InvalidOperationException(
++                    "The matchmaker refused this card server: OnlineTag.TagSecret in server.json is missing or does not match the matchmaker's.");
++            case 403:
++                throw new InvalidOperationException("The matchmaker refused this card server's network address (Security.AccessMode).");
++            case 429:
++                throw new InvalidOperationException("The matchmaker is rate limiting this card server; try again in a few seconds.");
++        }
++        return Task.CompletedTask;
++    }
++
++    private static async Task EnsureOk(HttpResponseMessage r, CancellationToken ct)
++    {
++        if (r.IsSuccessStatusCode) return;
++        await EnsureAuthorized(r);
++        r.EnsureSuccessStatusCode();
++    }
++
+     private static async Task<string?> ReadError(HttpResponseMessage r, CancellationToken ct)
+     {
+         try
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index f780498..a9adf6b 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -67,7 +67,21 @@
+       "ServerId": 0,
+       "ServerIdFile": "tag_server_id.txt",
+       "InviteUrl": "",
+-      "InviteStateFile": "tag_invites.json"
++      "InviteStateFile": "tag_invites.json",
++      "TagSecret": "",
++      "OpenCodeExpiryDays": 7,
++      "JoinedCodeExpiryDays": 90
++    },
++    "Security": {
++      "AccessMode": "LanOnly",
++      "ExtraAllowedCidrs": "",
++      "MatchRequestsPerMinute": 1200,
++      "MatchBurst": 300,
++      "TagRequestsPerMinute": 240,
++      "TagBurst": 60,
++      "ExemptLoopbackFromRateLimit": true,
++      "BindMatchNodesToSourceIp": true,
++      "MaskNetworkInLog": true
+     }
+   }
+ }
+diff --git a/Server-Infinite/Controllers/TagInviteController.cs b/Server-Infinite/Controllers/TagInviteController.cs
+index ffe55a8..9097dcf 100644
+--- a/Server-Infinite/Controllers/TagInviteController.cs
++++ b/Server-Infinite/Controllers/TagInviteController.cs
+@@ -6,6 +6,9 @@ namespace ServerInfinite.Controllers;
+ /// <summary>
+ /// Shared matchmaker API for cross-server online-tag invites. No card secrets are accepted or logged.
+ /// Card servers (and the WebUI through them) call these endpoints; cabinets do not.
++/// Security hardening 2026-11-15: every /tag request must carry OnlineTag.TagSecret in X-Tag-Secret (checked by
++/// Middlewares/SecurityGuardMiddleware before this controller runs; LAN-only when no secret is configured), is rate
++/// limited per source IP, and partner codes are logged masked (AB******).
+ /// </summary>
+ [ApiController]
+ [Route("tag")]
+@@ -76,7 +79,7 @@ public class TagInviteController : ControllerBase
+         try
+         {
+             var inv = _store.Join(body.Code, body.PilotId, body.Name ?? "");
+-            _log.LogInformation("tag invite {Code} joined by pilot {PilotId}", inv.Code, body.PilotId);
++            _log.LogInformation("tag invite {Code} joined by pilot {PilotId}", TagInviteStore.MaskCode(inv.Code), body.PilotId);
+             return Ok(inv);
+         }
+         catch (Exception ex)
+@@ -111,7 +114,7 @@ public class TagInviteController : ControllerBase
+                 BgmId = body.BgmId,
+                 NameColorId = body.NameColorId,
+             });
+-            _log.LogInformation("tag invite {Code} settings updated by pilot {PilotId}", inv.Code, body.PilotId);
++            _log.LogInformation("tag invite {Code} settings updated by pilot {PilotId}", TagInviteStore.MaskCode(inv.Code), body.PilotId);
+             return Ok(inv);
+         }
+         catch (Exception ex)
+@@ -125,6 +128,7 @@ public class TagInviteController : ControllerBase
+     {
+         if (body.AmId == 0) return BadRequest(new { error = "amId is required." });
+         _mm.RegisterTagSearch(body.AmId, body.Codes ?? Array.Empty<string>());
+-        return Ok(new { ok = true });
++        // only codes that exist and that this am_id created or joined are kept (TagInviteStore.RegisterSearch)
++        return Ok(new { ok = true, accepted = _store.CodesForAm(body.AmId).Count });
+     }
+ }
+diff --git a/Server-Infinite/Controllers/UI/CardController.cs b/Server-Infinite/Controllers/UI/CardController.cs
+index 9ec8995..3789a21 100644
+--- a/Server-Infinite/Controllers/UI/CardController.cs
++++ b/Server-Infinite/Controllers/UI/CardController.cs
+@@ -36,7 +36,7 @@ public class CardController : BaseController<CardController>
+ 
+     [HttpPost("authorize")]
+     [Produces("application/json")]
+-    public async Task<ActionResult<BasicResponse>> Authorize([FromBody] CardAuthorizationRequest request)
++    public async Task<ActionResult<CardAuthorizationResponse>> Authorize([FromBody] CardAuthorizationRequest request)
+     {
+         var response = await _mediator.Send(new PostCardAuthorizationCommand(request));
+         return response;
+diff --git a/Server-Infinite/Handlers/Match/MatchingQueueCommandHandlers.cs b/Server-Infinite/Handlers/Match/MatchingQueueCommandHandlers.cs
+index ee6aa30..4dc39da 100644
+--- a/Server-Infinite/Handlers/Match/MatchingQueueCommandHandlers.cs
++++ b/Server-Infinite/Handlers/Match/MatchingQueueCommandHandlers.cs
+@@ -17,6 +17,14 @@ internal static class MmsClock
+ {
+     // Monotonic seconds: matchmaking only uses differences, and a wall-clock step (NTP, VM resume) must not
+     // expire or extend every waiting cabinet at once (seen in the 2026-11-13 load test on the box).
++    /// <summary>The HTTP source IP (IPv4-mapped addresses unmapped). No proxy headers are trusted.</summary>
++    public static string? Source(IHttpContextAccessor? http)
++    {
++        var src = http?.HttpContext?.Connection.RemoteIpAddress;
++        if (src is { IsIPv4MappedToIPv6: true }) src = src.MapToIPv4();
++        return src?.ToString();
++    }
++
+     public static double Now => System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency;
+ }
+ 
+@@ -60,13 +68,18 @@ public class EntryMatchingCommandHandler : IRequestHandler<EntryMatchingCommand,
+ public class CheckMatchingCommandHandler : IRequestHandler<CheckMatchingCommand, Response>
+ {
+     private readonly Matchmaker _mm;
++    private readonly IHttpContextAccessor? _http;
+ 
+-    public CheckMatchingCommandHandler(Matchmaker mm) => _mm = mm;
++    public CheckMatchingCommandHandler(Matchmaker mm, IHttpContextAccessor? http = null)
++    {
++        _mm = mm;
++        _http = http;
++    }
+ 
+     public Task<Response> Handle(CheckMatchingCommand request, CancellationToken cancellationToken)
+     {
+         var req = request.Request;
+-        var (code, room, applyId) = _mm.Check(req.check_matching?.NodeId ?? 0, MmsClock.Now);
++        var (code, room, applyId) = _mm.Check(req.check_matching?.NodeId ?? 0, MmsClock.Now, MmsClock.Source(_http));
+         var body = new Response.CheckMatching();
+         if (room != null)
+         {
+@@ -93,13 +106,18 @@ public class CheckMatchingCommandHandler : IRequestHandler<CheckMatchingCommand,
+ public class CancelMatchingCommandHandler : IRequestHandler<CancelMatchingCommand, Response>
+ {
+     private readonly Matchmaker _mm;
++    private readonly IHttpContextAccessor? _http;
+ 
+-    public CancelMatchingCommandHandler(Matchmaker mm) => _mm = mm;
++    public CancelMatchingCommandHandler(Matchmaker mm, IHttpContextAccessor? http = null)
++    {
++        _mm = mm;
++        _http = http;
++    }
+ 
+     public Task<Response> Handle(CancelMatchingCommand request, CancellationToken cancellationToken)
+     {
+         var req = request.Request;
+-        _mm.Cancel(req.cancel_matching?.NodeId ?? 0, MmsClock.Now, req.cancel_matching?.ApplyId ?? 0);   // the game ignores this reply
++        _mm.Cancel(req.cancel_matching?.NodeId ?? 0, MmsClock.Now, req.cancel_matching?.ApplyId ?? 0, MmsClock.Source(_http));   // the game ignores this reply
+         return Task.FromResult(new Response
+         {
+             Type = req.Type,
+diff --git a/Server-Infinite/Handlers/UI/Card/GetAllBareboneCardCommandHandler.cs b/Server-Infinite/Handlers/UI/Card/GetAllBareboneCardCommandHandler.cs
+index 19af490..0408c66 100644
+--- a/Server-Infinite/Handlers/UI/Card/GetAllBareboneCardCommandHandler.cs
++++ b/Server-Infinite/Handlers/UI/Card/GetAllBareboneCardCommandHandler.cs
+@@ -31,10 +31,13 @@ public class GetAllBareboneCardCommandHandler : IRequestHandler<GetAllBareboneCa
+ 
+         if (!string.IsNullOrEmpty(searchKeyword))
+         {
++            // security hardening 2026-11-15: chip ids are matched only in full (no substring oracle that would let
++            // anyone on the network reconstruct them); player names still match partially.
++            var keyword = searchKeyword.Trim().ToLower();
+             cardProfileQuery = cardProfileQuery
+                 .Where(
+-                    x => x.ChipId.ToLower().Contains(searchKeyword.ToLower()) ||
+-                         x.UserName.ToLower().Contains(searchKeyword.ToLower()));
++                    x => x.ChipId.ToLower() == keyword ||
++                         x.UserName.ToLower().Contains(keyword));
+         }
+ 
+         var cardProfiles = await cardProfileQuery.ToPaginatedListAsync(
+@@ -54,12 +57,22 @@ public class GetAllBareboneCardCommandHandler : IRequestHandler<GetAllBareboneCa
+             getAllRequest.PageSize);
+     }
+ 
++    public static string MaskChipId(string? chipId)
++    {
++        var c = chipId ?? "";
++        if (c.Length <= 4) return new string('*', c.Length);
++        return new string('*', c.Length - 4) + c[^4..];
++    }
++
+     private Func<CardProfile, BareboneCardProfile> ToBareboneCardProfile()
+     {
+         return cardProfile => new BareboneCardProfile
+         {
+             CardId = cardProfile.Id,
+-            ChipId = cardProfile.ChipId,
++            // security hardening 2026-11-15: the list never carries the chip id (half of the WebUI credential and
++            // the card's identity on a cabinet); the dialog gets it from /ui/card/authorize after the access code.
++            ChipId = string.Empty,
++            ChipIdHint = MaskChipId(cardProfile.ChipId),
+             UserName = cardProfile.UserName
+         };
+     }
+diff --git a/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs b/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs
+index cf2d105..477f459 100644
+--- a/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs
++++ b/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs
+@@ -6,9 +6,9 @@ using WebUIInfinite.Shared.Dto.Response;
+ 
+ namespace ServerInfinite.Handlers.UI.Card;
+ 
+-public record PostCardAuthorizationCommand(CardAuthorizationRequest Request) : IRequest<BasicResponse>;
++public record PostCardAuthorizationCommand(CardAuthorizationRequest Request) : IRequest<CardAuthorizationResponse>;
+ 
+-public class PostCardAuthorizationCommandHandler : IRequestHandler<PostCardAuthorizationCommand, BasicResponse>
++public class PostCardAuthorizationCommandHandler : IRequestHandler<PostCardAuthorizationCommand, CardAuthorizationResponse>
+ {
+     readonly ILogger _logger;
+     readonly ServerDbContext _context;
+@@ -19,15 +19,21 @@ public class PostCardAuthorizationCommandHandler : IRequestHandler<PostCardAutho
+         _context = context;
+     }
+ 
+-    public async Task<BasicResponse> Handle(PostCardAuthorizationCommand request, CancellationToken cancellationToken)
++    public async Task<CardAuthorizationResponse> Handle(PostCardAuthorizationCommand request, CancellationToken cancellationToken)
+     {
++        // security hardening 2026-11-15: the card list no longer exposes chip ids, so the card is found by its id;
++        // a chip id, when sent, must still match. The chip id is returned only after the access code matched.
++        var req = request.Request;
+         var cardProfile = await _context.CardProfiles
+             .Where(x => !x.IsNewCard)
+-            .FirstOrDefaultAsync(x => x.ChipId.Equals(request.Request.ChipId) && x.Id == request.Request.CardId);
++            .FirstOrDefaultAsync(x => x.Id == req.CardId, cancellationToken);
+ 
+-        if (cardProfile is not null && request.Request.AccessCode == cardProfile.AccessCode)
+-            return new BasicResponse { Success = true };
++        if (cardProfile is not null &&
++            (string.IsNullOrEmpty(req.ChipId) || req.ChipId == cardProfile.ChipId) &&
++            ServerInfinite.Lobbies.NetworkAccess.SecretEquals(cardProfile.AccessCode, req.AccessCode ?? ""))
++            return new CardAuthorizationResponse { Success = true, ChipId = cardProfile.ChipId };
+ 
+-        return new BasicResponse { Success = false };
++        _logger.LogWarning("WebUI card authorization failed for card {CardId}", req.CardId);
++        return new CardAuthorizationResponse { Success = false };
+     }
+ }
+diff --git a/Server-Infinite/Lobbies/IpRateLimiter.cs b/Server-Infinite/Lobbies/IpRateLimiter.cs
+new file mode 100644
+index 0000000..2fc2c54
+--- /dev/null
++++ b/Server-Infinite/Lobbies/IpRateLimiter.cs
+@@ -0,0 +1,54 @@
++namespace ServerInfinite.Lobbies;
++
++/// <summary>
++/// exvs2-lobbies security hardening (2026-11-15): per-key token bucket (key = source IP). Thread-safe.
++/// <see cref="PerMinute"/> tokens are added per minute up to <see cref="Burst"/>; each request takes one.
++/// Idle buckets are pruned so a scan of many addresses cannot grow memory without bound.
++/// </summary>
++public sealed class IpRateLimiter
++{
++    private readonly object _gate = new();
++    private readonly Dictionary<string, (double Tokens, double Last)> _buckets = new();
++    private double _lastPrune;
++
++    public IpRateLimiter(int perMinute, int burst)
++    {
++        PerMinute = Math.Max(0, perMinute);
++        Burst = Math.Max(1, burst);
++    }
++
++    public int PerMinute { get; }
++    public int Burst { get; }
++    public int MaxKeys { get; set; } = 50_000;
++    public bool Enabled => PerMinute > 0;
++    public int Count { get { lock (_gate) return _buckets.Count; } }
++
++    /// <summary>Take one token for <paramref name="key"/> at time <paramref name="now"/> (seconds, monotonic).</summary>
++    public bool TryAcquire(string key, double now)
++    {
++        if (!Enabled) return true;
++        var rate = PerMinute / 60.0;
++        lock (_gate)
++        {
++            if (now - _lastPrune > 60 || _buckets.Count > MaxKeys) Prune(now, rate);
++            var (tokens, last) = _buckets.TryGetValue(key, out var b) ? b : (Burst, now);
++            tokens = Math.Min(Burst, tokens + Math.Max(0, now - last) * rate);
++            if (tokens < 1)
++            {
++                _buckets[key] = (tokens, now);
++                return false;
++            }
++            _buckets[key] = (tokens - 1, now);
++            return true;
++        }
++    }
++
++    private void Prune(double now, double rate)
++    {
++        _lastPrune = now;
++        var full = rate > 0 ? Burst / rate : 0;   // a bucket idle this long is full again = same as absent
++        foreach (var k in _buckets.Where(kv => now - kv.Value.Last >= full).Select(kv => kv.Key).ToList())
++            _buckets.Remove(k);
++        if (_buckets.Count > MaxKeys) _buckets.Clear();
++    }
++}
+diff --git a/Server-Infinite/Lobbies/LogMask.cs b/Server-Infinite/Lobbies/LogMask.cs
+index b830ffd..e2f352b 100644
+--- a/Server-Infinite/Lobbies/LogMask.cs
++++ b/Server-Infinite/Lobbies/LogMask.cs
+@@ -24,4 +24,34 @@ public static class LogMask
+     }
+ 
+     private static string Masked(string v) => v.StartsWith("<masked:") || v == "(null)" ? v : $"<masked:{v.Length}>";
++
++    // ---- security hardening 2026-11-15: network addresses and partner codes ----
++
++    private static readonly Regex Ipv4 = new(@"(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d])", RegexOptions.Compiled);
++
++    // /tag/invites/ABCD2345 (request paths) and tag=ABCD2345,EFGH6789 (matchmaker lines)
++    private static readonly Regex TagPath = new(@"(?i)(/tag/invites/)([0-9A-Z]{8})(?![0-9A-Z])", RegexOptions.Compiled);
++    private static readonly Regex TagList = new(@"(?i)(\btag=)([0-9A-Z]{8}(?:,[0-9A-Z]{8})*)", RegexOptions.Compiled);
++
++    /// <summary>"ABCD2345" -> "AB******". Enough to tell two codes apart in a log, not enough to join one.</summary>
++    public static string MaskCode(string? code)
++    {
++        var c = (code ?? "").Trim();
++        if (c.Length == 0) return "";
++        return c.Length <= 2 ? new string('*', c.Length) : c[..2] + new string('*', c.Length - 2);
++    }
++
++    /// <summary>Mask public IPv4 addresses (a.b.x.x) and partner codes in free text. Private / loopback IPs are kept.</summary>
++    public static string MaskNetwork(string? text)
++    {
++        if (string.IsNullOrEmpty(text)) return text ?? "";
++        var s = Ipv4.Replace(text, m =>
++        {
++            for (var i = 1; i <= 4; i++)
++                if (!int.TryParse(m.Groups[i].Value, out var o) || o > 255) return m.Value;
++            return NetworkAccess.MaskIp(m.Value);
++        });
++        s = TagPath.Replace(s, m => m.Groups[1].Value + MaskCode(m.Groups[2].Value));
++        return TagList.Replace(s, m => m.Groups[1].Value + string.Join(",", m.Groups[2].Value.Split(',').Select(MaskCode)));
++    }
+ }
+diff --git a/Server-Infinite/Lobbies/NetworkAccess.cs b/Server-Infinite/Lobbies/NetworkAccess.cs
+new file mode 100644
+index 0000000..742070a
+--- /dev/null
++++ b/Server-Infinite/Lobbies/NetworkAccess.cs
+@@ -0,0 +1,126 @@
++using System.Net;
++using System.Net.Sockets;
++using System.Security.Cryptography;
++using System.Text;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>exvs2-lobbies security hardening: who may reach which path (see SecurityConfigurations.AccessMode).</summary>
++public enum AccessMode
++{
++    LanOnly,
++    PublicMatchmaker,
++    Open,
++}
++
++/// <summary>
++/// exvs2-lobbies security hardening (2026-11-15): pure source-address policy, shared-secret comparison and
++/// path classification. Used by Middlewares/SecurityGuardMiddleware; no ASP.NET types so it is unit-testable.
++/// </summary>
++public static class NetworkAccess
++{
++    public const string TagSecretHeader = "X-Tag-Secret";
++
++    private static readonly IPNetwork[] LanNets =
++    {
++        IPNetwork.Parse("127.0.0.0/8"), IPNetwork.Parse("10.0.0.0/8"), IPNetwork.Parse("172.16.0.0/12"),
++        IPNetwork.Parse("192.168.0.0/16"), IPNetwork.Parse("169.254.0.0/16"),
++        IPNetwork.Parse("::1/128"), IPNetwork.Parse("fc00::/7"), IPNetwork.Parse("fe80::/10"),
++    };
++
++    public static AccessMode ParseMode(string? s)
++    {
++        var v = (s ?? "").Trim();
++        if (v.Equals("PublicMatchmaker", StringComparison.OrdinalIgnoreCase) ||
++            v.Equals("Public", StringComparison.OrdinalIgnoreCase)) return AccessMode.PublicMatchmaker;
++        if (v.Equals("Open", StringComparison.OrdinalIgnoreCase)) return AccessMode.Open;
++        return AccessMode.LanOnly;   // empty / unknown = the safe default
++    }
++
++    /// <summary>"100.64.0.0/10, 26.0.0.0/8" -> networks (invalid entries are skipped).</summary>
++    public static IReadOnlyList<IPNetwork> ParseCidrs(string? spec)
++    {
++        var list = new List<IPNetwork>();
++        foreach (var part in (spec ?? "").Split(new[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries))
++            if (IPNetwork.TryParse(part.Trim(), out var net)) list.Add(net);
++        return list;
++    }
++
++    public static IPAddress? Normalize(IPAddress? ip) =>
++        ip is { IsIPv4MappedToIPv6: true } ? ip.MapToIPv4() : ip;
++
++    public static bool IsLoopback(IPAddress? ip)
++    {
++        ip = Normalize(ip);
++        return ip != null && IPAddress.IsLoopback(ip);
++    }
++
++    /// <summary>Loopback, RFC 1918, link-local and IPv6 ULA / link-local addresses, plus <paramref name="extra"/>.</summary>
++    public static bool IsLan(IPAddress? ip, IReadOnlyList<IPNetwork>? extra = null)
++    {
++        ip = Normalize(ip);
++        if (ip == null) return false;
++        if (IPAddress.IsLoopback(ip)) return true;
++        foreach (var n in LanNets)
++            if (n.BaseAddress.AddressFamily == ip.AddressFamily && n.Contains(ip)) return true;
++        if (extra != null)
++            foreach (var n in extra)
++                if (n.BaseAddress.AddressFamily == ip.AddressFamily && n.Contains(ip)) return true;
++        return false;
++    }
++
++    /// <summary>Paths a cabinet / remote card server needs on the shared matchmaker.</summary>
++    public static bool IsMatchPath(string? path) => Under(path, "/match") || Under(path, "/mms");
++
++    public static bool IsTagPath(string? path) => Under(path, "/tag");
++
++    private static bool Under(string? path, string prefix)
++    {
++        if (string.IsNullOrEmpty(path)) return false;
++        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
++        return path.Length == prefix.Length || path[prefix.Length] == '/';
++    }
++
++    /// <summary>Whether a request from <paramref name="ip"/> to <paramref name="path"/> may be served at all.</summary>
++    public static bool IsAllowed(AccessMode mode, string? path, IPAddress? ip, IReadOnlyList<IPNetwork>? extra = null)
++    {
++        if (mode == AccessMode.Open) return true;
++        if (IsLan(ip, extra)) return true;
++        return mode == AccessMode.PublicMatchmaker && (IsMatchPath(path) || IsTagPath(path));
++    }
++
++    /// <summary>
++    /// /tag authorisation. With a configured secret every caller (LAN too) must present it.
++    /// Without one, /tag is LAN-only (a lone all-in-one server keeps working; the internet gets nothing).
++    /// </summary>
++    public static bool TagAuthorized(string? configuredSecret, string? presented, IPAddress? ip, IReadOnlyList<IPNetwork>? extra = null)
++    {
++        if (string.IsNullOrEmpty(configuredSecret)) return IsLan(ip, extra);
++        return SecretEquals(configuredSecret, presented);
++    }
++
++    /// <summary>Constant-time comparison (no early exit on the first differing byte).</summary>
++    public static bool SecretEquals(string? expected, string? presented)
++    {
++        if (string.IsNullOrEmpty(expected) || presented == null) return false;
++        var a = SHA256.HashData(Encoding.UTF8.GetBytes(expected));
++        var b = SHA256.HashData(Encoding.UTF8.GetBytes(presented));
++        return CryptographicOperations.FixedTimeEquals(a, b);
++    }
++
++    /// <summary>Public IPv4 -> "a.b.x.x"; private / loopback kept; IPv6 public -> first two groups + "::x".</summary>
++    public static string MaskIp(string? ip)
++    {
++        var s = (ip ?? "").Trim();
++        if (s.StartsWith("::ffff:", StringComparison.OrdinalIgnoreCase)) s = s[7..];
++        if (!IPAddress.TryParse(s, out var a)) return s;
++        if (IsLan(a) || a.Equals(IPAddress.Any) || a.Equals(IPAddress.IPv6Any)) return s;
++        if (a.AddressFamily == AddressFamily.InterNetwork)
++        {
++            var b = a.GetAddressBytes();
++            return $"{b[0]}.{b[1]}.x.x";
++        }
++        var parts = a.ToString().Split(':');
++        return parts.Length >= 2 ? $"{parts[0]}:{parts[1]}::x" : "x::x";
++    }
++}
+diff --git a/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs b/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs
+new file mode 100644
+index 0000000..7ae09b4
+--- /dev/null
++++ b/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs
+@@ -0,0 +1,26 @@
++using Serilog.Core;
++using Serilog.Events;
++
++namespace ServerInfinite.Lobbies.Serilog;
++
++/// <summary>
++/// exvs2-lobbies security hardening (2026-11-15): with CardServerConfig.Security.MaskNetworkInLog (default true),
++/// rewrites every string property of a log event (matchmaker lines, the "Request is" dump, request paths, …) so
++/// public IPv4 addresses become a.b.x.x and partner codes become AB******. Logging only.
++/// </summary>
++public sealed class NetworkMaskEnricher : ILogEventEnricher
++{
++    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
++    {
++        List<LogEventProperty>? changed = null;
++        foreach (var kv in logEvent.Properties)
++        {
++            if (kv.Value is not ScalarValue { Value: string s } || s.Length < 7) continue;
++            var masked = LogMask.MaskNetwork(s);
++            if (!ReferenceEquals(masked, s) && masked != s)
++                (changed ??= new()).Add(new LogEventProperty(kv.Key, new ScalarValue(masked)));
++        }
++        if (changed != null)
++            foreach (var p in changed) logEvent.AddOrUpdateProperty(p);
++    }
++}
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 7820594..1116ce2 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -259,6 +259,14 @@ public sealed class Matchmaker
+     /// <summary>First node id issued by this process (0 = unknown). An unknown node below it was issued before a
+     /// server restart, so its wait was lost: answer MATCH_CANCELED instead of ERR_MATCH_NOENTRY.</summary>
+     public uint FirstNodeThisRun { get; set; }
++    /// <summary>
++    /// security hardening 2026-11-15 (Security.BindMatchNodesToSourceIp): CheckMatching / CancelMatching for a node
++    /// whose EntryMatching came from a recorded source IP are refused from any other source (ERR_MATCH_NOENTRY /
++    /// ignored), so node ids (sequential, guessable) cannot be used to read another cabinet's room roster or
++    /// cancel its search. Off by default here; the config default is on.
++    /// </summary>
++    public bool BindNodesToSource { get; set; } = false;
++    private readonly HashSet<(uint, string)> _sourceWarned = new();
+     /// <summary>Network realms (NetDiag.DefaultRealms by default). null = realm matching off: one pool per mode.</summary>
+     public IReadOnlyList<(string Name, string Cidr)>? Realms { get; set; } = NetDiag.DefaultRealms;
+     /// <summary>In-store worlds: only cabinets of one shop may meet (shop code + <see cref="NetDiag.ShopSite"/>).</summary>
+@@ -434,7 +442,7 @@ public sealed class Matchmaker
+                                       "never placed while NoCpuPartner is on (its results screen would hang); it waits for its own timeout");
+             TryMatch(now);
+             Log?.Invoke($"entry {t.WorldName} nodes=[{string.Join(",", t.NodeIds)}] slots={t.Slots} key={t.Key}" +
+-                        (t.TagCodes.Length > 0 ? $" tag={string.Join(",", t.TagCodes)}" : "") +
++                        (t.TagCodes.Length > 0 ? $" tag={string.Join(",", t.TagCodes.Select(TagInviteStore.MaskCode))}" : "") +
+                         (t.Soft != null ? $" soft={t.Soft}" : "") + $" level={t.Level} queue={_queue.Count}");
+             if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.TagCodes.Length == 0 && t.Room == null)
+                 (Warn ?? Log)?.Invoke($"TAG-WARN node={e.Myclient.NodeId} online-tag entry with pair key 0 (no partner id from the card server?) - it will never pair");
+@@ -454,8 +462,9 @@ public sealed class Matchmaker
+         }
+     }
+ 
+-    public (ErrorCode Code, Room? Room, uint ApplyId) Check(uint nodeId, double now)
++    public (ErrorCode Code, Room? Room, uint ApplyId) Check(uint nodeId, double now, string? sourceIp = null)
+     {
++        if (ForeignSource(nodeId, sourceIp, "check")) return (ErrorCode.ErrMatchNoentry, null, 0);
+         var r = CheckCore(nodeId, now);
+         if (Verbose) Log?.Invoke($"check node={nodeId} -> {r.Code} room={r.Room?.RoomId.ToString() ?? "-"}");
+         return r;
+@@ -490,8 +499,9 @@ public sealed class Matchmaker
+         }
+     }
+ 
+-    public void Cancel(uint nodeId, double now = 0, uint applyId = 0)
++    public void Cancel(uint nodeId, double now = 0, uint applyId = 0, string? sourceIp = null)
+     {
++        if (ForeignSource(nodeId, sourceIp, "cancel")) return;
+         lock (_gate)
+         {
+             if (!_byNode.TryGetValue(nodeId, out var t) || t.Room != null) return;
+@@ -503,6 +513,25 @@ public sealed class Matchmaker
+         }
+     }
+ 
++    /// <summary>
++    /// True when <see cref="BindNodesToSource"/> is on and this node's entry was recorded from a different source IP.
++    /// Nodes with no recorded source (e.g. a team partner that has not sent its own entry yet) are not refused.
++    /// </summary>
++    private bool ForeignSource(uint nodeId, string? sourceIp, string what)
++    {
++        if (!BindNodesToSource || string.IsNullOrEmpty(sourceIp) || nodeId == 0) return false;
++        var src = NetDiag.Norm(sourceIp);
++        lock (_gate)
++        {
++            if (!_byNode.TryGetValue(nodeId, out var t)) return false;
++            if (!t.SourceByNode.TryGetValue(nodeId, out var owner) || string.IsNullOrEmpty(owner) || owner == src) return false;
++            if (_sourceWarned.Count > 4096) _sourceWarned.Clear();
++            if (_sourceWarned.Add((nodeId, src)))
++                (Warn ?? Log)?.Invoke($"SRC-WARN {what} for node={nodeId} from a different source than its entry: refused");
++            return true;
++        }
++    }
++
+     /// <summary>One NET line per entry; a warning once per (source, global) pair when STUN and HTTP disagree.</summary>
+     private void NetEntry(Client c, string? sourceIp, string what)
+     {
+diff --git a/Server-Infinite/Matchmaking/TagInviteStore.cs b/Server-Infinite/Matchmaking/TagInviteStore.cs
+index d752294..30d8103 100644
+--- a/Server-Infinite/Matchmaking/TagInviteStore.cs
++++ b/Server-Infinite/Matchmaking/TagInviteStore.cs
+@@ -18,6 +18,9 @@ public sealed class TagInvite
+     public DateTime CreatedUtc { get; set; }
+     public DateTime? JoinedUtc { get; set; }
+ 
++    /// <summary>Last create / join / registration / settings save (security hardening: drives code expiry).</summary>
++    public DateTime? LastUsedUtc { get; set; }
++
+     [JsonIgnore]
+     public bool Joined => PartnerPilotId != 0;
+ 
+@@ -67,6 +70,17 @@ public sealed class TagInviteStore
+     private readonly Dictionary<string, TagInvite> _invites = new(StringComparer.OrdinalIgnoreCase);
+     private readonly Dictionary<uint, string[]> _codesByAm = new();
+ 
++    /// <summary>Clock (UTC). Tests replace it to check expiry.</summary>
++    public Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
++
++    /// <summary>Unjoined codes expire this long after they were created or last re-shown. Null / zero = never.</summary>
++    public TimeSpan? OpenCodeTtl { get; set; } = TimeSpan.FromDays(7);
++
++    /// <summary>Joined (team) codes expire after this long with no use by either partner. Null / zero = never.</summary>
++    public TimeSpan? JoinedCodeTtl { get; set; } = TimeSpan.FromDays(90);
++
++    public int Count { get { lock (_gate) { PruneExpired(); return _invites.Count; } } }
++
+     public TagInviteStore(string? statePath = null)
+     {
+         _path = string.IsNullOrWhiteSpace(statePath) ? null : statePath;
+@@ -103,12 +117,17 @@ public sealed class TagInviteStore
+         var name = creatorName?.Trim() ?? "";
+         lock (_gate)
+         {
++            PruneExpired();
+             // Reuse an open invite from the same creator so they can refresh the page
+             // and still see the same code.
+             foreach (var existing in _invites.Values)
+             {
+                 if (existing.CreatorPilotId == creatorPilotId && !existing.Joined)
++                {
++                    existing.LastUsedUtc = UtcNow();
++                    Persist();
+                     return existing.Code;
++                }
+             }
+ 
+             string code;
+@@ -118,7 +137,8 @@ public sealed class TagInviteStore
+                 Code = code,
+                 CreatorPilotId = creatorPilotId,
+                 CreatorName = name,
+-                CreatedUtc = DateTime.UtcNow,
++                CreatedUtc = UtcNow(),
++                LastUsedUtc = UtcNow(),
+             };
+             Persist();
+             return code;
+@@ -132,6 +152,7 @@ public sealed class TagInviteStore
+         if (key.Length != CodeLength) throw new InvalidOperationException("Invalid tag code.");
+         lock (_gate)
+         {
++            PruneExpired();
+             if (!_invites.TryGetValue(key, out var inv))
+                 throw new InvalidOperationException("Tag code not found. Check that you typed it correctly and that the matchmaker is the same one your partner is using.");
+             if (inv.CreatorPilotId == partnerPilotId)
+@@ -141,7 +162,8 @@ public sealed class TagInviteStore
+             // Idempotent re-join by the same partner (page refresh).
+             inv.PartnerPilotId = partnerPilotId;
+             inv.PartnerName = partnerName?.Trim() ?? inv.PartnerName;
+-            inv.JoinedUtc ??= DateTime.UtcNow;
++            inv.JoinedUtc ??= UtcNow();
++            inv.LastUsedUtc = UtcNow();
+             Persist();
+             return Clone(inv);
+         }
+@@ -152,6 +174,7 @@ public sealed class TagInviteStore
+         var key = Normalize(code);
+         lock (_gate)
+         {
++            PruneExpired();
+             return _invites.TryGetValue(key, out var inv) ? Clone(inv) : null;
+         }
+     }
+@@ -162,11 +185,17 @@ public sealed class TagInviteStore
+         if (wirePilotId == 0) return Array.Empty<TagInvite>();
+         lock (_gate)
+         {
+-            return _invites.Values
++            PruneExpired();
++            var mine = _invites.Values
+                 .Where(i => i.CreatorPilotId == wirePilotId || i.PartnerPilotId == wirePilotId)
+                 .OrderByDescending(i => i.CreatedUtc)
+-                .Select(Clone)
+                 .ToList();
++            // A LoadCard / Teams tab refresh keeps a team alive; an unjoined code is NOT refreshed by this
++            // (only by its creator pressing "Create a code" again), so a forgotten open code still expires.
++            var touched = false;
++            foreach (var i in mine.Where(i => i.Joined)) { i.LastUsedUtc = UtcNow(); touched = true; }
++            if (touched) Persist();
++            return mine.Select(Clone).ToList();
+         }
+     }
+ 
+@@ -182,6 +211,7 @@ public sealed class TagInviteStore
+         if (key.Length != CodeLength) throw new InvalidOperationException("Invalid tag code.");
+         lock (_gate)
+         {
++            PruneExpired();
+             if (!_invites.TryGetValue(key, out var inv))
+                 throw new InvalidOperationException("Tag code not found.");
+             if (inv.CreatorPilotId != byPilotId && inv.PartnerPilotId != byPilotId)
+@@ -197,28 +227,40 @@ public sealed class TagInviteStore
+                 EmblemId = settings.EmblemId,
+                 BgmId = settings.BgmId,
+                 NameColorId = settings.NameColorId,
+-                UpdatedUtc = DateTime.UtcNow,
++                UpdatedUtc = UtcNow(),
+                 UpdatedByPilotId = byPilotId,
+             };
++            inv.LastUsedUtc = UtcNow();
+             Persist();
+             return Clone(inv);
+         }
+     }
+ 
+-    /// <summary>Bind the codes this am_id will search with on world 5.</summary>
+-    public void RegisterSearch(uint amId, IEnumerable<string> codes)
++    /// <summary>
++    /// Bind the codes this am_id will search with on world 5. Security hardening: only codes that exist and that
++    /// this am_id (= wire pilot id) created or joined are kept, so a leaked code cannot be used to search as
++    /// somebody's partner. Returns the codes that were accepted.
++    /// </summary>
++    public IReadOnlyList<string> RegisterSearch(uint amId, IEnumerable<string> codes)
+     {
+-        if (amId == 0) return;
+-        var list = (codes ?? Array.Empty<string>())
++        if (amId == 0) return Array.Empty<string>();
++        var requested = (codes ?? Array.Empty<string>())
+             .Select(Normalize)
+             .Where(c => c.Length == CodeLength)
+             .Distinct(StringComparer.OrdinalIgnoreCase)
+             .ToArray();
+         lock (_gate)
+         {
++            PruneExpired();
++            var list = requested
++                .Where(c => _invites.TryGetValue(c, out var inv) &&
++                            (inv.CreatorPilotId == amId || inv.PartnerPilotId == amId))
++                .ToArray();
++            foreach (var c in list) _invites[c].LastUsedUtc = UtcNow();
+             if (list.Length == 0) _codesByAm.Remove(amId);
+             else _codesByAm[amId] = list;
+             Persist();
++            return list;
+         }
+     }
+ 
+@@ -226,18 +268,53 @@ public sealed class TagInviteStore
+     {
+         lock (_gate)
+         {
++            PruneExpired();
+             return _codesByAm.TryGetValue(amId, out var list) ? list.ToArray() : Array.Empty<string>();
+         }
+     }
+ 
++    /// <summary>"ABCD2345" -> "AB******" for logs.</summary>
++    public static string MaskCode(string? code)
++    {
++        var c = (code ?? "").Trim();
++        return c.Length <= 2 ? new string('*', c.Length) : c[..2] + new string('*', c.Length - 2);
++    }
++
+     public static string Normalize(string? code) =>
+         (code ?? "").Trim().ToUpperInvariant();
+ 
+-    private string NewCode()
++    /// <summary>Remove expired codes (and their am_id registrations). Lock held. Returns how many were removed.</summary>
++    private int PruneExpired()
++    {
++        var now = UtcNow();
++        var dead = _invites.Values.Where(i => IsExpired(i, now)).Select(i => Normalize(i.Code)).ToList();
++        if (dead.Count == 0) return 0;
++        foreach (var c in dead) _invites.Remove(c);
++        foreach (var am in _codesByAm.Keys.ToList())
++        {
++            var left = _codesByAm[am].Where(c => _invites.ContainsKey(c)).ToArray();
++            if (left.Length == 0) _codesByAm.Remove(am);
++            else _codesByAm[am] = left;
++        }
++        Persist();
++        return dead.Count;
++    }
++
++    private bool IsExpired(TagInvite i, DateTime now)
++    {
++        var ttl = i.Joined ? JoinedCodeTtl : OpenCodeTtl;
++        if (ttl is null || ttl.Value <= TimeSpan.Zero) return false;
++        var last = i.LastUsedUtc ?? i.JoinedUtc ?? i.CreatedUtc;
++        if (i.JoinedUtc > last) last = i.JoinedUtc.Value;
++        return now - last > ttl.Value;
++    }
++
++    /// <summary>Codes come from a CSPRNG (an attacker who saw some codes must not predict the next one).</summary>
++    private static string NewCode()
+     {
+         Span<char> chars = stackalloc char[CodeLength];
+         for (var i = 0; i < CodeLength; i++)
+-            chars[i] = Alphabet[Random.Shared.Next(Alphabet.Length)];
++            chars[i] = Alphabet[System.Security.Cryptography.RandomNumberGenerator.GetInt32(Alphabet.Length)];
+         return new string(chars);
+     }
+ 
+@@ -265,6 +342,7 @@ public sealed class TagInviteStore
+         PartnerName = i.PartnerName,
+         CreatedUtc = i.CreatedUtc,
+         JoinedUtc = i.JoinedUtc,
++        LastUsedUtc = i.LastUsedUtc,
+         Settings = CloneSettings(i.Settings),
+     };
+ 
+diff --git a/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs b/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+new file mode 100644
+index 0000000..2b94027
+--- /dev/null
++++ b/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+@@ -0,0 +1,96 @@
++using System.Net;
++using Microsoft.Extensions.Options;
++using ServerInfinite.Lobbies;
++using NetworkAccess = ServerInfinite.Lobbies.NetworkAccess;
++using ServerInfinite.Models.Config;
++
++namespace ServerInfinite.Middlewares;
++
++/// <summary>
++/// exvs2-lobbies security hardening (2026-11-15). Runs before static files, the WebUI and every controller:
++/// <list type="number">
++/// <item>Source filter (Security.AccessMode): LanOnly / PublicMatchmaker / Open. Refused requests get 403 with no body.</item>
++/// <item>/tag shared secret (OnlineTag.TagSecret, header X-Tag-Secret): 401 without it. No secret configured = LAN-only /tag.</item>
++/// <item>Per source IP token buckets for /match + /mms and for /tag: 429 when exceeded.</item>
++/// </list>
++/// The connection's remote address is used as is; X-Forwarded-For is never trusted.
++/// </summary>
++public sealed class SecurityGuardMiddleware
++{
++    private static readonly double TickFreq = System.Diagnostics.Stopwatch.Frequency;
++    private readonly RequestDelegate _next;
++    private readonly ILogger<SecurityGuardMiddleware> _log;
++    private readonly AccessMode _mode;
++    private readonly IReadOnlyList<IPNetwork> _extra;
++    private readonly string _secret;
++    private readonly bool _exemptLoopback;
++    private readonly IpRateLimiter _matchLimiter;
++    private readonly IpRateLimiter _tagLimiter;
++    private readonly IpRateLimiter _warnLimiter = new(6, 3);   // at most a few "refused" lines per source per minute
++
++    public SecurityGuardMiddleware(RequestDelegate next, IOptions<CardServerConfig> options, ILogger<SecurityGuardMiddleware> log)
++    {
++        _next = next;
++        _log = log;
++        var cfg = options.Value;
++        _mode = NetworkAccess.ParseMode(cfg.Security.AccessMode);
++        _extra = NetworkAccess.ParseCidrs(cfg.Security.ExtraAllowedCidrs);
++        _secret = cfg.OnlineTag.TagSecret ?? "";
++        _exemptLoopback = cfg.Security.ExemptLoopbackFromRateLimit;
++        _matchLimiter = new IpRateLimiter(cfg.Security.MatchRequestsPerMinute, cfg.Security.MatchBurst);
++        _tagLimiter = new IpRateLimiter(cfg.Security.TagRequestsPerMinute, cfg.Security.TagBurst);
++    }
++
++    public AccessMode Mode => _mode;
++
++    public async Task InvokeAsync(HttpContext context)
++    {
++        var ip = NetworkAccess.Normalize(context.Connection.RemoteIpAddress);
++        var path = context.Request.Path.Value ?? "/";
++        var now = System.Diagnostics.Stopwatch.GetTimestamp() / TickFreq;
++
++        if (!NetworkAccess.IsAllowed(_mode, path, ip, _extra))
++        {
++            Refuse(context, StatusCodes.Status403Forbidden, ip, "not allowed from this network", now);
++            return;
++        }
++
++        var isTag = NetworkAccess.IsTagPath(path);
++        if (isTag)
++        {
++            var presented = context.Request.Headers[NetworkAccess.TagSecretHeader].ToString();
++            if (!NetworkAccess.TagAuthorized(_secret, presented, ip, _extra))
++            {
++                Refuse(context, StatusCodes.Status401Unauthorized, ip, "/tag without a valid shared secret", now);
++                return;
++            }
++        }
++
++        var limiter = isTag ? _tagLimiter : NetworkAccess.IsMatchPath(path) ? _matchLimiter : null;
++        if (limiter != null && !(_exemptLoopback && NetworkAccess.IsLoopback(ip)) &&
++            !limiter.TryAcquire(ip?.ToString() ?? "?", now))
++        {
++            context.Response.Headers["Retry-After"] = "5";
++            Refuse(context, StatusCodes.Status429TooManyRequests, ip, isTag ? "/tag rate limit" : "/match rate limit", now);
++            return;
++        }
++
++        await _next(context);
++    }
++
++    private void Refuse(HttpContext context, int status, IPAddress? ip, string why, double now)
++    {
++        context.Response.StatusCode = status;
++        context.Response.ContentLength = 0;
++        var key = ip?.ToString() ?? "?";
++        if (_warnLimiter.TryAcquire(key + "|" + status, now))
++            _log.LogWarning("SEC-REFUSE {Status} {Method} {Path} from {Source}: {Why}", status, context.Request.Method,
++                LogMask.MaskNetwork(context.Request.Path.Value), NetworkAccess.MaskIp(key), why);
++    }
++}
++
++public static class SecurityGuardExtensions
++{
++    public static IApplicationBuilder UseSecurityGuard(this IApplicationBuilder builder) =>
++        builder.UseMiddleware<SecurityGuardMiddleware>();
++}
+diff --git a/Server-Infinite/Models/Config/CardServerConfig.cs b/Server-Infinite/Models/Config/CardServerConfig.cs
+index ffe283f..f805322 100644
+--- a/Server-Infinite/Models/Config/CardServerConfig.cs
++++ b/Server-Infinite/Models/Config/CardServerConfig.cs
+@@ -42,6 +42,9 @@ public class CardServerConfig
+     // exvs2-lobbies: online tag / partner invites (experimental)
+     public OnlineTagConfigurations OnlineTag { get; set; } = new();
+ 
++    // exvs2-lobbies: source filtering, rate limits and log masking (security hardening 2026-11-15)
++    public SecurityConfigurations Security { get; set; } = new();
++
+     public override string ToString()
+     {
+         var options = new JsonSerializerOptions
+diff --git a/Server-Infinite/Models/Config/OnlineTagConfigurations.cs b/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
+index 262ea0b..5b6df9b 100644
+--- a/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
+@@ -1,3 +1,5 @@
++using System.Text.Json.Serialization;
++
+ namespace ServerInfinite.Models.Config;
+ 
+ /// <summary>
+@@ -50,4 +52,21 @@ public class OnlineTagConfigurations
+ 
+     /// <summary>JSON file for persisted invites and am_id registrations, used by the process that owns /tag.</summary>
+     public string InviteStateFile { get; set; } = "tag_invites.json";
++
++    /// <summary>
++    /// Shared secret between card servers and the matchmaker's /tag API (security hardening 2026-11-15).
++    /// The process that owns /tag rejects every /tag request without header <c>X-Tag-Secret</c> = this value (401).
++    /// Card servers send it on every /tag call. Empty on the /tag owner: /tag answers loopback / LAN sources only.
++    /// Keep it out of git; set it in the local server.json (restricted file permissions) or the environment variable
++    /// CardServerConfig__OnlineTag__TagSecret. Never logged (the startup config dump omits it).
++    /// </summary>
++    [JsonIgnore]
++    public string TagSecret { get; set; } = "";
++
++    /// <summary>An unjoined partner code expires this many days after it was created or last shown (0 = never).</summary>
++    public double OpenCodeExpiryDays { get; set; } = 7;
++
++    /// <summary>A joined (team) code expires after this many days with no use: no LoadCard registration, Teams tab
++    /// refresh or settings save from either partner (0 = never).</summary>
++    public double JoinedCodeExpiryDays { get; set; } = 90;
+ }
+diff --git a/Server-Infinite/Models/Config/SecurityConfigurations.cs b/Server-Infinite/Models/Config/SecurityConfigurations.cs
+new file mode 100644
+index 0000000..89b3017
+--- /dev/null
++++ b/Server-Infinite/Models/Config/SecurityConfigurations.cs
+@@ -0,0 +1,47 @@
++namespace ServerInfinite.Models.Config;
++
++/// <summary>
++/// exvs2-lobbies security hardening (2026-11-15). Who may reach this server and how often.
++/// <para><see cref="AccessMode"/>:</para>
++/// <list type="bullet">
++/// <item><c>LanOnly</c> (default): every path answers only loopback / private / link-local sources
++/// (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fc00::/7, fe80::/10) plus <see cref="ExtraAllowedCidrs"/>.
++/// For a card server whose cabinets are on the same LAN.</item>
++/// <item><c>PublicMatchmaker</c>: internet sources may reach only <c>/match</c>, <c>/mms</c> and <c>/tag</c>;
++/// the WebUI, card APIs (<c>/ui</c>, <c>/sys</c>, <c>/game</c> …) and static files stay LAN-only. For the VPS.</item>
++/// <item><c>Open</c>: upstream behaviour (no source filtering). Not recommended.</item>
++/// </list>
++/// </summary>
++public class SecurityConfigurations
++{
++    public string AccessMode { get; set; } = "LanOnly";
++
++    /// <summary>Extra source networks treated as LAN, e.g. "100.64.0.0/10 26.0.0.0/8" (Tailscale, Radmin). Space or comma separated.</summary>
++    public string ExtraAllowedCidrs { get; set; } = "";
++
++    /// <summary>Per source IP token bucket for /match and /mms: sustained requests per minute (0 = off).
++    /// A cabinet polls about every 3 s, so 1200/min leaves room for 16+ cabinets behind one NAT.</summary>
++    public int MatchRequestsPerMinute { get; set; } = 1200;
++
++    /// <summary>Burst size for /match (requests allowed at once before the per-minute rate applies).</summary>
++    public int MatchBurst { get; set; } = 300;
++
++    /// <summary>Per source IP token bucket for /tag (card servers only): requests per minute (0 = off).</summary>
++    public int TagRequestsPerMinute { get; set; } = 240;
++
++    /// <summary>Burst size for /tag.</summary>
++    public int TagBurst { get; set; } = 60;
++
++    /// <summary>Loopback sources are never rate limited.</summary>
++    public bool ExemptLoopbackFromRateLimit { get; set; } = true;
++
++    /// <summary>
++    /// /match CancelMatching and CheckMatching for a node are honoured only from the source IP that sent that node's
++    /// EntryMatching (when one was recorded). Stops a stranger from cancelling other cabinets' searches or reading
++    /// their room roster by guessing node ids. Cabinets behind one NAT share the IP, so this is safe for LAN setups.
++    /// </summary>
++    public bool BindMatchNodesToSourceIp { get; set; } = true;
++
++    /// <summary>Mask public IPv4 addresses (a.b.x.x) and partner codes in every log line. Private / loopback IPs are kept.</summary>
++    public bool MaskNetworkInLog { get; set; } = true;
++}
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 16c8c0e..82a21fb 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -54,6 +54,9 @@ try
+         // exvs2-lobbies: MaskCardSecretsInLog (default true) masks ChipId / AccessCode / SessionId log properties
+         if (context.Configuration.GetValue<bool?>("CardServerConfig:MaskCardSecretsInLog") ?? true)
+             configuration.Enrich.With(new ServerInfinite.Lobbies.Serilog.CardSecretMaskEnricher());
++        // exvs2-lobbies security hardening: Security.MaskNetworkInLog (default true) masks public IPs and partner codes
++        if (context.Configuration.GetValue<bool?>("CardServerConfig:Security:MaskNetworkInLog") ?? true)
++            configuration.Enrich.With(new ServerInfinite.Lobbies.Serilog.NetworkMaskEnricher());
+     });
+ 
+     builder.Services.AddMediatR(cfg => {
+@@ -87,7 +90,12 @@ try
+         var path = string.IsNullOrWhiteSpace(cfg.OnlineTag.InviteStateFile)
+             ? "tag_invites.json"
+             : cfg.OnlineTag.InviteStateFile;
+-        return new ServerInfinite.Matchmaking.TagInviteStore(path);
++        static TimeSpan? Days(double d) => d > 0 ? TimeSpan.FromDays(d) : null;
++        return new ServerInfinite.Matchmaking.TagInviteStore(path)
++        {
++            OpenCodeTtl = Days(cfg.OnlineTag.OpenCodeExpiryDays),
++            JoinedCodeTtl = Days(cfg.OnlineTag.JoinedCodeExpiryDays),
++        };
+     });
+     builder.Services.AddHttpClient("tag-invites");
+     builder.Services.AddSingleton<ServerInfinite.Common.TagInvites.ITagInviteClient>(sp =>
+@@ -99,7 +107,7 @@ try
+                 sp.GetRequiredService<ServerInfinite.Matchmaking.TagInviteStore>(),
+                 sp.GetRequiredService<ServerInfinite.Matchmaking.Matchmaker>());
+         var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("tag-invites");
+-        return new ServerInfinite.Common.TagInvites.HttpTagInviteClient(http, url);
++        return new ServerInfinite.Common.TagInvites.HttpTagInviteClient(http, url, cfg.OnlineTag.TagSecret);
+     });
+     builder.Services.AddSingleton(sp =>
+     {
+@@ -128,7 +136,8 @@ try
+             OneOnOneWorlds = ServerInfinite.Matchmaking.Matchmaker.ParseWorlds(mm.OneOnOneWorlds),
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+-            FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
++            FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0,
++            BindNodesToSource = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Security.BindMatchNodesToSourceIp
+         };
+     });
+     // exvs2-lobbies post-match trace (logging only, default on): OnlineMatching.LogPostMatchTraffic
+@@ -150,9 +159,19 @@ try
+     var serverIdFile = string.IsNullOrWhiteSpace(config.OnlineTag.ServerIdFile) ? "tag_server_id.txt" : config.OnlineTag.ServerIdFile;
+     ServerInfinite.Matchmaking.PilotId.Initialize(config.OnlineTag.ServerId, serverIdFile, s => Log.Information("{Message}", s));
+     var inviteUrl = ServerInfinite.Matchmaking.TagInviteUrl.Resolve(config.OnlineTag.InviteUrl, config.OnlineMatching.MatchUrl);
+-    Log.Information("OnlineTag ServerId={ServerId} InviteMode={Mode}",
++    Log.Information("OnlineTag ServerId={ServerId} InviteMode={Mode} TagSecret={SecretState}",
+         ServerInfinite.Matchmaking.PilotId.ServerId,
+-        string.IsNullOrEmpty(inviteUrl) ? "in-process" : "http");
++        string.IsNullOrEmpty(inviteUrl) ? "in-process" : "http",
++        string.IsNullOrEmpty(config.OnlineTag.TagSecret) ? "not set (/tag answers LAN only)" : "set");
++    Log.Information("Security: AccessMode={Mode} ExtraAllowedCidrs={Extra} rate /match={MatchRate}/min burst {MatchBurst}, " +
++                    "/tag={TagRate}/min burst {TagBurst}, BindMatchNodesToSourceIp={Bind}, MaskNetworkInLog={Mask}, " +
++                    "partner codes expire open {OpenDays}d / joined idle {JoinedDays}d",
++        ServerInfinite.Lobbies.NetworkAccess.ParseMode(config.Security.AccessMode),
++        string.IsNullOrWhiteSpace(config.Security.ExtraAllowedCidrs) ? "-" : config.Security.ExtraAllowedCidrs,
++        config.Security.MatchRequestsPerMinute, config.Security.MatchBurst,
++        config.Security.TagRequestsPerMinute, config.Security.TagBurst,
++        config.Security.BindMatchNodesToSourceIp, config.Security.MaskNetworkInLog,
++        config.OnlineTag.OpenCodeExpiryDays, config.OnlineTag.JoinedCodeExpiryDays);
+     
+     app.UseSerilogRequestLogging(options =>
+     {
+@@ -164,6 +183,10 @@ try
+         };
+     });
+ 
++    // exvs2-lobbies security hardening: source filter, /tag shared secret and rate limits run before the WebUI,
++    // static files and every controller (Middlewares/SecurityGuardMiddleware.cs).
++    app.UseSecurityGuard();
++
+     // Configure the HTTP request pipeline.
+     if (app.Environment.IsDevelopment())
+     {
+diff --git a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+index 74e757b..1516f20 100644
+--- a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
++++ b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+@@ -11,6 +11,8 @@
+     <Compile Include="..\..\Server-Infinite\Proto\Match.cs" Link="Proto\Match.cs" />
+     <Compile Include="..\..\Server-Infinite\Proto\Game.cs" Link="Proto\Game.cs" />
+     <Compile Include="..\..\Server-Infinite\Lobbies\*.cs" Link="Lobbies\%(Filename)%(Extension)" />
++    <Compile Include="..\..\Server-Infinite\Models\Config\OnlineTagConfigurations.cs" Link="Config\OnlineTagConfigurations.cs" />
++    <Compile Include="..\..\Server-Infinite\Models\Config\SecurityConfigurations.cs" Link="Config\SecurityConfigurations.cs" />
+   </ItemGroup>
+   <ItemGroup>
+     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+diff --git a/Tests/Matchmaking.Tests/SecurityTests.cs b/Tests/Matchmaking.Tests/SecurityTests.cs
+new file mode 100644
+index 0000000..58e2956
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/SecurityTests.cs
+@@ -0,0 +1,408 @@
++using System.Net;
++using System.Text.Json;
++using nue.protocol.mms;
++using ServerInfinite.Lobbies;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// Security hardening 2026-11-15: source filtering, /tag shared secret, rate limits, log masking, partner-code expiry,
++// /match node-to-source binding. All test data is fake (documentation IP ranges, made-up codes).
++public class SecurityTests
++{
++    private static IPAddress Ip(string s) => IPAddress.Parse(s);
++
++    // ---- LAN-only / public matchmaker source filter ----
++
++    [Theory]
++    [InlineData("127.0.0.1", true)]
++    [InlineData("::1", true)]
++    [InlineData("10.10.0.2", true)]          // N2N overlay on the PC
++    [InlineData("172.20.1.5", true)]
++    [InlineData("192.168.1.73", true)]       // a cabinet client IP
++    [InlineData("169.254.41.97", true)]      // N2N-LM link-local
++    [InlineData("::ffff:192.168.1.69", true)]
++    [InlineData("fe80::1", true)]
++    [InlineData("fd00::5", true)]
++    [InlineData("203.0.113.9", false)]
++    [InlineData("8.8.8.8", false)]
++    [InlineData("172.32.0.1", false)]        // just outside 172.16/12
++    [InlineData("100.64.1.1", false)]        // CGNAT / Tailscale: not LAN unless configured
++    [InlineData("2001:db8::1", false)]
++    public void IsLanCoversLoopbackPrivateAndLinkLocalOnly(string ip, bool lan) =>
++        Assert.Equal(lan, NetworkAccess.IsLan(Ip(ip)));
++
++    [Fact]
++    public void ExtraAllowedCidrsExtendTheLan()
++    {
++        var extra = NetworkAccess.ParseCidrs("100.64.0.0/10, 26.0.0.0/8 bogus");
++        Assert.Equal(2, extra.Count);
++        Assert.True(NetworkAccess.IsLan(Ip("100.64.1.1"), extra));
++        Assert.True(NetworkAccess.IsLan(Ip("26.1.2.3"), extra));
++        Assert.False(NetworkAccess.IsLan(Ip("27.1.2.3"), extra));
++    }
++
++    [Theory]
++    [InlineData("/ui/card/getAll")]
++    [InlineData("/")]
++    [InlineData("/index.html")]
++    [InlineData("/_framework/blazor.webassembly.js")]
++    [InlineData("/sys/servlet/PowerOn")]
++    [InlineData("/game")]
++    [InlineData("/match")]
++    [InlineData("/tag/invites")]
++    public void LanOnlyRefusesEveryPathFromTheInternetButServesTheLan(string path)
++    {
++        Assert.False(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, Ip("203.0.113.9")));
++        Assert.True(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, Ip("192.168.1.72")));
++        Assert.True(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, Ip("127.0.0.1")));
++    }
++
++    [Theory]
++    [InlineData("/match", true)]
++    [InlineData("/mms", true)]
++    [InlineData("/MATCH", true)]
++    [InlineData("/tag", true)]
++    [InlineData("/tag/invites/for/1000001", true)]
++    [InlineData("/tag/register", true)]
++    [InlineData("/matchx", false)]
++    [InlineData("/tagged", false)]
++    [InlineData("/ui/card/getAll", false)]
++    [InlineData("/ui/team/getTeams/x/y", false)]
++    [InlineData("/", false)]
++    [InlineData("/index.html", false)]
++    [InlineData("/swagger/index.html", false)]
++    [InlineData("/sys/servlet/PowerOn", false)]
++    [InlineData("/game", false)]
++    public void PublicMatchmakerExposesOnlyMatchAndTagToTheInternet(string path, bool allowed)
++    {
++        Assert.Equal(allowed, NetworkAccess.IsAllowed(AccessMode.PublicMatchmaker, path, Ip("198.51.100.20")));
++        Assert.True(NetworkAccess.IsAllowed(AccessMode.PublicMatchmaker, path, Ip("127.0.0.1")));   // ssh tunnel / local admin
++    }
++
++    [Fact]
++    public void OpenModeAndModeParsing()
++    {
++        Assert.True(NetworkAccess.IsAllowed(AccessMode.Open, "/ui/card/getAll", Ip("203.0.113.9")));
++        Assert.Equal(AccessMode.LanOnly, NetworkAccess.ParseMode(""));
++        Assert.Equal(AccessMode.LanOnly, NetworkAccess.ParseMode("typo"));
++        Assert.Equal(AccessMode.PublicMatchmaker, NetworkAccess.ParseMode("publicmatchmaker"));
++        Assert.Equal(AccessMode.Open, NetworkAccess.ParseMode("Open"));
++        Assert.Equal("LanOnly", new SecurityConfigurations().AccessMode);   // safe default for a card server
++    }
++
++    // ---- /tag shared secret ----
++
++    [Fact]
++    public void TagSecretIsRequiredFromEverySourceWhenConfigured()
++    {
++        const string secret = "unit-test-secret-not-real-0123456789";
++        Assert.False(NetworkAccess.TagAuthorized(secret, null, Ip("198.51.100.20")));
++        Assert.False(NetworkAccess.TagAuthorized(secret, "", Ip("198.51.100.20")));
++        Assert.False(NetworkAccess.TagAuthorized(secret, "wrong", Ip("198.51.100.20")));
++        Assert.False(NetworkAccess.TagAuthorized(secret, secret + "x", Ip("127.0.0.1")));   // LAN needs it too
++        Assert.True(NetworkAccess.TagAuthorized(secret, secret, Ip("198.51.100.20")));
++    }
++
++    [Fact]
++    public void WithoutASecretTagIsLanOnly()
++    {
++        Assert.True(NetworkAccess.TagAuthorized("", null, Ip("127.0.0.1")));
++        Assert.True(NetworkAccess.TagAuthorized(null, null, Ip("192.168.1.69")));
++        Assert.False(NetworkAccess.TagAuthorized("", "anything", Ip("198.51.100.20")));
++    }
++
++    [Fact]
++    public void SecretEqualsIsExactAndRejectsEmpty()
++    {
++        Assert.True(NetworkAccess.SecretEquals("abc", "abc"));
++        Assert.False(NetworkAccess.SecretEquals("abc", "ABC"));
++        Assert.False(NetworkAccess.SecretEquals("", ""));
++        Assert.False(NetworkAccess.SecretEquals("abc", null));
++    }
++
++    [Fact]
++    public void TagSecretIsNeverInTheStartupConfigDump()
++    {
++        var cfg = new OnlineTagConfigurations { TagSecret = "unit-test-secret-not-real" };
++        var json = JsonSerializer.Serialize(cfg);
++        Assert.DoesNotContain("unit-test-secret-not-real", json);
++        Assert.DoesNotContain("TagSecret", json);
++    }
++
++    // ---- rate limits ----
++
++    [Fact]
++    public void RateLimiterAllowsTheBurstThenRefusesUntilTokensRefill()
++    {
++        var rl = new IpRateLimiter(perMinute: 60, burst: 5);   // 1 token / s
++        for (var i = 0; i < 5; i++) Assert.True(rl.TryAcquire("198.51.100.20", 0));
++        Assert.False(rl.TryAcquire("198.51.100.20", 0));
++        Assert.True(rl.TryAcquire("198.51.100.21", 0));                 // other sources have their own bucket
++        Assert.False(rl.TryAcquire("198.51.100.20", 0.5));
++        Assert.True(rl.TryAcquire("198.51.100.20", 1.6));
++        Assert.True(new IpRateLimiter(0, 1).TryAcquire("x", 0));        // 0 = off
++    }
++
++    [Fact]
++    public void DefaultMatchLimitNeverThrottlesSixteenCabinetsBehindOneNat()
++    {
++        var s = new SecurityConfigurations();
++        var rl = new IpRateLimiter(s.MatchRequestsPerMinute, s.MatchBurst);
++        // 16 cabinets on one public IP: each IssueNodeId + Entry at once, then CheckMatching every 3 s for 10 minutes,
++        // plus a burst of post-match requests every 60 s.
++        for (var c = 0; c < 16 * 3; c++) Assert.True(rl.TryAcquire("203.0.113.50", 0));
++        for (var t = 0.0; t < 600; t += 3)
++        {
++            for (var c = 0; c < 16; c++) Assert.True(rl.TryAcquire("203.0.113.50", t + c * 0.01));
++            if ((int)t % 60 == 0)
++                for (var c = 0; c < 16 * 4; c++) Assert.True(rl.TryAcquire("203.0.113.50", t + 0.5));
++        }
++    }
++
++    [Fact]
++    public void DefaultTagLimitStopsCodeGuessingButNotNormalUse()
++    {
++        var s = new SecurityConfigurations();
++        var rl = new IpRateLimiter(s.TagRequestsPerMinute, s.TagBurst);
++        // normal: 4 cabinets load cards (ForPilot + register) and a Teams tab refresh, all at once
++        for (var i = 0; i < 12; i++) Assert.True(rl.TryAcquire("203.0.113.60", 0));
++        // a guessing loop: 10 000 joins in one minute is cut to roughly burst + rate
++        var ok = 0;
++        for (var i = 0; i < 10_000; i++) if (rl.TryAcquire("203.0.113.61", i * 0.006)) ok++;
++        Assert.InRange(ok, 1, s.TagBurst + s.TagRequestsPerMinute + 1);
++    }
++
++    [Fact]
++    public void RateLimiterPrunesIdleSources()
++    {
++        var rl = new IpRateLimiter(60, 5);
++        for (var i = 0; i < 1000; i++) rl.TryAcquire($"198.51.{i / 256}.{i % 256}", 0);
++        Assert.Equal(1000, rl.Count);
++        rl.TryAcquire("198.51.100.1", 3600);
++        Assert.Equal(1, rl.Count);
++    }
++
++    // ---- log masking ----
++
++    [Fact]
++    public void LogsMaskPublicIpsAndPartnerCodesButKeepLanIps()
++    {
++        var line = "NET entry node=12 src=203.0.113.77 local=192.168.1.73:50000 global=198.51.100.5:41000 " +
++                   "entry world5 nodes=[12] tag=ABCD2345,EFGH6789 HTTP POST /tag/invites/WXYZ2345/settings";
++        var m = LogMask.MaskNetwork(line);
++        Assert.DoesNotContain("203.0.113.77", m);
++        Assert.DoesNotContain("198.51.100.5", m);
++        Assert.Contains("203.0.x.x", m);
++        Assert.Contains("198.51.x.x:41000", m);
++        Assert.Contains("192.168.1.73:50000", m);
++        Assert.DoesNotContain("ABCD2345", m);
++        Assert.DoesNotContain("EFGH6789", m);
++        Assert.DoesNotContain("WXYZ2345", m);
++        Assert.Contains("tag=AB******,EF******", m);
++        Assert.Contains("/tag/invites/WX******/settings", m);
++        Assert.Equal("version 1.2.300.4", LogMask.MaskNetwork("version 1.2.300.4"));   // not an IP
++        Assert.Equal("127.0.0.1", NetworkAccess.MaskIp("127.0.0.1"));
++        Assert.Equal("2001:db8::x", NetworkAccess.MaskIp("2001:db8::1"));
++        Assert.Equal("AB******", TagInviteStore.MaskCode("ABCD2345"));
++    }
++
++    [Fact]
++    public void MatchmakerEntryLogShowsOnlyMaskedTagCodes()
++    {
++        var log = new List<string>();
++        var store = new TagInviteStore();
++        var code = store.Create(1_000_001, "A");
++        store.Join(code, 2_000_001, "B");
++        var mm = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, Invites = store, Log = log.Add, Warn = log.Add
++        };
++        mm.RegisterTagSearch(1_000_001, new[] { code });
++        mm.Entry(TagEntry(901, "S1", 1_000_001), 0, "203.0.113.9");
++        Assert.Contains(log, l => l.Contains("tag=" + TagInviteStore.MaskCode(code)));
++        Assert.DoesNotContain(log, l => l.Contains(code));
++    }
++
++    // ---- partner-code expiry ----
++
++    [Fact]
++    public void OpenCodesExpireAfterSevenDaysUnusedAndRecreatingRefreshesThem()
++    {
++        var now = new DateTime(2026, 11, 15, 12, 0, 0, DateTimeKind.Utc);
++        var store = new TagInviteStore { UtcNow = () => now };
++        var code = store.Create(1_000_001, "A");
++        now = now.AddDays(6);
++        Assert.Equal(code, store.Create(1_000_001, "A"));      // shown again = used
++        now = now.AddDays(6.9);
++        Assert.NotNull(store.Get(code));
++        now = now.AddDays(0.2);                                 // > 7 days since last shown
++        Assert.Null(store.Get(code));
++        Assert.Throws<InvalidOperationException>(() => store.Join(code, 2_000_001, "B"));
++        Assert.NotEqual(code, store.Create(1_000_001, "A"));    // a fresh code
++    }
++
++    [Fact]
++    public void LoadCardDoesNotKeepAnUnjoinedCodeAlive()
++    {
++        var now = new DateTime(2026, 11, 15, 12, 0, 0, DateTimeKind.Utc);
++        var store = new TagInviteStore { UtcNow = () => now };
++        var code = store.Create(1_000_001, "A");
++        for (var d = 0; d < 8; d++) { now = now.AddDays(1); store.ForPilot(1_000_001); }
++        Assert.Null(store.Get(code));
++    }
++
++    [Fact]
++    public void JoinedTeamsStayWhileUsedAndExpireAfterTheIdleLimit()
++    {
++        var now = new DateTime(2026, 11, 15, 12, 0, 0, DateTimeKind.Utc);
++        var store = new TagInviteStore { UtcNow = () => now };
++        var code = store.Create(1_000_001, "A");
++        store.Join(code, 2_000_001, "B");
++        store.RegisterSearch(1_000_001, new[] { code });
++        for (var d = 0; d < 20; d++) { now = now.AddDays(30); store.ForPilot(2_000_001); }   // played monthly
++        Assert.NotNull(store.Get(code));
++        Assert.Equal(new[] { code }, store.CodesForAm(1_000_001));
++        now = now.AddDays(91);
++        Assert.Null(store.Get(code));
++        Assert.Empty(store.CodesForAm(1_000_001));               // registration pruned with it
++        Assert.Equal(0, store.Count);
++    }
++
++    [Fact]
++    public void ExpiryIsConfigurableAndZeroMeansNever()
++    {
++        var now = new DateTime(2026, 11, 15, 12, 0, 0, DateTimeKind.Utc);
++        var store = new TagInviteStore { UtcNow = () => now, OpenCodeTtl = TimeSpan.FromHours(1), JoinedCodeTtl = null };
++        var open = store.Create(1_000_001, "A");
++        var team = store.Create(3_000_001, "C");
++        store.Join(team, 4_000_001, "D");
++        now = now.AddHours(2);
++        Assert.Null(store.Get(open));
++        now = now.AddDays(3650);
++        Assert.NotNull(store.Get(team));
++        var defaults = new OnlineTagConfigurations();
++        Assert.Equal(7, defaults.OpenCodeExpiryDays);
++        Assert.Equal(90, defaults.JoinedCodeExpiryDays);
++    }
++
++    [Fact]
++    public void ExpiredCodesAreDroppedFromThePersistedFile()
++    {
++        var path = Path.Combine(Path.GetTempPath(), "tag-invites-sec-" + Guid.NewGuid().ToString("n") + ".json");
++        try
++        {
++            var now = new DateTime(2026, 11, 15, 12, 0, 0, DateTimeKind.Utc);
++            var store = new TagInviteStore(path) { UtcNow = () => now };
++            var code = store.Create(1_000_001, "A");
++            Assert.Contains(code, File.ReadAllText(path));
++            now = now.AddDays(8);
++            Assert.Equal(0, store.Count);
++            Assert.DoesNotContain(code, File.ReadAllText(path));
++        }
++        finally
++        {
++            if (File.Exists(path)) File.Delete(path);
++        }
++    }
++
++    [Fact]
++    public void RegisterSearchKeepsOnlyCodesThisPilotCreatedOrJoined()
++    {
++        var store = new TagInviteStore();
++        var mine = store.Create(1_000_001, "A");
++        store.Join(mine, 2_000_001, "B");
++        var other = store.Create(3_000_001, "C");
++        store.Join(other, 4_000_001, "D");
++        var accepted = store.RegisterSearch(1_000_001, new[] { mine, other, "ZZZZ9999" });
++        Assert.Equal(new[] { mine }, accepted);
++        Assert.Equal(new[] { mine }, store.CodesForAm(1_000_001));
++        Assert.Empty(store.RegisterSearch(5_000_001, new[] { mine }));   // a stranger with a leaked code
++        Assert.Empty(store.CodesForAm(5_000_001));
++    }
++
++    [Fact]
++    public void NewCodesAreUniqueAndUseTheReadableAlphabet()
++    {
++        var store = new TagInviteStore();
++        var codes = Enumerable.Range(1, 500).Select(i => store.Create((uint)(1_000_000 + i), "P")).ToList();
++        Assert.Equal(codes.Count, codes.Distinct().Count());
++        Assert.All(codes, c => Assert.Matches("^[2-9A-HJ-NP-Z]{8}$", c));
++    }
++
++    // ---- /match: CheckMatching / CancelMatching bound to the entry's source IP ----
++
++    private static Request.EntryMatching TagEntry(uint node, string serial, uint am, uint world = Matchmaker.OnlineTagWorld)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = serial, LocId = "L" + serial, PrefCode = 13, GlobalIpaddress = "",
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = c, MatchingTimeout = 150, Myplayer = new Player { BanapassportAmId = am },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 3, parameter = 0 });
++        return e;
++    }
++
++    private static Matchmaker Bound(List<string>? log = null) =>
++        new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, BindNodesToSource = true, NoCpuPartner = true, Log = log == null ? null : log.Add,
++            Warn = log == null ? null : log.Add
++        };
++
++    [Fact]
++    public void AStrangerCannotCancelSomeoneElsesSearch()
++    {
++        var log = new List<string>();
++        var mm = Bound(log);
++        Assert.Equal(ErrorCode.Success, mm.Entry(TagEntry(701, "A", 11, world: 23), 0, "203.0.113.10"));
++        mm.Cancel(701, 1, 1, "198.51.100.99");                       // guessed node id, other source
++        var still = mm.Check(701, 2, "203.0.113.10");
++        Assert.Equal(ErrorCode.Success, still.Code);                 // still waiting, not cancelled
++        Assert.Contains(log, l => l.StartsWith("SRC-WARN cancel for node=701"));
++        mm.Cancel(701, 3, 1, "203.0.113.10");                        // its own cancel works
++        Assert.NotEqual(ErrorCode.Success, mm.Check(701, 4, "203.0.113.10").Code);
++    }
++
++    [Fact]
++    public void AStrangerCannotReadSomeoneElsesRoomRoster()
++    {
++        var mm = Bound();
++        mm.Entry(TagEntry(711, "A", 11, world: 20), 0, "203.0.113.10");   // Fes 1on1: 2 humans make a room
++        mm.Entry(TagEntry(712, "B", 12, world: 20), 0, "198.51.100.20");
++        var spy = mm.Check(711, 1, "192.0.2.66");
++        Assert.Equal(ErrorCode.ErrMatchNoentry, spy.Code);
++        Assert.Null(spy.Room);
++        var own = mm.Check(711, 1, "203.0.113.10");
++        Assert.NotNull(own.Room);
++        Assert.Equal(2, own.Room!.Clients.Count);
++        Assert.NotNull(mm.Check(712, 1, "198.51.100.20").Room);
++    }
++
++    [Fact]
++    public void CabinetsBehindOneNatAndUnrecordedNodesStillWork()
++    {
++        var mm = Bound();
++        // four cabinets of one shop share a public IP
++        for (uint n = 721; n <= 724; n++) mm.Entry(TagEntry(n, "S" + n, n, world: 23), 0, "203.0.113.30");
++        var r = mm.Check(721, 1, "203.0.113.30");
++        Assert.NotNull(r.Room);
++        for (uint n = 722; n <= 724; n++) Assert.Same(r.Room, mm.Check(n, 1, "203.0.113.30").Room);
++        // binding off (default in the class) = old behaviour
++        var open = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1) { StaleAfter = 1e6 };
++        open.Entry(TagEntry(731, "X", 31, world: 23), 0, "203.0.113.10");
++        open.Cancel(731, 1, 1, "198.51.100.99");
++        Assert.NotEqual(ErrorCode.Success, open.Check(731, 2, "203.0.113.10").Code);
++        Assert.True(new SecurityConfigurations().BindMatchNodesToSourceIp);
++    }
++}
+diff --git a/WebUIInfinite/Client/Pages/Cards.razor b/WebUIInfinite/Client/Pages/Cards.razor
+index f823edf..b3c09c8 100644
+--- a/WebUIInfinite/Client/Pages/Cards.razor
++++ b/WebUIInfinite/Client/Pages/Cards.razor
+@@ -59,7 +59,7 @@
+                     </MudCardHeader>
+                     <MudCardContent>
+                         <MudText Style="font-weight: bold">@localizer["cardid"]</MudText>
+-                        <MudText Style="font-family:monospace">@card.ChipId</MudText>
++                        <MudText Style="font-family:monospace">@card.ChipIdHint</MudText>
+                     </MudCardContent>
+                     <MudCardActions>
+                         <MudStack Row="true" Style="width:100%" Spacing="4" Justify="Justify.FlexEnd">
+diff --git a/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor b/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor
+index e932d0b..08a0c93 100644
+--- a/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor
++++ b/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor
+@@ -15,7 +15,7 @@
+     </TitleContent>
+     <DialogContent>
+         <MudStack>
+-            <MudTextField Value="@Data.ChipId" Label="@localizer["cardid"]" Variant="Variant.Outlined" ReadOnly="true" />
++            <MudTextField Value="@Data.ChipIdHint" Label="@localizer["cardid"]" Variant="Variant.Outlined" ReadOnly="true" />
+             <MudTextField @ref="mudTextField" @bind-Value="AccessCode" Label="@localizer["accesscode"]"
+                           Immediate="true"
+                           Counter="ACCESS_CODE_MAX_LENGTH"
+@@ -63,15 +63,15 @@
+         var authRequest = new CardAuthorizationRequest
+         {
+             CardId = Data.CardId,
+-            ChipId = Data.ChipId, 
++            ChipId = Data.ChipId,   // empty from the card list: the server returns it after the access code matched
+             AccessCode = AccessCode
+         };
+         
+         var response = await Http.PostAsJsonAsync<CardAuthorizationRequest>($"ui/card/authorize", authRequest);
+-        var result = await response.Content.ReadFromJsonAsync<BasicResponse>();
++        var result = await response.Content.ReadFromJsonAsync<CardAuthorizationResponse>();
+         result.ThrowIfNull();
+ 
+-        if (!result.Success)
++        if (!result.Success || string.IsNullOrEmpty(result.ChipId))
+         {
+             Snackbar.Add("Authorization failed. Invalid access code!", Severity.Error);
+         }
+@@ -81,11 +81,11 @@
+ 
+             if (Mode == "EditCard")
+             {
+-                NavManager.NavigateTo($"Cards/Customize/{Data.ChipId}");
++                NavManager.NavigateTo($"Cards/Customize/{result.ChipId}");
+                 return;
+             }
+ 
+-            NavManager.NavigateTo($"Cards/ViewDetail/{Data.ChipId}"); 
++            NavManager.NavigateTo($"Cards/ViewDetail/{result.ChipId}"); 
+         }
+     }
+ 
+diff --git a/WebUIInfinite/Shared/Dto/Response/BareboneCardProfile.cs b/WebUIInfinite/Shared/Dto/Response/BareboneCardProfile.cs
+index b02f930..f9d7174 100644
+--- a/WebUIInfinite/Shared/Dto/Response/BareboneCardProfile.cs
++++ b/WebUIInfinite/Shared/Dto/Response/BareboneCardProfile.cs
+@@ -4,5 +4,10 @@ public class BareboneCardProfile
+ {
+     public int CardId { get; set; } = 0;
+     public string UserName { get; set; } = string.Empty;
++    /// <summary>Full chip id. Security hardening 2026-11-15: empty in the public card list (/ui/card/getAll);
++    /// only returned after the access code is checked (/ui/card/authorize) or by /ui/card/getBy/{accessCode}.</summary>
+     public string ChipId { get; set; } = string.Empty;
++
++    /// <summary>Masked chip id for the card list ("************1234").</summary>
++    public string ChipIdHint { get; set; } = string.Empty;
+ }
+\ No newline at end of file
+diff --git a/WebUIInfinite/Shared/Dto/Response/CardAuthorizationResponse.cs b/WebUIInfinite/Shared/Dto/Response/CardAuthorizationResponse.cs
+new file mode 100644
+index 0000000..d2f67cd
+--- /dev/null
++++ b/WebUIInfinite/Shared/Dto/Response/CardAuthorizationResponse.cs
+@@ -0,0 +1,7 @@
++namespace WebUIInfinite.Shared.Dto.Response;
++
++/// <summary>/ui/card/authorize reply. <see cref="ChipId"/> is set only when the access code was correct.</summary>
++public class CardAuthorizationResponse : BasicResponse
++{
++    public string ChipId { get; set; } = string.Empty;
++}
+diff --git a/tools/vps/README.md b/tools/vps/README.md
+index d133927..d866158 100644
+--- a/tools/vps/README.md
++++ b/tools/vps/README.md
+@@ -21,6 +21,17 @@ Never copy a PC database (card ChipId/AccessCode) or the game to the VPS.
+     tools/vps/deploy.sh --ref <commit>       # update
+     ssh -i ~/.ssh/exvs2_vps root@<VPS_IP> journalctl -u exvs2-mm -f
+ 
++## Security (2026-11-15)
++- ufw allows only SSH (22/tcp), 28090/tcp and 3478-3479/udp. On 28090, the server's own filter
++  (`Security.AccessMode=PublicMatchmaker`) serves only `/match`, `/mms` and `/tag` to the internet. Everything else
++  (WebUI, `/ui`, `/sys`, `/game`) gets 403 unless it comes from loopback:
++  `ssh -L 28090:127.0.0.1:28090 root@<VPS_IP>` and open http://127.0.0.1:28090/.
++- `/tag` needs the shared secret (`OnlineTag.TagSecret`, header `X-Tag-Secret`). It lives only in the VPS
++  `Configurations/server.json` (0640 root:exvs2mm) and in each card server's `server.json`. Set or rotate it with
++  `deploy.sh --tag-secret-file FILE`, then put the same value in every card server and restart them.
++- `deploy.sh` never deletes `tag_invites.json` and `tag_server_id.txt`, and copies `tag_invites.json` to
++  `tag_invites.json.bak-<UTC timestamp>` before each upload.
++
+ ## Pointing a local card server at it
+ In that card server's `Configurations/server.json` -> `CardServerConfig.OnlineMatching`:
+ 
+@@ -30,6 +41,7 @@ In that card server's `Configurations/server.json` -> `CardServerConfig.OnlineMa
+     "StunPort": 3478,
+     "BuiltinStun": false
+ 
+-then restart that card server. The cabinet's `config.ini` `Server=` keeps pointing at its local card server.
++and in `CardServerConfig.OnlineTag` add `"TagSecret": "<the matchmaker's secret>"`. Keep `Security.AccessMode` set
++to `LanOnly` (the default) on a card server. Then restart that card server. The cabinet's `config.ini` `Server=` keeps pointing at its local card server.
+ (Pointing `Server=` straight at `<VPS_IP>:28090` also matches, but then the cabinet's cards are created on the
+ VPS instead of the PC.)
+diff --git a/tools/vps/apply-security-config.py b/tools/vps/apply-security-config.py
+new file mode 100755
+index 0000000..f89d81d
+--- /dev/null
++++ b/tools/vps/apply-security-config.py
+@@ -0,0 +1,27 @@
++#!/usr/bin/env python3
++"""exvs2-lobbies security hardening: add missing security defaults to a VPS server.json and, when a secret arrives on
++stdin, set OnlineTag.TagSecret. Never prints the secret. Used by deploy.sh (runs on the VPS as root).
++
++    python3 apply-security-config.py /opt/exvs2-mm/Configurations/server.json < secret_file
++"""
++import json, os, sys
++
++path = sys.argv[1]
++secret = sys.stdin.read().strip() if not sys.stdin.isatty() else ""
++with open(path, encoding="utf-8-sig") as f:
++    d = json.load(f)
++c = d.setdefault("CardServerConfig", {})
++sec = c.setdefault("Security", {})
++sec.setdefault("AccessMode", "PublicMatchmaker")   # internet: /match, /mms, /tag only
++tag = c.setdefault("OnlineTag", {})
++tag.setdefault("OpenCodeExpiryDays", 7)
++tag.setdefault("JoinedCodeExpiryDays", 90)
++if secret:
++    tag["TagSecret"] = secret
++tmp = path + ".tmp"
++fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o640)
++with os.fdopen(fd, "w", encoding="utf-8") as f:
++    f.write(json.dumps(d, indent=4, ensure_ascii=False) + "\n")
++os.replace(tmp, path)
++print("   server.json: Security.AccessMode=%s, OnlineTag.TagSecret %s"
++      % (sec["AccessMode"], "set" if tag.get("TagSecret") else "NOT set (/tag answers loopback only)"))
+diff --git a/tools/vps/deploy.sh b/tools/vps/deploy.sh
+index 365c1cc..fa24352 100755
+--- a/tools/vps/deploy.sh
++++ b/tools/vps/deploy.sh
+@@ -3,6 +3,7 @@
+ # as the systemd service exvs2-mm (universal matchmaker: OnlineMatching + built-in STUN).
+ #
+ #   tools/vps/deploy.sh [--host IP] [--key FILE] [--ref GITREF] [--bootstrap] [--force-config] [--no-build DIR]
++#                       [--tag-secret-file FILE]
+ #
+ #   --host          VPS public IPv4 (required; not stored in this repo). Also written into server.json as MatchUrl/StunHost.
+ #   --key           SSH private key (default ~/.ssh/exvs2_vps); logs in as root.
+@@ -10,17 +11,24 @@
+ #   --bootstrap     first-time host setup: apt upgrade, unattended-upgrades, user exvs2mm, ufw, key-only SSH.
+ #   --force-config  overwrite /opt/exvs2-mm/Configurations/{server,log,kestrel}.json (default: only if missing).
+ #   --no-build DIR  skip the build and upload an existing publish folder.
++#   --tag-secret-file FILE  set OnlineTag.TagSecret (the /tag shared secret, also in every card server's server.json)
++#                   from FILE (first line). Sent over ssh stdin, never on a command line, never printed.
+ #
+-# Never uploaded: ServerInfinite.db* (card data/secrets), mms_nodeids.json, Logs/ - they live only on the VPS.
++# Never uploaded or deleted: ServerInfinite.db* (card data/secrets), mms_nodeids.json, tag_invites.json (partner
++# codes), tag_server_id.txt, Logs/ - they live only on the VPS. tag_invites.json is also copied to
++# tag_invites.json.bak-<timestamp> before every upload.
++# Security (2026-11-15): server.json gets Security.AccessMode=PublicMatchmaker if it has no AccessMode (internet may
++# reach only /match, /mms, /tag; the WebUI and card APIs answer loopback only) and is chmod 0640 root:exvs2mm.
+ set -euo pipefail
+ 
+-HOST=""; KEY="$HOME/.ssh/exvs2_vps"; REF=HEAD; BOOTSTRAP=0; FORCE_CONFIG=0; PUBDIR=""
++HOST=""; KEY="$HOME/.ssh/exvs2_vps"; REF=HEAD; BOOTSTRAP=0; FORCE_CONFIG=0; PUBDIR=""; SECRET_FILE=""
+ while [ $# -gt 0 ]; do
+   case "$1" in
+     --host) HOST=$2; shift 2;;  --key) KEY=$2; shift 2;;  --ref) REF=$2; shift 2;;
+     --bootstrap) BOOTSTRAP=1; shift;;  --force-config) FORCE_CONFIG=1; shift;;
+     --no-build) PUBDIR=$2; shift 2;;
+-    -h|--help) sed -n 2,16p "$0"; exit 0;;
++    --tag-secret-file) SECRET_FILE=$2; shift 2;;
++    -h|--help) sed -n 2,24p "$0"; exit 0;;
+     *) echo "unknown arg $1" >&2; exit 2;;
+   esac
+ done
+@@ -44,7 +52,8 @@ if [ -z "$PUBDIR" ]; then
+     -p:LinuxHost=true -p:SelfContained=true -o "$PUBDIR" -nologo -v:q
+   echo "$SHA" > "$PUBDIR/BUILD_COMMIT"
+ fi
+-rm -f "$PUBDIR"/ServerInfinite.db* "$PUBDIR"/mms_nodeids.json
++if [ -n "$SECRET_FILE" ] && [ ! -s "$SECRET_FILE" ]; then echo "error: --tag-secret-file $SECRET_FILE is missing or empty" >&2; exit 2; fi
++rm -f "$PUBDIR"/ServerInfinite.db* "$PUBDIR"/mms_nodeids.json "$PUBDIR"/tag_invites.json* "$PUBDIR"/tag_server_id.txt
+ 
+ if [ "$BOOTSTRAP" = 1 ]; then
+   echo "== bootstrap $HOST"
+@@ -72,8 +81,12 @@ fi
+ 
+ echo "== upload to $HOST:/opt/exvs2-mm"
+ "${SSH[@]}" 'systemctl stop exvs2-mm 2>/dev/null || true
+-  cd /opt/exvs2-mm && find . -mindepth 1 -maxdepth 1 ! -name "ServerInfinite.db*" ! -name mms_nodeids.json ! -name Logs ! -name Configurations -exec rm -rf {} +'
++  cd /opt/exvs2-mm && ts=$(date -u +%Y%m%d-%H%M%S)
++  [ -f tag_invites.json ] && cp -p tag_invites.json "tag_invites.json.bak-$ts" && echo "   backed up tag_invites.json -> tag_invites.json.bak-$ts"
++  find . -mindepth 1 -maxdepth 1 ! -name "ServerInfinite.db*" ! -name mms_nodeids.json ! -name "tag_invites.json*" \
++    ! -name tag_server_id.txt ! -name Logs ! -name Configurations -exec rm -rf {} +'
+ tar -C "$PUBDIR" --exclude=./Configurations --exclude='./ServerInfinite.db*' --exclude=./mms_nodeids.json --exclude=./Logs \
++  --exclude='./tag_invites.json*' --exclude=./tag_server_id.txt \
+   -czf - . | "${SSH[@]}" 'tar -C /opt/exvs2-mm --no-same-owner -xzf -'
+ "${SSH[@]}" "install -d -o root -g root -m 0755 /opt/exvs2-mm/Configurations"
+ for f in kestrel server log; do
+@@ -85,17 +98,25 @@ for f in kestrel server log; do
+   else echo "   kept existing $f.json (use --force-config to replace)"; fi
+   rm -f "$tmp"
+ done
++# security defaults for an existing server.json (kept configs predate them) + optional shared /tag secret via stdin
++scp -q -i "$KEY" -o BatchMode=yes "$HERE/apply-security-config.py" "root@$HOST:/root/exvs2-apply-security-config.py"
++{ if [ -n "$SECRET_FILE" ]; then head -n1 "$SECRET_FILE" | tr -d '\r\n'; fi; } | \
++  "${SSH[@]}" python3 /root/exvs2-apply-security-config.py /opt/exvs2-mm/Configurations/server.json
+ scp -q -i "$KEY" -o BatchMode=yes "$HERE/exvs2-mm.service" "root@$HOST:/etc/systemd/system/exvs2-mm.service"
+ "${SSH[@]}" bash -s <<'REMOTE'
+ set -e
+ cd /opt/exvs2-mm
+ chown -R root:root . ; chown exvs2mm:exvs2mm . ; chmod 0755 Server-Infinite
+-for f in ServerInfinite.db ServerInfinite.db-shm ServerInfinite.db-wal mms_nodeids.json Logs; do [ -e "$f" ] && chown -R exvs2mm:exvs2mm "$f"; done
+-chmod 0644 Configurations/*.json
++for f in ServerInfinite.db ServerInfinite.db-shm ServerInfinite.db-wal mms_nodeids.json tag_invites.json tag_server_id.txt Logs; do [ -e "$f" ] && chown -R exvs2mm:exvs2mm "$f"; done
++chmod 0644 Configurations/kestrel.json Configurations/log.json
++chown root:exvs2mm Configurations/server.json; chmod 0640 Configurations/server.json   # holds the /tag shared secret
+ systemctl daemon-reload; systemctl enable --now exvs2-mm; systemctl restart exvs2-mm
+ sleep 8
+ systemctl --no-pager --lines=0 status exvs2-mm | head -5
+ ss -tulpn | grep -E ':(28090|3478|3479)\b' || true
+ journalctl -u exvs2-mm --no-pager -n 200 | grep -E 'Matchmaker policy|STUN built-in|Now listening|NET-WARN|rror' | tail -8
+ REMOTE
+-echo "== http check"; curl -s -o /dev/null -w 'HTTP %{http_code}\n' --max-time 5 "http://$HOST:28090/" || true
++echo "== http check (from here: / and /ui must be 403, /tag without the secret 401)"
++for p in / /ui/card/getAll /tag/invites/for/1; do
++  printf '   %-22s ' "$p"; curl -s -o /dev/null -w 'HTTP %{http_code}\n' --max-time 5 "http://$HOST:28090$p" || echo "no answer"
++done
+diff --git a/tools/vps/exvs2-mm.service b/tools/vps/exvs2-mm.service
+index a517155..7db2681 100644
+--- a/tools/vps/exvs2-mm.service
++++ b/tools/vps/exvs2-mm.service
+@@ -28,6 +28,8 @@ ProtectKernelModules=true
+ ProtectControlGroups=true
+ RestrictSUIDSGID=true
+ LockPersonality=true
++# files the server writes (tag_invites.json = partner codes, the database, logs) are readable by this user only
++UMask=0077
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/tools/vps/server.vps.json b/tools/vps/server.vps.json
+index 294f8aa..b2ab9da 100644
+--- a/tools/vps/server.vps.json
++++ b/tools/vps/server.vps.json
+@@ -52,6 +52,19 @@
+             "HumansTeamVsCpu":  false,
+             "LoneTeamVsCpu":  false,
+             "NoCpuPartner":  true
++        },
++        "OnlineTag":  {
++            "OpenCodeExpiryDays":  7,
++            "JoinedCodeExpiryDays":  90
++        },
++        "Security":  {
++            "AccessMode":  "PublicMatchmaker",
++            "MatchRequestsPerMinute":  1200,
++            "MatchBurst":  300,
++            "TagRequestsPerMinute":  240,
++            "TagBurst":  60,
++            "BindMatchNodesToSourceIp":  true,
++            "MaskNetworkInLog":  true
+         }
+     }
+ }
+-- 
+2.47.3
+
+
+From e11c91c17e0a35943dd16fa3c8a3b2b48be8a332 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 07:36:40 -0800
+Subject: [PATCH 28/28] WebUI single-card login, card secrets masked in request
+ paths, TAG-WAIT partner log
+
+- WebUI saves the access code together with its chip id (one card at a
+  time); pages re-check a saved login via POST ui/card/authorize (CardId 0
+  + chip id) and ask to log in again instead of sending one card's access
+  code with another card's chip id (500 "Card Profile is invalid").
+- LogMask.MaskUrlSecrets + CardSecretMaskEnricher: access codes, chip ids
+  and tokens in WebUI request paths (/ui/.../{accessCode}/{chipId},
+  getBy/{accessCode}), token segments and secret query parameters become
+  <masked:N> in every sink (request log, HttpClient log, errors).
+- Matchmaker: a world-5 search that waits PartnerWaitLogAfter (20 s) logs
+  once "TAG-WAIT node=N am=X waiting for partner <wire id>: partner not
+  searching" (or that the partner is queued in another mode and cannot
+  pair). Logging only.
+- Tests: same-server code team still pairs, two tag pairs (cross-server
+  and same-server) form one 2v2, TAG-WAIT once per search, path masking.
+251 unit tests, cross_server_tag_e2e 53/53. Real game 2026-11-15
+7:33 AM PT: 4 cabinets, two online-tag pairs, several 2v2 games completed.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ .../PostCardAuthorizationCommandHandler.cs    |   9 +-
+ Server-Infinite/Lobbies/LogMask.cs            |  30 +++
+ .../Lobbies/Serilog/CardSecretMaskEnricher.cs |  18 ++
+ .../Lobbies/Serilog/NetworkMaskEnricher.cs    |   8 +-
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  59 +++++
+ Tests/Matchmaking.Tests/Fix2Tests.cs          | 209 ++++++++++++++++++
+ .../Matchmaking.Tests.csproj                  |   2 +
+ .../Client/Pages/CustomizeCard.razor.cs       |  11 +-
+ .../Client/Pages/Dialogs/CardAuthDialog.razor |   3 +-
+ .../Client/Pages/SingularCardLogin.razor      |   4 +-
+ .../Client/Pages/SingularCardMenu.razor.cs    |   5 +-
+ WebUIInfinite/Client/Pages/ViewCard.razor.cs  |  11 +-
+ WebUIInfinite/Client/Services/CardLogin.cs    |  29 +++
+ WebUIInfinite/Client/wwwroot/index.html       |  19 +-
+ 14 files changed, 404 insertions(+), 13 deletions(-)
+ create mode 100644 Tests/Matchmaking.Tests/Fix2Tests.cs
+ create mode 100644 WebUIInfinite/Client/Services/CardLogin.cs
+
+diff --git a/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs b/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs
+index 477f459..cc47d4b 100644
+--- a/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs
++++ b/Server-Infinite/Handlers/UI/Card/PostCardAuthorizationCommandHandler.cs
+@@ -24,9 +24,12 @@ public class PostCardAuthorizationCommandHandler : IRequestHandler<PostCardAutho
+         // security hardening 2026-11-15: the card list no longer exposes chip ids, so the card is found by its id;
+         // a chip id, when sent, must still match. The chip id is returned only after the access code matched.
+         var req = request.Request;
+-        var cardProfile = await _context.CardProfiles
+-            .Where(x => !x.IsNewCard)
+-            .FirstOrDefaultAsync(x => x.Id == req.CardId, cancellationToken);
++        // fix2 2026-11-15: CardId 0 + chip id = the WebUI re-checking a saved login (stale tab / reload) by chip id.
++        var cardProfile = req.CardId == 0 && !string.IsNullOrEmpty(req.ChipId)
++            ? await _context.CardProfiles.Where(x => !x.IsNewCard)
++                .FirstOrDefaultAsync(x => x.ChipId == req.ChipId, cancellationToken)
++            : await _context.CardProfiles.Where(x => !x.IsNewCard)
++                .FirstOrDefaultAsync(x => x.Id == req.CardId, cancellationToken);
+ 
+         if (cardProfile is not null &&
+             (string.IsNullOrEmpty(req.ChipId) || req.ChipId == cardProfile.ChipId) &&
+diff --git a/Server-Infinite/Lobbies/LogMask.cs b/Server-Infinite/Lobbies/LogMask.cs
+index e2f352b..c7591a7 100644
+--- a/Server-Infinite/Lobbies/LogMask.cs
++++ b/Server-Infinite/Lobbies/LogMask.cs
+@@ -54,4 +54,34 @@ public static class LogMask
+         s = TagPath.Replace(s, m => m.Groups[1].Value + MaskCode(m.Groups[2].Value));
+         return TagList.Replace(s, m => m.Groups[1].Value + string.Join(",", m.Groups[2].Value.Split(',').Select(MaskCode)));
+     }
++
++    // ---- fix2 2026-11-15: card secrets inside WebUI / API request paths and query strings ----
++
++    // /ui/<controller>/<action>/{accessCode}/{chipId} (getTeams, getBasicDisplayProfile, get-recent-battle-histories, …)
++    private static readonly Regex UiPair = new(
++        @"(?i)(/ui/[A-Za-z\-/]+?/(?:get|get\-recent\-battle\-histories|getAllFavouriteMs|getBasicDisplayProfile|getCpuTriadPartner|getCustomMessageGroupSetting|getDefaultSticker|getGamepadConfig|getMobileSuitStickers|getNaviProfile|getPlayerLevelProfile|getTeams|getTriadCourseOverallResult|getUsedMobileSuitData)/)([^/?#\s]+)/([^/?#\s]+)(?=$|[/?#\s""'])", RegexOptions.Compiled);
++    // /ui/card/getBy/{accessCode}
++    private static readonly Regex UiGetBy = new(@"(?i)(/ui/card/getBy/)([^/?#\s]+)", RegexOptions.Compiled);
++    // /ui/team/checkPlayerExistence/{partnerId}/{partnerToken} and /upload/uploadImage/{cardId}/{accessToken}
++    private static readonly Regex IdThenToken = new(
++        @"(?i)(/(?:checkPlayerExistence|uploadImage)/[^/?#\s]+/)([^/?#\s]+)", RegexOptions.Compiled);
++    // ?accessCode=…&chipId=…&token=…
++    private static readonly Regex QuerySecret = new(
++        @"(?i)([?&;](?:access_?code|chip_?id|session_?id|boot_?token|access_?token|partner_?token|upload_?token|token)=)([^&#\s""']+)",
++        RegexOptions.Compiled);
++    // fallback: any URL path segment that looks like a chip id (16+ hex) or an access code (16+ digits)
++    private static readonly Regex LongHexSegment = new(@"(?<=/)([0-9A-Fa-f]{16,})(?=$|[/?#\s""'])", RegexOptions.Compiled);
++
++    private static string M(string v) => v.StartsWith("<masked:") ? v : $"<masked:{v.Length}>";
++
++    /// <summary>Mask access codes, chip ids and tokens in URL paths / query strings (request logs, HttpClient logs).</summary>
++    public static string MaskUrlSecrets(string? text)
++    {
++        if (string.IsNullOrEmpty(text) || text.IndexOf('/') < 0 && text.IndexOf('=') < 0) return text ?? "";
++        var s = UiGetBy.Replace(text, m => m.Groups[1].Value + M(m.Groups[2].Value));
++        s = UiPair.Replace(s, m => m.Groups[1].Value + M(m.Groups[2].Value) + "/" + M(m.Groups[3].Value));
++        s = IdThenToken.Replace(s, m => m.Groups[1].Value + M(m.Groups[2].Value));
++        s = QuerySecret.Replace(s, m => m.Groups[1].Value + M(m.Groups[2].Value));
++        return LongHexSegment.Replace(s, m => M(m.Groups[1].Value));
++    }
+ }
+diff --git a/Server-Infinite/Lobbies/Serilog/CardSecretMaskEnricher.cs b/Server-Infinite/Lobbies/Serilog/CardSecretMaskEnricher.cs
+index ba4c1a9..eb02970 100644
+--- a/Server-Infinite/Lobbies/Serilog/CardSecretMaskEnricher.cs
++++ b/Server-Infinite/Lobbies/Serilog/CardSecretMaskEnricher.cs
+@@ -18,5 +18,23 @@ public sealed class CardSecretMaskEnricher : ILogEventEnricher
+             if (logEvent.Properties.TryGetValue(name, out var v) && v is ScalarValue { Value: string s } && s.Length > 0
+                 && !s.StartsWith("<masked:"))
+                 logEvent.AddOrUpdateProperty(new LogEventProperty(name, new ScalarValue($"<masked:{s.Length}>")));
++
++        // fix2 2026-11-15: WebUI routes carry the access code / chip id in the path (e.g. /ui/team/getTeams/{accessCode}/{chipId});
++        // mask them in every string / Uri property (RequestPath, HttpClient Uri, …) before any sink writes the event.
++        List<LogEventProperty>? changed = null;
++        foreach (var kv in logEvent.Properties)
++        {
++            string? text = kv.Value switch
++            {
++                ScalarValue { Value: string str } => str,
++                ScalarValue { Value: Uri uri } => uri.OriginalString,
++                _ => null
++            };
++            if (text == null || text.Length < 8) continue;
++            var masked = LogMask.MaskUrlSecrets(text);
++            if (masked != text) (changed ??= new()).Add(new LogEventProperty(kv.Key, new ScalarValue(masked)));
++        }
++        if (changed != null)
++            foreach (var p in changed) logEvent.AddOrUpdateProperty(p);
+     }
+ }
+diff --git a/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs b/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs
+index 7ae09b4..24904da 100644
+--- a/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs
++++ b/Server-Infinite/Lobbies/Serilog/NetworkMaskEnricher.cs
+@@ -15,7 +15,13 @@ public sealed class NetworkMaskEnricher : ILogEventEnricher
+         List<LogEventProperty>? changed = null;
+         foreach (var kv in logEvent.Properties)
+         {
+-            if (kv.Value is not ScalarValue { Value: string s } || s.Length < 7) continue;
++            var s = kv.Value switch
++            {
++                ScalarValue { Value: string str } => str,
++                ScalarValue { Value: Uri uri } => uri.OriginalString,
++                _ => null
++            };
++            if (s == null || s.Length < 7) continue;
+             var masked = LogMask.MaskNetwork(s);
+             if (!ReferenceEquals(masked, s) && masked != s)
+                 (changed ??= new()).Add(new LogEventProperty(kv.Key, new ScalarValue(masked)));
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 1116ce2..a019447 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -107,6 +107,8 @@ public sealed class Matchmaker
+         public Room? Room;
+         /// <summary>NoCpuPartner: the "held, no short-handed room" line was logged for this unit.</summary>
+         public bool NoCpuHoldLogged;
++        /// <summary>Online tag: the "waiting for partner … not searching" line was logged for this search.</summary>
++        public bool PartnerWaitLogged;
+         /// <summary>A 2-slot entry whose partner is the game's CPU stand-in ("N").</summary>
+         public bool HasCpuPartner => Clients.Any(c => !IsHuman(c));
+ 
+@@ -211,6 +213,12 @@ public sealed class Matchmaker
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+     /// <summary>
++    /// Online tag diagnostics (2026-11-15): after this many seconds without a partner, a world-5 search logs once
++    /// "TAG-WAIT … waiting for partner &lt;wire id&gt;: partner not searching" (or why a searching partner does not fit).
++    /// 0 = off. Logging only; matching is unchanged.
++    /// </summary>
++    public double PartnerWaitLogAfter { get; set; } = 20;
++    /// <summary>
+     /// results-hang test 2026-11-13: fill each short side of a short-handed room with a CPU stand-in client
+     /// (pcb_serial PCB00000NPC, property "N", node_id = the human's unused 2nd IssueNodeId id, same group_id),
+     /// i.e. the same entry the game itself builds for a CPU partner (0x140753962), so every seat has an owner.
+@@ -319,6 +327,51 @@ public sealed class Matchmaker
+         return _tagByAm.TryGetValue(amId, out var list) ? list : Array.Empty<string>();
+     }
+ 
++    /// <summary>Wire pilot ids this online-tag search is waiting for (from its codes, else from the pair key).</summary>
++    private List<uint> ExpectedPartners(Unit t, out bool openCode)
++    {
++        openCode = false;
++        var own = t.Players.Count > 0 ? t.Players[0].BanapassportAmId : 0;
++        var partners = new List<uint>();
++        foreach (var code in t.TagCodes)
++        {
++            var inv = Invites?.Get(code);
++            if (inv == null) continue;
++            if (!inv.Joined) { openCode = true; continue; }
++            var other = inv.CreatorPilotId == own ? inv.PartnerPilotId : inv.CreatorPilotId;
++            if (other != 0 && other != own && !partners.Contains(other)) partners.Add(other);
++        }
++        // same-server / legacy search: attr2 = min(own, partner), so it names the partner only when the partner is lower
++        if (t.TagCodes.Length == 0 && t.Attr2 > 0 && t.Attr2 != own && t.Attr2 <= uint.MaxValue)
++            partners.Add((uint)t.Attr2);
++        return partners;
++    }
++
++    /// <summary>One diagnostics line for a world-5 search that has waited <see cref="PartnerWaitLogAfter"/> s (holds _gate).</summary>
++    private void LogPartnerWait(Unit t, double now)
++    {
++        var waited = $"{now - t.Created:0}s";
++        var tag = t.TagCodes.Length > 0 ? $" tag={string.Join(",", t.TagCodes.Select(TagInviteStore.MaskCode))}" : $" key={t.Attr2}";
++        var partners = ExpectedPartners(t, out var openCode);
++        var line = $"TAG-WAIT node={t.LeaderNode} am={string.Join(",", t.AmIds)}";
++        if (partners.Count == 0)
++        {
++            Log?.Invoke($"{line} waiting for partner (unknown{(openCode ? ": code not joined yet" : "")}): no partner searching after {waited}{tag}");
++            return;
++        }
++        foreach (var p in partners)
++        {
++            var other = _queue.FirstOrDefault(u => !ReferenceEquals(u, t) && u.Room == null && u.AmIds.Contains(p));
++            if (other == null)
++                Log?.Invoke($"{line} waiting for partner {p}: partner not searching ({waited}{tag})");
++            else
++                Log?.Invoke($"{line} waiting for partner {p}: partner is in the queue as node={other.LeaderNode} " +
++                            $"{other.WorldName} key={other.Key}" +
++                            (other.TagCodes.Length > 0 ? $" tag={string.Join(",", other.TagCodes.Select(TagInviteStore.MaskCode))}" : "") +
++                            $" but cannot pair ({waited}{tag})");
++        }
++    }
++
+     private static bool TagCodeOverlap(Unit a, Unit b)
+     {
+         foreach (var c in a.TagCodes)
+@@ -488,6 +541,12 @@ public sealed class Matchmaker
+             t.LastSeen = now;
+             if (t.Room == null) TryMatch(now);           // bands widen / fill timer runs with time
+             if (t.Room != null) return (ErrorCode.Success, t.Room, t.ApplyId);
++            if (PartnerWaitLogAfter > 0 && !t.PartnerWaitLogged && t.Pair && t.World == OnlineTagWorld &&
++                now - t.Created >= PartnerWaitLogAfter)
++            {
++                t.PartnerWaitLogged = true;
++                LogPartnerWait(t, now);
++            }
+             if (now - t.Created > t.Timeout)
+             {
+                 // disconnect test 2026-11-13: tombstone the polling node too, so a retried poll (response lost)
+diff --git a/Tests/Matchmaking.Tests/Fix2Tests.cs b/Tests/Matchmaking.Tests/Fix2Tests.cs
+new file mode 100644
+index 0000000..a491728
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/Fix2Tests.cs
+@@ -0,0 +1,209 @@
++using nue.protocol.mms;
++using Serilog.Events;
++using Serilog.Parsing;
++using ServerInfinite.Lobbies;
++using ServerInfinite.Lobbies.Serilog;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// fix2 2026-11-15 (after the 4-cab test at 6:58 AM PT): same-server online tag under the code rules, the
++// "waiting for partner" diagnostics line, two tag pairs becoming one 2v2, and card secrets masked in request paths.
++public class Fix2Tests
++{
++    // fake values shaped like a 20-digit access code and a 32-hex chip id (not real cards)
++    private const string Ac = "12345678901234567890";
++    private const string Chip = "0123456789ABCDEF0123456789ABCDEF";
++
++    private static Client Cl(uint node, string serial)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = serial, LocId = "L" + serial, PrefCode = 13, GlobalIpaddress = "",
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        return c;
++    }
++
++    private static Request.EntryMatching Solo(uint node, uint am, uint world, long attr2 = 0, Client? partner = null,
++        Player? partnerPlayer = null, uint applyId = 1, bool cpuPartner = false)
++    {
++        var e = new Request.EntryMatching
++        {
++            ApplyId = applyId, Myclient = Cl(node, "S" + node), MatchingTimeout = world == Matchmaker.OnlineTagWorld ? 90u : 150u,
++            Myplayer = new Player { BanapassportAmId = am },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = attr2 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 3, parameter = 0 });
++        if (partner != null)
++            e.Groups.Add(new Request.EntryMatching.Group { Client = partner, Player = partnerPlayer ?? new Player() });
++        if (cpuPartner)
++        {
++            var npc = new Client { NodeId = node + 1, PcbSerial = Matchmaker.NpcSerial };
++            npc.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "N" });
++            e.Groups.Add(new Request.EntryMatching.Group { Client = npc, Player = new Player() });
++        }
++        return e;
++    }
++
++    private static (Matchmaker mm, TagInviteStore store, List<string> log) New()
++    {
++        var log = new List<string>();
++        var store = new TagInviteStore();
++        var mm = new Matchmaker(fillAfter: 3, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, NoCpuPartner = true, Invites = store, Log = log.Add, Warn = log.Add
++        };
++        return (mm, store, log);
++    }
++
++    [Fact]
++    public void SameServerCodeTeamStillPairsUnderTheCreatorOrPartnerRule()
++    {
++        var (mm, store, log) = New();
++        var code = store.Create(2_000_003, "LITTLE TEST");      // both cards on card server 2
++        store.Join(code, 2_000_004, "LITTLE TEST");
++        Assert.Single(store.RegisterSearch(2_000_003, new[] { code }));
++        Assert.Single(store.RegisterSearch(2_000_004, new[] { code }));
++        Assert.Empty(store.RegisterSearch(2_000_002, new[] { code }));   // a third pilot cannot borrow it
++        mm.Entry(Solo(1032, 2_000_003, Matchmaker.OnlineTagWorld, 2_000_003), 0);
++        mm.Entry(Solo(1030, 2_000_004, Matchmaker.OnlineTagWorld, 2_000_003), 1);
++        var room = mm.Check(1032, 2).Room;
++        Assert.NotNull(room);
++        Assert.Same(room, mm.Check(1030, 2).Room);
++        Assert.DoesNotContain(log, l => l.Contains("TAG-WAIT"));
++    }
++
++    [Fact]
++    public void AloneTagSearchLogsWaitingForPartnerOnceAfterTwentySeconds()
++    {
++        var (mm, store, log) = New();
++        var code = store.Create(2_000_003, "LITTLE TEST");
++        store.Join(code, 2_000_004, "LITTLE TEST");
++        store.RegisterSearch(2_000_003, new[] { code });
++        mm.Entry(Solo(1032, 2_000_003, Matchmaker.OnlineTagWorld, 2_000_003), 0);
++        mm.Check(1032, 10);
++        Assert.DoesNotContain(log, l => l.Contains("TAG-WAIT"));
++        mm.Check(1032, 20);
++        mm.Check(1032, 23);
++        mm.Check(1032, 60);
++        var waits = log.Where(l => l.Contains("TAG-WAIT")).ToList();
++        Assert.Single(waits);
++        Assert.Contains("waiting for partner 2000004: partner not searching", waits[0]);
++        Assert.Contains("node=1032", waits[0]);
++        Assert.DoesNotContain(code, waits[0]);                           // only the masked code
++        Assert.Contains("tag=" + TagInviteStore.MaskCode(code), waits[0]);
++    }
++
++    [Fact]
++    public void WaitLineSaysWhenThePartnerIsQueuedInAnotherModeInstead()
++    {
++        // 6:59 AM PT: cab 3 went to team mode with a CPU partner while cab 4 searched online tag for it
++        var (mm, store, log) = New();
++        var code = store.Create(2_000_003, "LITTLE TEST");
++        store.Join(code, 2_000_004, "LITTLE TEST");
++        store.RegisterSearch(2_000_003, new[] { code });
++        mm.Entry(Solo(1032, 2_000_003, Matchmaker.OnlineTagWorld, 2_000_003), 0);
++        mm.Entry(Solo(1030, 2_000_004, 14, cpuPartner: true), 5);
++        mm.Check(1032, 21);
++        var w = Assert.Single(log, l => l.Contains("TAG-WAIT"));
++        Assert.Contains("waiting for partner 2000004: partner is in the queue as node=1030", w);
++        Assert.Contains("cannot pair", w);
++    }
++
++    [Fact]
++    public void LegacySameServerSearchNamesThePartnerFromThePairKey()
++    {
++        var (mm, _, log) = New();
++        mm.Entry(Solo(1030, 2_000_004, Matchmaker.OnlineTagWorld, attr2: 2_000_003), 0);   // no code: attr2 = min
++        mm.Check(1030, 25);
++        Assert.Contains(log, l => l.Contains("TAG-WAIT") && l.Contains("waiting for partner 2000003: partner not searching"));
++    }
++
++    [Fact]
++    public void WaitLogCanBeTurnedOff()
++    {
++        var (mm, _, log) = New();
++        mm.PartnerWaitLogAfter = 0;
++        mm.Entry(Solo(1030, 2_000_004, Matchmaker.OnlineTagWorld, attr2: 2_000_003), 0);
++        mm.Check(1030, 60);
++        Assert.DoesNotContain(log, l => l.Contains("TAG-WAIT"));
++    }
++
++    [Fact]
++    public void TwoTagPairsCrossAndSameServerBecomeOne2v2Room()
++    {
++        var (mm, store, _) = New();
++        var big = store.Create(1_000_001, "BIG TEST"); store.Join(big, 2_000_002, "BIG TEST");
++        var little = store.Create(2_000_003, "LITTLE TEST"); store.Join(little, 2_000_004, "LITTLE TEST");
++        foreach (var (am, c) in new[] { (1_000_001u, big), (2_000_002u, big), (2_000_003u, little), (2_000_004u, little) })
++            store.RegisterSearch(am, new[] { c });
++        var e1 = Solo(1026, 1_000_001, Matchmaker.OnlineTagWorld, 1_000_001);
++        var e2 = Solo(1028, 2_000_002, Matchmaker.OnlineTagWorld, 1_000_001);
++        var e3 = Solo(1032, 2_000_003, Matchmaker.OnlineTagWorld, 2_000_003);
++        var e4 = Solo(1030, 2_000_004, Matchmaker.OnlineTagWorld, 2_000_003);
++        mm.Entry(e1, 0); mm.Entry(e2, 0); mm.Entry(e3, 1); mm.Entry(e4, 1);
++        var p1 = mm.Check(1026, 2).Room; var p2 = mm.Check(1032, 2).Room;
++        Assert.NotNull(p1); Assert.NotNull(p2); Assert.NotSame(p1, p2);
++        // each leader sends its duo into the team queue (world 14, as at 6:58:49)
++        mm.Entry(Solo(1026, 1_000_001, 14, attr2: 2, partner: e2.Myclient, partnerPlayer: e2.Myplayer, applyId: 2), 10);
++        mm.Entry(Solo(1032, 2_000_003, 14, attr2: 2, partner: e4.Myclient, partnerPlayer: e4.Myplayer, applyId: 2), 12);
++        var room = mm.Check(1026, 13).Room;
++        Assert.NotNull(room);
++        Assert.Equal(4, room!.Clients.Count);
++        Assert.Same(room, mm.Check(1032, 13).Room);
++    }
++
++    // ---- card secrets in request paths ----
++
++    [Theory]
++    [InlineData("/ui/team/getTeams/{0}/{1}")]
++    [InlineData("/ui/card/getBasicDisplayProfile/{0}/{1}")]
++    [InlineData("/ui/battle-history/get-recent-battle-histories/{0}/{1}")]
++    [InlineData("/ui/player-level/getPlayerLevelProfile/{0}/{1}")]
++    [InlineData("/ui/training/get/{0}/{1}")]
++    [InlineData("http://localhost:28090/ui/navi/getNaviProfile/{0}/{1}?x=1")]
++    [InlineData("/ui/card/getBy/{0}")]
++    [InlineData("/upload/uploadImage/12/{0}")]
++    [InlineData("/ui/team/checkPlayerExistence/2000004/{1}")]
++    [InlineData("/ui/x?accessCode={0}&chipId={1}")]
++    [InlineData("HTTP GET /something/{1} responded 200")]
++    public void RequestPathsNeverKeepAccessCodesOrChipIds(string template)
++    {
++        var raw = string.Format(template, Ac, Chip);
++        var m = LogMask.MaskUrlSecrets(raw);
++        Assert.DoesNotContain(Ac, m);
++        Assert.DoesNotContain(Chip, m);
++        Assert.Contains("<masked:", m);
++    }
++
++    [Theory]
++    [InlineData("/ui/team/upsertTeams")]
++    [InlineData("/tag/invites/for/2000004")]
++    [InlineData("/ui/rank/player-level-rank/getAll")]
++    [InlineData("key=GIB1|106547|5|0|2000003 level=1")]
++    public void OrdinaryPathsAreUnchanged(string raw) => Assert.Equal(raw, LogMask.MaskUrlSecrets(raw));
++
++    [Fact]
++    public void EnricherMasksTheRequestPathAndHttpClientUriProperties()
++    {
++        var ev = new LogEvent(DateTimeOffset.Now, LogEventLevel.Information, null,
++            new MessageTemplateParser().Parse("HTTP {RequestMethod} {RequestPath} responded {StatusCode} {Uri}"),
++            new[]
++            {
++                new LogEventProperty("RequestMethod", new ScalarValue("GET")),
++                new LogEventProperty("RequestPath", new ScalarValue($"/ui/team/getTeams/{Ac}/{Chip}")),
++                new LogEventProperty("StatusCode", new ScalarValue(200)),
++                new LogEventProperty("Uri", new ScalarValue(new Uri($"http://127.0.0.1:28090/ui/card/getBy/{Ac}"))),
++            });
++        new CardSecretMaskEnricher().Enrich(ev, null!);
++        var text = ev.RenderMessage();
++        Assert.DoesNotContain(Ac, text);
++        Assert.DoesNotContain(Chip, text);
++        Assert.Contains("/ui/team/getTeams/<masked:20>/<masked:32>", text);
++    }
++}
+diff --git a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+index 1516f20..bf38111 100644
+--- a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
++++ b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+@@ -13,11 +13,13 @@
+     <Compile Include="..\..\Server-Infinite\Lobbies\*.cs" Link="Lobbies\%(Filename)%(Extension)" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\OnlineTagConfigurations.cs" Link="Config\OnlineTagConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\SecurityConfigurations.cs" Link="Config\SecurityConfigurations.cs" />
++    <Compile Include="..\..\Server-Infinite\Lobbies\Serilog\*.cs" Link="Lobbies\Serilog\%(Filename)%(Extension)" />
+   </ItemGroup>
+   <ItemGroup>
+     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+     <PackageReference Include="xunit" Version="2.9.2" />
+     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+     <PackageReference Include="protobuf-net" Version="3.2.45" />
++    <PackageReference Include="Serilog" Version="3.1.1" />
+   </ItemGroup>
+ </Project>
+diff --git a/WebUIInfinite/Client/Pages/CustomizeCard.razor.cs b/WebUIInfinite/Client/Pages/CustomizeCard.razor.cs
+index f37e4f8..d95a938 100644
+--- a/WebUIInfinite/Client/Pages/CustomizeCard.razor.cs
++++ b/WebUIInfinite/Client/Pages/CustomizeCard.razor.cs
+@@ -1,3 +1,4 @@
++using WebUIInfinite.Client.Services;
+ using Microsoft.AspNetCore.Components;
+ using Microsoft.JSInterop;
+ using MudBlazor;
+@@ -9,6 +10,8 @@ namespace WebUIInfinite.Client.Pages;
+ 
+ public partial class CustomizeCard
+ {
++    [Inject] private HttpClient CardLoginHttp { get; set; } = null!;   // fix2: saved-login check
++
+     [Parameter]
+     public string ChipId { get; set; } = string.Empty;
+     [Parameter]
+@@ -71,7 +74,13 @@ public partial class CustomizeCard
+         
+         _breadcrumbs.Add(new BreadcrumbItem("Menu", href: $"Cards/SingularCardMenu/{ChipId}", disabled: false));
+ 
+-        AccessCode = await JsRuntime.InvokeAsync<string>("accessCode.get");
++        AccessCode = await JsRuntime.InvokeAsync<string>("accessCode.get", ChipId);
++        // fix2 2026-11-15: never send an access code with a chip id it does not belong to (500 "Card Profile is invalid")
++        if (!string.IsNullOrEmpty(AccessCode) && !await CardLogin.Verify(CardLoginHttp, ChipId, AccessCode))
++        {
++            await JsRuntime.InvokeVoidAsync("accessCode.clear");
++            AccessCode = string.Empty;
++        }
+ 
+         if (string.IsNullOrEmpty(AccessCode))
+         {
+diff --git a/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor b/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor
+index 08a0c93..f3deeab 100644
+--- a/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor
++++ b/WebUIInfinite/Client/Pages/Dialogs/CardAuthDialog.razor
+@@ -73,11 +73,12 @@
+ 
+         if (!result.Success || string.IsNullOrEmpty(result.ChipId))
+         {
++            await _jsRuntime.InvokeVoidAsync("accessCode.clear");
+             Snackbar.Add("Authorization failed. Invalid access code!", Severity.Error);
+         }
+         else
+         {
+-            await _jsRuntime.InvokeVoidAsync("accessCode.set", AccessCode);
++            await _jsRuntime.InvokeVoidAsync("accessCode.set", result.ChipId, AccessCode);   // replaces any other card's login
+ 
+             if (Mode == "EditCard")
+             {
+diff --git a/WebUIInfinite/Client/Pages/SingularCardLogin.razor b/WebUIInfinite/Client/Pages/SingularCardLogin.razor
+index 57d8e76..3e066ae 100644
+--- a/WebUIInfinite/Client/Pages/SingularCardLogin.razor
++++ b/WebUIInfinite/Client/Pages/SingularCardLogin.razor
+@@ -55,7 +55,7 @@
+             ChipId = "",
+             UserName = ""
+         };
+-        await _jsRuntime.InvokeVoidAsync("accessCode.set", AccessCode);
++        await _jsRuntime.InvokeVoidAsync("accessCode.clear");
+     }
+ 
+     private async Task Login()
+@@ -94,7 +94,7 @@
+             return;
+         }
+         
+-        await _jsRuntime.InvokeVoidAsync("accessCode.set", AccessCode);
++        await _jsRuntime.InvokeVoidAsync("accessCode.set", _cardProfile.ChipId, AccessCode);
+         
+         NavManager.NavigateTo($"Cards/SingularCardMenu/{_cardProfile.ChipId}"); 
+     }
+diff --git a/WebUIInfinite/Client/Pages/SingularCardMenu.razor.cs b/WebUIInfinite/Client/Pages/SingularCardMenu.razor.cs
+index dcc2bb1..465975f 100644
+--- a/WebUIInfinite/Client/Pages/SingularCardMenu.razor.cs
++++ b/WebUIInfinite/Client/Pages/SingularCardMenu.razor.cs
+@@ -32,7 +32,7 @@ public partial class SingularCardMenu
+         await base.OnInitializedAsync();
+         errorMessage = null;
+ 
+-        AccessCode = await _jsRuntime.InvokeAsync<string>("accessCode.get");
++        AccessCode = await _jsRuntime.InvokeAsync<string>("accessCode.get", ChipId);
+         
+         if (string.IsNullOrEmpty(AccessCode))
+         {
+@@ -46,8 +46,9 @@ public partial class SingularCardMenu
+ 
+         _cardProfile = cardProfileResponse;
+ 
+-        if (_cardProfile.CardId == 0)
++        if (_cardProfile.CardId == 0 || _cardProfile.ChipId != ChipId)
+         {
++            await _jsRuntime.InvokeVoidAsync("accessCode.clear");   // saved code belongs to another card
+             Snackbar.Add(localizer["invalid_user_login"], Severity.Error);
+             errorMessage = localizer["invalid_user_login"];
+         }
+diff --git a/WebUIInfinite/Client/Pages/ViewCard.razor.cs b/WebUIInfinite/Client/Pages/ViewCard.razor.cs
+index 45fe25d..e906615 100644
+--- a/WebUIInfinite/Client/Pages/ViewCard.razor.cs
++++ b/WebUIInfinite/Client/Pages/ViewCard.razor.cs
+@@ -1,3 +1,4 @@
++using WebUIInfinite.Client.Services;
+ using Microsoft.AspNetCore.Components;
+ using Microsoft.JSInterop;
+ using MudBlazor;
+@@ -8,6 +9,8 @@ namespace WebUIInfinite.Client.Pages;
+ 
+ public partial class ViewCard
+ {
++    [Inject] private HttpClient CardLoginHttp { get; set; } = null!;   // fix2: saved-login check
++
+     [Parameter]
+     public string ChipId { get; set; } = string.Empty;
+     
+@@ -33,7 +36,13 @@ public partial class ViewCard
+         await base.OnInitializedAsync();
+         breadcrumbs.Add(new BreadcrumbItem("Menu", href: $"Cards/SingularCardMenu/{ChipId}", disabled: false));
+ 
+-        AccessCode = await _jsRuntime.InvokeAsync<string>("accessCode.get");
++        AccessCode = await _jsRuntime.InvokeAsync<string>("accessCode.get", ChipId);
++        // fix2 2026-11-15: never send an access code with a chip id it does not belong to (500 "Card Profile is invalid")
++        if (!string.IsNullOrEmpty(AccessCode) && !await CardLogin.Verify(CardLoginHttp, ChipId, AccessCode))
++        {
++            await _jsRuntime.InvokeVoidAsync("accessCode.clear");
++            AccessCode = string.Empty;
++        }
+         
+         if (string.IsNullOrEmpty(AccessCode))
+         {
+diff --git a/WebUIInfinite/Client/Services/CardLogin.cs b/WebUIInfinite/Client/Services/CardLogin.cs
+new file mode 100644
+index 0000000..dc6ed46
+--- /dev/null
++++ b/WebUIInfinite/Client/Services/CardLogin.cs
+@@ -0,0 +1,29 @@
++using System.Net.Http.Json;
++using WebUIInfinite.Shared.Dto.Request;
++using WebUIInfinite.Shared.Dto.Response;
++
++namespace WebUIInfinite.Client.Services;
++
++/// <summary>
++/// fix2 2026-11-15: checks a saved (chip id, access code) pair with the server before a card page uses it, so a stale
++/// tab / reload never combines one card's access code with another card's chip id. Both values travel in the POST
++/// body (never the URL, which is logged).
++/// </summary>
++public static class CardLogin
++{
++    public static async Task<bool> Verify(HttpClient http, string chipId, string accessCode)
++    {
++        if (string.IsNullOrEmpty(chipId) || string.IsNullOrEmpty(accessCode)) return false;
++        try
++        {
++            var response = await http.PostAsJsonAsync("ui/card/authorize",
++                new CardAuthorizationRequest { CardId = 0, ChipId = chipId, AccessCode = accessCode });
++            var result = await response.Content.ReadFromJsonAsync<CardAuthorizationResponse>();
++            return result is { Success: true } && result.ChipId == chipId;
++        }
++        catch (Exception)
++        {
++            return false;
++        }
++    }
++}
+diff --git a/WebUIInfinite/Client/wwwroot/index.html b/WebUIInfinite/Client/wwwroot/index.html
+index 574e323..e460e11 100644
+--- a/WebUIInfinite/Client/wwwroot/index.html
++++ b/WebUIInfinite/Client/wwwroot/index.html
+@@ -34,9 +34,24 @@
+         set: (value) => localStorage['BlazorDarkTheme'] = value
+     };
+ 
++    // fix2 2026-11-15: the access code is saved together with the chip id it belongs to, and only one card at a
++    // time. A page for another card (stale tab, reload after logging in to a different card) gets "" and must log in
++    // again, so an access code is never sent with another card's chip id.
+     window.accessCode = {
+-        get: () => localStorage['accessCode'],
+-        set: (value) => localStorage['accessCode'] = value
++        get: (chipId) => {
++            localStorage.removeItem('accessCode');   // pre-fix2 value without a chip id: never trusted
++            try {
++                const saved = JSON.parse(localStorage['cardLogin'] || 'null');
++                if (saved && chipId && saved.chipId === chipId && saved.accessCode) return saved.accessCode;
++            } catch (e) { }
++            return '';
++        },
++        set: (chipId, value) => {
++            localStorage.removeItem('accessCode');
++            if (!chipId || !value) { localStorage.removeItem('cardLogin'); return; }
++            localStorage['cardLogin'] = JSON.stringify({ chipId: chipId, accessCode: value });
++        },
++        clear: () => { localStorage.removeItem('accessCode'); localStorage.removeItem('cardLogin'); }
+     };
+ </script>
+ </body>
 -- 
 2.47.3
 

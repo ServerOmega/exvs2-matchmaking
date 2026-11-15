@@ -15,6 +15,7 @@ Ports
 -----
   Open / forward these to the SERVER:
       TCP 28080         card server + matchmaker (/match) + card website (WebUI). Same port for all three.
+                        On a public IP only /match, /mms and /tag answer the internet (see Security).
       UDP 3478 and 3479 the built-in STUN server (players' games test their NAT with it)
   NOT on the server (these are between the players' own PCs, each player handles them):
       UDP 48000 (+ a few)   the battle itself, game to game (see Connect-Your-Game.txt, part C)
@@ -50,6 +51,7 @@ WHERE the public IP / VPN IP goes  (this is the important part)
 
   On the PLAYERS' side, the same address goes:
       - Way 1 (card server = your server):  POC config.ini   Server = 203.0.113.10
+        (over the internet only if you picked "2 = internet players load cards" in 2-Configure - see Security)
       - Way 2 (own local card server, e.g. SnowLauncher users): 2-Configure.bat "2 = PLAY" and type
         203.0.113.10 -> MatchUrl http://203.0.113.10:28080/match, StunHost 203.0.113.10, BuiltinStun false.
   Details: Connect-Your-Game.txt.
@@ -109,7 +111,8 @@ Linux VPS
         sudo ufw enable
      firewalld:  sudo firewall-cmd --permanent --add-port=28080/tcp --add-port=3478-3479/udp && sudo firewall-cmd --reload
   5. Try it:      ./linux/start-server.sh          (Ctrl+C stops it; logs in server-linux/Logs/)
-     Check from your PC: open  http://<VPS IP>:28080/  in a browser - the card website should load.
+     Check from the VPS itself:  curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:28080/  -> 200.
+     From your PC  http://<VPS IP>:28080/  answers 403 - that is correct (card website is LAN-only).
   6. Run it in the background and at boot: edit the paths/user in  linux/exvs2-matchmaking.service, then
         sudo cp linux/exvs2-matchmaking.service /etc/systemd/system/
         sudo systemctl daemon-reload && sudo systemctl enable --now exvs2-matchmaking
@@ -117,17 +120,28 @@ Linux VPS
      Run it as a normal user, never as root.
   ARM VPS (e.g. Ampere): RUNTIME=linux-arm64 ./linux/build-server.sh  (untested).
 
-Security
+Security  (v0.4.0-pre; full details: docs/SECURITY.md on the project page)
 --------
   - Open ONLY TCP 28080 and UDP 3478-3479. Nothing else is needed. Never forward UDP 49000 or your game PC.
-  - Port 28080 also serves the card website (WebUI). Anyone who can reach the server can open it and can
-    register a card on it. Players log in there with their card's access code - tell players to keep
-    their access code private and never post it.
+  - "AccessMode" in server.json -> CardServerConfig -> Security (2-Configure sets it from the address):
+        LanOnly           (private / VPN address) everything answers only LAN + VPN sources
+        PublicMatchmaker  (public address, default) the internet reaches ONLY /match, /mms, /tag and STUN;
+                          the card website and card data answer 403 from the internet. Players use Way 2.
+        Open              old behaviour: card website, card data and access-code logins open to the internet
+                          over plain HTTP. Only if players really must use Way 1 over the internet.
+    VPN ranges (Tailscale 100.64.0.0/10, Radmin 26.0.0.0/8, Hamachi 25.0.0.0/8) go in "ExtraAllowedCidrs".
+  - "TagSecret" (CardServerConfig -> OnlineTag): online tag across card servers needs the SAME secret on the
+    matchmaker and every card server. 2-Configure "1 = HOST" generates one and shows it once; give it to the
+    other card servers' hosts PRIVATELY. Never post it or share server.json.
+  - Rate limits: /match 1200 and /tag 240 requests per minute per IP (HTTP 429 above that).
+  - A search can only be checked / cancelled from the IP that started it.
+  - Logs mask public IPs (a.b.x.x), partner codes (AB******) and card access codes / chip ids.
+    Older logs from before v0.4.0-pre may still contain them - delete old Logs\ files before sharing anything.
   - The server is plain HTTP (no encryption), like the original card server. Don't reuse passwords for anything.
+    In a match the players' games connect directly, so players see each other's public IP (use a VPN if
+    that matters).
   - Back up  ServerInfinite.db  (the card database) regularly; stop the server first for a clean copy.
   - For a group of friends, a VPN (Option 2) is the safest: nothing is exposed to the whole internet.
-  - The server logs players' IP addresses and NAT types (no card numbers or access codes). Keep logs private.
-  - No passwords or secrets are needed for any of this; don't put any in server.json.
 
 Check it works
 --------------
@@ -138,4 +152,5 @@ Check it works
     "NET entry node=... class=..."  a player is searching ("class=stun-missing" = their STUN test failed:
                                     UDP 3478-3479 not open/forwarded, or StunHost wrong)
     "MATCH room=..."                a match formed
+    "SEC-REFUSE 403|401|429 ..."    a request was refused (access mode / missing TagSecret / rate limit)
   More: Troubleshooting.txt

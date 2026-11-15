@@ -6,6 +6,8 @@
   Non-interactive examples:
     configure.ps1 -Role Host -Ip 203.0.113.10                 (public / VPN / LAN IP of THIS server)
     configure.ps1 -Role Player -MatchServer 203.0.113.10       (use someone else's matchmaking server)
+  Security (2026-11-15): -AccessMode LanOnly | PublicMatchmaker | Open (default picked from the address, see
+  docs/SECURITY.md), -TagSecret <shared secret for cross-server online tag; Host: blank = keep or generate one>.
 #>
 param(
     [ValidateSet("", "Host", "Player")] [string]$Role = "",
@@ -15,7 +17,9 @@ param(
     [int]$StunPort = 3478,
     [double]$FillAfterSeconds = 3,
     [switch]$NoFirewall,
-    [switch]$NoPrompt
+    [switch]$NoPrompt,
+    [ValidateSet("", "LanOnly", "PublicMatchmaker", "Open")] [string]$AccessMode = "",
+    [string]$TagSecret = ""
 )
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
@@ -41,6 +45,20 @@ function SetProp($obj, $name, $value) {
 function GetOrAdd($obj, $name) {
     if (-not $obj.PSObject.Properties[$name]) { $obj | Add-Member -NotePropertyName $name -NotePropertyValue ([pscustomobject]@{}) }
     return $obj.$name
+}
+function IsPrivate($s) {
+    return $s -match '^(10\.|127\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.)'
+}
+function VpnCidr($s) {
+    if ($s -match '^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.') { return "100.64.0.0/10" }   # Tailscale / CGNAT
+    if ($s -match '^26\.') { return "26.0.0.0/8" }                                                   # Radmin VPN
+    if ($s -match '^25\.') { return "25.0.0.0/8" }                                                   # Hamachi
+    return ""
+}
+function NewSecret() {
+    $b = New-Object byte[] 32
+    [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b)
+    return ([Convert]::ToBase64String($b) -replace '[+/=]', '').Substring(0, 40)
 }
 function ReadJson($p) { return (Get-Content -Raw -Encoding UTF8 $p) | ConvertFrom-Json }
 function WriteJson($p, $o) {
@@ -150,7 +168,39 @@ if ($Role -eq "Host") {
     SetProp $om "BuiltinStun" $false     # STUN runs on the matchmaking server
     SetProp $om "CpuStandInSeats" $false
 }
-foreach ($kv in @(@("SendTagTeams", $true), @("TagStatus", 0), @("MaxTeams", 20), @("OneTimeInviteCode", $true))) {
+# ---- security (docs/SECURITY.md) ----
+$sec = GetOrAdd $c "Security"
+$extra = ""
+if (-not $AccessMode) {
+    if ($Role -eq "Player") { $AccessMode = "LanOnly" }                 # only this PC's / LAN's cabinets use this card server
+    elseif ((IsPrivate $Ip) -or $Ip -like "127.*") { $AccessMode = "LanOnly" }
+    elseif (VpnCidr $Ip) { $AccessMode = "LanOnly"; $extra = VpnCidr $Ip }
+    else {
+        $AccessMode = "PublicMatchmaker"
+        if (-not $NoPrompt) {
+            Write-Host ""
+            Write-Host "This is a PUBLIC address. Who loads their cards from this server?" -ForegroundColor Yellow
+            Write-Host "  1 = nobody from the internet: players run their own card server (option 2) and only use my"
+            Write-Host "      matchmaker. Internet sources reach only /match, /mms and /tag. (recommended)"
+            Write-Host "  2 = internet players point their game at this server for cards too. Card data, access codes"
+            Write-Host "      and the card website become reachable from the internet over plain HTTP. (not recommended)"
+            if ((Ask "Type 1 or 2" "1") -eq "2") { $AccessMode = "Open" }
+        }
+    }
+}
+SetProp $sec "AccessMode" $AccessMode
+if ($extra -and -not $sec.ExtraAllowedCidrs) { SetProp $sec "ExtraAllowedCidrs" $extra }
+foreach ($kv in @(@("BindMatchNodesToSourceIp", $true), @("MaskNetworkInLog", $true))) {
+    if (-not $sec.PSObject.Properties[$kv[0]]) { SetProp $sec $kv[0] $kv[1] }
+}
+$secretShown = $false
+if (-not $TagSecret -and $Role -eq "Player" -and -not $NoPrompt) {
+    $TagSecret = Ask "Online-tag shared secret from the matchmaker's host (blank = none / keep)" ""
+}
+if ($TagSecret) { SetProp $ot "TagSecret" $TagSecret }
+elseif ($Role -eq "Host" -and -not $ot.TagSecret) { SetProp $ot "TagSecret" (NewSecret); $secretShown = $true }
+
+foreach ($kv in @(@("SendTagTeams", $true), @("TagStatus", 1), @("MaxTeams", 20), @("OneTimeInviteCode", $true))) {
     if (-not $ot.PSObject.Properties[$kv[0]]) { SetProp $ot $kv[0] $kv[1] }
 }
 
@@ -168,6 +218,12 @@ if ($Role -eq "Host") {
     Write-Host "  Players reach this server at:   $Ip  (port $HttpPort)"
     Write-Host "  STUN (NAT test) runs here on:   UDP $StunPort and $($StunPort + 1)"
     Write-Host "  Ports to open / forward:        TCP $HttpPort, UDP $StunPort-$($StunPort + 1)   (see Public-Server.txt)"
+    Write-Host "  Access mode:                    $AccessMode   (docs/SECURITY.md)"
+    if ($secretShown) {
+        Write-Host "  Online-tag shared secret:       $($ot.TagSecret)" -ForegroundColor Yellow
+        Write-Host "    Give it privately (not in a public chat) to hosts of other card servers that use this matchmaker;"
+        Write-Host "    they type it when 2-Configure.bat asks. It is stored in server.json - never share that file."
+    }
     if ($HttpPort -ne 28080) { Write-Host "  NOTE: the game itself only talks to port 28080. Another port only works for players who use their own local card server (option 2)." -ForegroundColor Yellow }
 } else {
     Write-Host "  This PC's card server:          port $HttpPort (your game connects here, Server = 127.0.0.1)"

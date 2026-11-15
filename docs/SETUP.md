@@ -79,10 +79,11 @@ Minimum for a matchmaker with built-in STUN:
 | `PollingIntervalSeconds`, `StaleAfterSeconds`, `NetworkRealms`, `InStoreScope`, `ShopKeys`, `VerboseLog` | Optional; see the [config reference](../server-sketch/ib-server/README.md#configure). |
 
 Online tag (players inviting a chosen partner, B5) is on by default and has its own section, `CardServerConfig` →
-`OnlineTag`: `SendTagTeams` (true), `TagStatus` (0; try 1 if players' online-tag list stays empty), `MaxTeams` (20),
+`OnlineTag`: `SendTagTeams` (true), `TagStatus` (1; 0 leaves the in-game online-tag list greyed out), `MaxTeams` (20),
 `OneTimeInviteCode` (true = a partner's invitation code changes after it was used). The player-facing part is the
-card server's web page (WebUI, same address and port as the card server, e.g. `http://<host>:28080/`), so players
-who want to invite partners need to reach it.
+card server's web page (WebUI, same address and port as the card server, e.g. `http://<host>:28080/`). Since the
+2026-11-15 security update the WebUI answers **LAN / VPN sources only** (`Security.AccessMode`, see A7), so remote
+players run their own card server (A6) or join over a VPN whose range is in `Security.ExtraAllowedCidrs`.
 
 Any key can also be set with an environment variable, which wins over the file, e.g.
 `CardServerConfig__OnlineMatching__FillAfterSeconds=10`.
@@ -143,6 +144,21 @@ goes between the two servers before, during or after a match (the cabinet calls 
 Results are still saved to the player's own card server. This was tested on 2026-11-13 (one cabinet on a second
 card-server instance, one directly on the matchmaker; they matched and played).
 
+### A7. Security (access mode, `/tag` secret, logs)
+Full reference: [`docs/SECURITY.md`](SECURITY.md). In short, in `CardServerConfig`:
+```json
+"Security": { "AccessMode": "PublicMatchmaker", "ExtraAllowedCidrs": "" },
+"OnlineTag": { "TagSecret": "<long random string, same on the matchmaker and every card server>" }
+```
+* **Matchmaker on a VPS / port-forwarded PC:** `PublicMatchmaker` — the internet reaches only `/match`, `/mms`,
+  `/tag` (and STUN on UDP); the card website and card APIs answer 403.
+* **Card server for your own cabinets:** `LanOnly` (default) — loopback / private networks only; add VPN ranges
+  (Tailscale `100.64.0.0/10`, Radmin `26.0.0.0/8`, Hamachi `25.0.0.0/8`) to `ExtraAllowedCidrs`.
+* **Cross-server online tag** needs the same `OnlineTag.TagSecret` on the matchmaker and on every card server
+  (`/tag` answers 401 without it). VPS: `tools/vps/deploy.sh --host <VPS_IP> --tag-secret-file FILE`.
+  Never commit it or share `server.json`.
+* `2-Configure.bat` / `linux/configure.sh` (release package) set both for you.
+
 ---
 
 ## Part B — Players: connecting a cabinet to a matchmaking server
@@ -193,8 +209,9 @@ on 2026-11-15 at 5:57 AM Pacific Time (two cabinets, two card servers, one share
 
 **Different card servers** (each player keeps their own cards; both servers point `OnlineMatching.MatchUrl`
 and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28090/match`). Give each card server a
-distinct `OnlineTag.ServerId` (for example 1 and 2). Leave `OnlineTag.InviteUrl` empty so it is derived as
-`/tag` on that matchmaker.
+distinct `OnlineTag.ServerId` (for example 1 and 2) and the matchmaker's `OnlineTag.TagSecret` (A7). Leave
+`OnlineTag.InviteUrl` empty so it is derived as `/tag` on that matchmaker. Two cards on the **same** card server
+can also use a partner code (tested 2026-11-15 with four cabinets: one cross-server and one same-server pair).
 
 1. Each player opens **their own** card server's web page → Customize → **Teams**.
 2. One partner taps **Create a code** (under *Partner on another card server*) and sends the 8-character
@@ -231,6 +248,10 @@ Partner recruit (パートナー急募, random partner) also pairs two players, 
 | `MATCH` but the battle never starts | P2P UDP between players is blocked: firewall on the game exe, strict/CGNAT NAT without UDP 48000 forwarded → use an overlay VPN |
 | Online tag: no team to pick / panel greyed out | team not created in the WebUI (B5), card read before the team was made (re-insert the card), or `OnlineTag.TagStatus` is still 0 (default is now 1). Log: `LoadCard online tag: … tag_teams=N tag_status=1` |
 | Online tag: `entry online-tag` for both but no `online-tag pair` | they searched a different mode (e.g. Mix Match world 23 instead of Online Tag world 5), or the two cabinets sent different pair keys / codes, or they didn't search at the same time (90 s each) |
+| Online tag: one cabinet searches alone, matchmaker log `TAG-WAIT … waiting for partner N: partner not searching` | the partner's cabinet never started an Online Tag search (still in menus, picked another mode, or started more than ~90 s later). `… partner is in the queue as node=… but cannot pair` = the partner searched another mode (e.g. Team mode with a CPU partner) — see [SECURITY.md](SECURITY.md#reading-tag-wait-why-an-online-tag-pair-didnt-form) |
+| Card server log: `The matchmaker refused this card server: OnlineTag.TagSecret …` / matchmaker `SEC-REFUSE 401 … /tag` | `OnlineTag.TagSecret` missing or different from the matchmaker's (A7) |
+| Card website or cabinet gets HTTP 403, log `SEC-REFUSE 403` | the source isn't allowed by `Security.AccessMode`: a VPN range missing from `ExtraAllowedCidrs`, or a cabinet on the internet using a `PublicMatchmaker` server as its card server (use your own card server, A6) |
+| `SEC-REFUSE 429` | rate limit (`/match` 1200/min, `/tag` 240/min per source IP) — normally only a misbehaving script |
 | Results screen hangs for minutes after a versus match | **known issue with two cabinets on one PC** (also happens in local LM mode without any matchmaker); the games recover by themselves. Not seen with a solo match; separate-machine test pending ([report](../analysis/real-game-test-2026-11-13.md#4-results-screen-hang-open)) |
 
 Running two cabinets on one PC for testing: see the recipe in

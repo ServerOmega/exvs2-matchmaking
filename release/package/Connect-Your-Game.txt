@@ -18,6 +18,9 @@ Way 1: Use the host's server as your card server  (simplest; your cards live on 
   Only the IP. No "http://", no port. The game talks to the card server on port 28080, so the host must
   keep the default port 28080.
   Your old cards are NOT on the host's server: you start fresh there (or the host imports your database).
+  Since v0.4.0-pre a host on a PUBLIC IP serves only matchmaking to the internet by default
+  (AccessMode PublicMatchmaker). Way 1 then works only over a VPN / LAN, or if the host chose
+  "internet players load cards from this server" in 2-Configure. Otherwise use Way 2.
 
 Way 2: Keep your own card server on your PC, match on the host's server  (cards stay with you)
   Use this if you play with SnowLauncher: SnowLauncher ignores its Server= setting and the game always
@@ -83,7 +86,8 @@ partners on different card servers that share one matchmaker:
   2. You open your own Customize -> Teams, enter them under Add Team, press ADD.
 
   Different card servers (each server has its own ServerId; MatchUrl / StunHost point at the same
-  matchmaker, e.g. http://<VPS_IP>:28090/match):
+  matchmaker, e.g. http://<VPS_IP>:28090/match; every card server needs the matchmaker's online-tag
+  shared secret - 2-Configure "2 = PLAY" asks for it, the matchmaker's host gives it to you privately):
   1. Each of you opens YOUR own card website -> Customize -> Teams.
   2. One partner taps "Create a code" and sends the 8-character code to the other.
   3. The other types it under "Partner's code" and taps Join. The creator reopens the Teams tab.
@@ -93,4 +97,7 @@ partners on different card servers that share one matchmaker:
   1. Both re-insert your cards. On TEAM SELECT pick オンラインタッグ (Online Tag) — not Mix Match,
      Class, Fes, or 店内チーム — choose the shared team, and search at about the same time
      (each waits up to 90 s for the other).
-  2. After the duo forms, a 2v2 still needs two more human players.
+  2. After the duo forms, a 2v2 still needs two more human players. Two online-tag duos (even one
+     cross-server and one same-server) form one 2v2 together - tested 2026-11-15 with 4 cabinets.
+  3. If one of you searches alone, the matchmaker log says "TAG-WAIT ... waiting for partner N:
+     partner not searching" - the partner's cabinet hasn't started an Online Tag search.

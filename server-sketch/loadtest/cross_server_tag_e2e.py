@@ -18,7 +18,7 @@ Usage:
 
 Needs game_server_nue_pb2 and loadtest.py (same as online_tag_e2e.py). Never prints card secrets.
 """
-import argparse, json, os, shutil, signal, subprocess, sys, time, urllib.error, urllib.request, uuid
+import argparse, json, os, re, secrets, shutil, signal, subprocess, sys, time, urllib.error, urllib.request, uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -30,6 +30,8 @@ import game_server_nue_pb2 as pb
 
 RESULTS = []
 CHILDREN = []
+# security hardening 2026-11-15: shared /tag secret for this run only (random, never printed)
+TAG_SECRET = secrets.token_urlsafe(32)
 
 
 def check(name, ok, detail=""):
@@ -46,6 +48,19 @@ def post_pb(url, q, strict=True):
     out = pb.Response()
     (out.ParseFromString if strict else out.MergeFromString)(data)
     return out
+
+
+def raw_status(url, path, headers=None, body=None):
+    """HTTP status of a request (JSON body when given). Never prints headers (they may carry the secret)."""
+    data = None if body is None else json.dumps(body).encode()
+    h = {"Content-Type": "application/json"}
+    h.update(headers or {})
+    req = urllib.request.Request(url.rstrip("/") + path, data=data, method="POST" if body is not None else "GET", headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
 
 
 def base(method, serial="XSPCB0001"):
@@ -187,6 +202,9 @@ def start_server(publish_dir, work, port, server_id, match_url, invite_url, enab
     env["CardServerConfig__OnlineTag__ServerId"] = str(server_id)
     env["CardServerConfig__OnlineTag__InviteUrl"] = invite_url
     env["CardServerConfig__OnlineTag__SendTagTeams"] = "true"
+    env["CardServerConfig__OnlineTag__TagSecret"] = TAG_SECRET
+    env["CardServerConfig__Security__AccessMode"] = "LanOnly"
+    env["CardServerConfig__Security__ExemptLoopbackFromRateLimit"] = "false"   # so the /tag limit can be seen from 127.0.0.1
     env["DOTNET_PrintLogo"] = "false"
     exe = os.path.join(work, "Server-Infinite")
     dll = os.path.join(work, "Server-Infinite.dll")
@@ -375,6 +393,82 @@ def main():
         # canceled or still waiting alone is fine; must not be in the partners' room
         if rx[1] and ra[1]:
             check("unrelated room is not the partners' room", rx[1] != ra[1], str(rx))
+
+        # 5. security hardening (2026-11-15)
+        sec = {"X-Tag-Secret": TAG_SECRET}
+        for path in ("/tag/invites/for/%d" % A.pilot, "/tag/invites/%s" % code):
+            st, _ = raw_status(url_a, path)
+            check("GET %s without the secret is refused (401)" % re.sub(r"/[0-9A-Z]{8}$", "/<code>", path), st == 401, "status=%d" % st)
+            st, _ = raw_status(url_a, path, {"X-Tag-Secret": "wrong-" + TAG_SECRET[:4]})
+            check("GET %s with a wrong secret is refused (401)" % re.sub(r"/[0-9A-Z]{8}$", "/<code>", path), st == 401, "status=%d" % st)
+            st, _ = raw_status(url_a, path, sec)
+            check("GET %s with the secret works (200)" % re.sub(r"/[0-9A-Z]{8}$", "/<code>", path), st == 200, "status=%d" % st)
+        st, _ = raw_status(url_a, "/tag/invites", body={"pilotId": 9_000_123, "name": "x"})
+        check("POST /tag/invites without the secret is refused (401)", st == 401, "status=%d" % st)
+        st, _ = raw_status(url_a, "/tag/invites/join", body={"code": code, "pilotId": 9_000_124, "name": "x"})
+        check("POST /tag/invites/join without the secret is refused (401)", st == 401, "status=%d" % st)
+        st, body = raw_status(url_a, "/tag/register", sec, {"amId": 9_000_125, "codes": [code]})
+        acc = (json.loads(body or b"{}") or {}).get("accepted")
+        check("a stranger cannot register someone else's code for world 5", st == 200 and acc == 0, "status=%d accepted=%s" % (st, acc))
+
+        st, body = raw_status(url_a, "/ui/card/getAll?PageSize=50")
+        cards = json.loads(body or b"[]") if st == 200 else []
+        leaked = [c for c in cards if c.get("chipId")]
+        mine = [c for c in cards if c.get("cardId") == A.pilot % 1000000]
+        check("WebUI card list still works from the LAN (200)", st == 200 and len(cards) >= 1, "status=%d n=%d" % (st, len(cards)))
+        check("WebUI card list carries no chip ids", not leaked, "leaked=%d" % len(leaked))
+        check("WebUI card list shows a masked hint", bool(mine) and mine[0].get("chipIdHint", "").endswith(A.chip[-4:])
+              and A.chip not in mine[0].get("chipIdHint", ""), "")
+        st, body = raw_status(url_a, "/ui/card/getAll?PageSize=50&SearchKeyword=" + A.chip[:-3])
+        check("partial chip-id search finds nothing (no chip-id oracle)",
+              st == 200 and not any(c.get("cardId") == mine[0]["cardId"] for c in json.loads(body or b"[]")) if mine else False, "")
+        st, body = raw_status(url_a, "/ui/card/getAll?PageSize=50&SearchKeyword=" + A.chip)
+        check("full chip-id search still finds the card", st == 200 and len(json.loads(body or b"[]")) >= 1, "")
+        if mine:
+            st, body = raw_status(url_a, "/ui/card/authorize", body={"cardId": mine[0]["cardId"], "chipId": "", "accessCode": "0" * 20})
+            r = json.loads(body or b"{}")
+            check("authorize with a wrong access code fails and returns no chip id", not r.get("success") and not r.get("chipId"), "")
+            st, body = raw_status(url_a, "/ui/card/authorize", body={"cardId": mine[0]["cardId"], "chipId": "", "accessCode": A.access})
+            r = json.loads(body or b"{}")
+            check("authorize with the access code returns the chip id (Customize/Teams flow)",
+                  r.get("success") is True and r.get("chipId") == A.chip, "")
+            # fix2: the WebUI re-checks a saved login by chip id (cardId 0); another card's chip never passes
+            st, body = raw_status(url_a, "/ui/card/authorize", body={"cardId": 0, "chipId": A.chip, "accessCode": A.access})
+            r = json.loads(body or b"{}")
+            check("fix2: saved login re-check by chip id works", r.get("success") is True and r.get("chipId") == A.chip, "")
+            st, body = raw_status(url_a, "/ui/card/authorize", body={"cardId": 0, "chipId": C.chip, "accessCode": A.access})
+            r = json.loads(body or b"{}")
+            check("fix2: an access code with another card's chip id is refused", not r.get("success") and not r.get("chipId"), "")
+        tb3 = B.teams()
+        check("Teams tab still works after the security checks", bool((tb3 or {}).get("teams")), "")
+
+        # /tag rate limit (loopback exemption is off in this run): hammering a missing code gets 429s
+        codes = []
+        for i in range(400):
+            st, _ = raw_status(url_a, "/tag/invites/ZZZZ%04d" % i, sec)
+            codes.append(st)
+        check("/tag is rate limited per source (429 after the burst)", 429 in codes and codes[0] == 404,
+              "first=%d n429=%d" % (codes[0], codes.count(429)))
+
+        # log masking: no partner code, no full public IP, no secret in server A's / B's logs
+        if started:
+            for d, name in ((wa, "A"), (wb, "B")):
+                txt = ""
+                for root, _, files in os.walk(d):
+                    for fn in files:
+                        if fn.endswith(".txt") or fn == "server.log":
+                            try:
+                                txt += open(os.path.join(root, fn), errors="replace").read()
+                            except Exception:
+                                pass
+                check("server %s log never contains the shared secret" % name, TAG_SECRET not in txt, "")
+                check("server %s log never contains the partner code" % name, code not in txt, "")
+                leaks = [c.access for c in (A, B, C) if c.access in txt] + [c.chip for c in (A, B, C) if c.chip in txt]
+                check("fix2: server %s log never contains a card access code or chip id" % name, not leaks, "%d leaks" % len(leaks))
+                check("fix2: server %s log shows masked WebUI paths" % name,
+                      "/ui/team/getTeams/<masked:" in txt or name == "B" and "<masked:" in txt or "getTeams" not in txt, "")
+                check("server %s log masks public cabinet IPs" % name, not re.search(r"198\.18\.88\.\d+", txt),
+                      "%d hits" % len(re.findall(r"198\.18\.88\.\d+", txt)))
     finally:
         if started:
             cleanup()
