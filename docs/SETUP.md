@@ -202,6 +202,10 @@ queue: the log repeats `drop nodes=[…] reason=same cabinet entered again` and 
   So run a **local** patched card server on port 28080 and use the split setup (A6): `MatchUrl` and `StunHost`
   point at the remote matchmaker. (SnowLauncher once wiped the `AccessCode` in its ini during testing — keep a
   backup of your launcher/card config.)
+  SnowLauncher always starts the **stock** card server from the game's `server` folder (no ini setting turns
+  that off). Start the patched server first (`3-Start-Server.bat`, wait until it listens), then SnowLauncher:
+  the stock server can't get port 28080 and the game uses the patched one. Alternatively rename the game's
+  `server` folder (e.g. `server.original`) and put the patched build in a new `server` folder.
 
 ### B4. Queue
 1. Start the game, insert your card, pick an online mode. **Everyone must pick the same mode** to meet
@@ -227,7 +231,8 @@ on 2026-11-15 at 5:57 AM Pacific Time (two cabinets, two card servers, one share
    and **Friend's Invitation Code**, and press **ADD**.
 
 **Different card servers** (each player keeps their own cards; both servers point `OnlineMatching.MatchUrl`
-and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28090/match`). Give each card server a
+and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28080/match`; use the port the
+matchmaker's `kestrel.json` listens on, 28080 by default — `2-Configure` "2 = PLAY" assumes 28080). Give each card server a
 distinct `OnlineTag.ServerId` (for example 1 and 2) and the matchmaker's `OnlineTag.TagSecret` (A7). Leave
 `OnlineTag.InviteUrl` empty so it is derived as `/tag` on that matchmaker. Two cards on the **same** card server
 can also use a partner code (tested 2026-11-15 with four cabinets: one cross-server and one same-server pair).

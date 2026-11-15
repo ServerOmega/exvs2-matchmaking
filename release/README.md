@@ -21,10 +21,19 @@ Our scripts and instructions in the package are GPL-3.0 (`package/LICENSE.txt`).
 | `linux/build-server.sh`, `configure.sh`, `start-server.sh`, `exvs2-matchmaking.service` | same for a Linux PC / VPS (self-contained linux-x64, `-p:LinuxHost=true`), systemd example |
 | `START-HERE.txt`, `Connect-Your-Game.txt`, `Public-Server.txt`, `Troubleshooting.txt` | plain-language instructions |
 
-Build the zip: `release/make-release.sh v0.4.0-pre` → `release/dist/` (not committed).
+Build the zip: `release/make-release.sh v0.4.1-pre` → `release/dist/` (not committed).
 
 ## Changelog
 
+* **v0.4.1-pre (2026-11-15)** — docs only, same `online-matchmaking.patch` as v0.4.0-pre (rebuild not needed).
+  `testmode_pcb.json` is in `<game folder>\29\`; how to set `battleMode` to 0 by hand in Notepad (only `value`,
+  leave `type`, every `group` of the active `settingFile`, game closed, back up first). Every cabinet needs its
+  **own random 4-character serial** in both `SnowLauncher.ini` and `config.ini` — two cabinets with the same
+  serial behind the same public IP knock each other out of the queue (`same cabinet entered again`). SnowLauncher
+  always starts the stock card server: start the patched one first (or swap the `server` folder). `MatchUrl`
+  examples use the default port 28080 (`2-Configure` "2 = PLAY" assumes the host listens on 28080). Found in a
+  friend's from-scratch build test 2026-11-15; that build then paired through the VPS matchmaker in Online Tag
+  and filled a 4-player 2v2 game (9:52 AM PT).
 * **v0.4.0-pre (2026-11-15)** — security hardening (patch commits 27–28): `PublicMatchmaker` / `LanOnly` access
   modes, `/tag` shared secret (`X-Tag-Secret`), `/match` source-IP binding, rate limits (1200 / 240 per minute),
   partner-code expiry (7 / 90 days), public IPs / codes / card secrets masked in logs (including WebUI request

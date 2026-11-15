@@ -32,9 +32,16 @@ Way 2: Keep your own card server on your PC, match on the host's server  (cards 
            "MatchUrl": "http://203.0.113.10:28080/match",     <- the host's matchmaker
            "StunHost": "203.0.113.10",                         <- the host's STUN
            "BuiltinStun": false
+       2-Configure assumes the host's matchmaker uses the default port 28080. If the host changed it
+       (kestrel.json on the host), change only the port in MatchUrl to the host's port.
     2. Your game keeps  Server = 127.0.0.1  (POC config.ini default) - SnowLauncher does that by itself.
     3. Close any OTHER card server on your PC first (only one program can use port 28080),
        e.g. the official Server.exe. Your cards: copy ServerInfinite.db into server\ (step 1 can do it for you).
+       SnowLauncher always starts the stock card server from the game's server folder. Start the patched
+       server FIRST (3-Start-Server.bat, wait until it is listening), then open SnowLauncher: the stock
+       server cannot get port 28080 and the game uses the patched one (close the stock server's window if
+       it shows one). Or rename the game's server folder (e.g. server.original) and put the patched
+       server build in a new server folder, so SnowLauncher starts the patched one itself.
   Results and cards are saved on YOUR card server; only the matching happens on the host's server.
   (Tested 2026-11-13 on one PC with two card servers.)
 
@@ -110,7 +117,7 @@ partners on different card servers that share one matchmaker:
   2. You open your own Customize -> Teams, enter them under Add Team, press ADD.
 
   Different card servers (each server has its own ServerId; MatchUrl / StunHost point at the same
-  matchmaker, e.g. http://<VPS_IP>:28090/match; every card server needs the matchmaker's online-tag
+  matchmaker, e.g. http://<VPS_IP>:28080/match; every card server needs the matchmaker's online-tag
   shared secret - 2-Configure "2 = PLAY" asks for it, the matchmaker's host gives it to you privately):
   1. Each of you opens YOUR own card website -> Customize -> Teams.
   2. One partner taps "Create a code" and sends the 8-character code to the other.
