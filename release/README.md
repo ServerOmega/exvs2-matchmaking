@@ -11,7 +11,7 @@ pinned commit `7f4b280` (v1.2.0) from GitHub on the user's own PC, applies the p
 No upstream source and no compiled server is uploaded anywhere.
 
 Our scripts and instructions in the package are GPL-3.0 (`package/LICENSE.txt`). The card server and
-`online-matchmaking.patch` are **not** covered; see the License section of the main README.
+`online-matchmaking.patch` (and the follow-on `results-gap-and-rolling-fill/` series, already included in that combined patch) are **not** covered; see the License section of the main README.
 
 | File | What it does |
 |---|---|

@@ -54,8 +54,12 @@ Online tag
 
 Settings reference (server\Configurations\server.json -> CardServerConfig)
 --------------------------------------------------------------------------
-  OnlineMatching:  Enabled, MatchUrl, StunHost, StunPort, BuiltinStun, FillAfterSeconds (15), AllowPartialRooms,
-                   CpuStandInSeats (keep false), PollingIntervalSeconds, StaleAfterSeconds, NetworkRealms, VerboseLog ...
+  OnlineMatching:  Enabled, MatchUrl, StunHost, StunPort, BuiltinStun, FillAfterSeconds (15),
+                   FillTimerMode (Rolling), MaxFillWaitSeconds (90),
+                   InStoreFillAfterSeconds (60), InStoreMaxFillWaitSeconds (120),
+                   OneOnOneWorlds ("20"), AllowPartialRooms, CpuStandInSeats (keep false),
+                   LogResultGap, LogPostMatchTraffic, PollingIntervalSeconds, StaleAfterSeconds,
+                   NetworkRealms, VerboseLog ...
   OnlineTag:       SendTagTeams, TagStatus, MaxTeams, OneTimeInviteCode
   Full list: https://github.com/ServerOmega/exvs2-matchmaking/blob/main/server-sketch/ib-server/README.md#configure
   Restart the server after editing. Keep a copy of the file before editing by hand.
@@ -63,9 +67,9 @@ Settings reference (server\Configurations\server.json -> CardServerConfig)
 KNOWN ISSUES (this is an early test build)
 ------------------------------------------
   1. Results screen hangs after a versus match when BOTH cabinets run on ONE PC. It also happens in local
-     LM mode without this server, so it's most likely two copies of the game on one PC getting in each other's
-     way. The games recover by themselves after a while. Not seen in solo matches vs CPU. Matches between
-     separate PCs are not tested yet. (Under investigation.)
+     LM mode without this server. A 4-human 2v2 on 2026-11-14 cleared results; hung rooms were 2 humans +
+     2 game-added CPUs. Not seen in solo matches vs CPU. Matches between separate PCs are not tested yet.
+     (Under investigation.)
      Test options and tools that help narrow it down: see Results-Hang-Testing.txt.
   2. Only tested with two cabinets on one Windows PC (2026-11-13). Matching between different homes /
      over the internet / over a VPN is NOT tested yet - you are the testers. Please report what happens.

@@ -23,6 +23,17 @@ Options in "CardServerConfig" -> "OnlineMatching"
   LogPostMatchTraffic     true   Log MMS-POST / STUN-POST lines for 30 min after a
                                  match. If none appear during a hang, the
                                  matchmaker is not involved.
+  LogResultGap            true   Log RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines
+                                 from a cabinet's result save to its next request
+                                 (times the hang without a stopwatch).
+  FillTimerMode           Rolling  FillAfter restarts on each new compatible joiner
+                                 so late cabinets can merge into one 2v2.
+  MaxFillWaitSeconds      90     Hard cap from the first searcher (0 = no cap).
+  InStoreFillAfterSeconds 60     In-store (worlds 15/16) only; online keeps 15.
+  InStoreMaxFillWaitSeconds 120  In-store cap; online keeps 90.
+  OneOnOneWorlds          "20"   Fes 1on1: 2-client 1v1, no CPU seats. Also set
+                                 FesConfigurations for the day to a OneOnOne*
+                                 value and restart the cabinets.
 
 Tools (read-only, they never change or launch anything)
 -------------------------------------------------------

@@ -1,7 +1,7 @@
 From 46f2cf5f59c4858078e5c4d44e3d60923d7e15c1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/14] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/18] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2328,7 +2328,7 @@ index 0000000..3b81d9a
 From 59a8ceaba76b4a9c00743b17e00ecb7abdc89ed3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/14] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/18] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2366,7 +2366,7 @@ index da8f5ea..3029cb0 100644
 From c10e1826eccd88272306b1f2f71b16126626baba Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/14] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/18] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2598,7 +2598,7 @@ index bda49e2..a9c56ab 100644
 From 9295ed8babeb0d6e6651d2c6790f26f1b85b6061 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/14] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/18] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2657,7 +2657,7 @@ index 872d2b3..4ef4c22 100644
 From 060e241c15c6a6ede6d3c0a9e267f1122e06afdd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/14] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/18] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2685,7 +2685,7 @@ index 90e35a8..5fad533 100644
 From a6cdb59e736f93bbb922a85b637ee0b9888254fc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/14] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/18] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3036,7 +3036,7 @@ index 3b81d9a..b5b7cbb 100644
 From 679ae7d833acb2a84183f4844568c34134ac5adf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/14] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/18] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3110,7 +3110,7 @@ index 2a72884..65ee897 100644
 From 4ecdd01d345a51c3a5560a882691a6e492be2c03 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/14] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/18] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3601,7 +3601,7 @@ index 0000000..f7c4beb
 From e460603df7dd164e85b3ed5cd456994a819a2601 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/14] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/18] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4043,7 +4043,7 @@ index 27c6cb7..94b83aa 100644
 From dcf1e9cf9fddc8862ad034846ebf1a1fb167a3d5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/14] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/18] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4139,7 +4139,7 @@ index 3709ff7..f37e4f8 100644
 From 0e7ec86f35d24461efb049eb1ae6b3eae7015728 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/14] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/18] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4219,7 +4219,7 @@ index 65ee897..81e88cd 100644
 From bb1f1c02bf7ac969890bdb686027ca10f450e7c8 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/14] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/18] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4749,7 +4749,7 @@ index 0000000..a4934f4
 From 581a1ce4c65e127e280234709143633cc1c9b7ee Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/14] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/18] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5398,7 +5398,7 @@ index b5b7cbb..74e757b 100644
 From 79b9fb419883b19d6a806e5b0bd07ca083e36acc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/14] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/18] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5876,6 +5876,1189 @@ index 0000000..310cbdf
 +        Assert.Null(t.Line(new Request { Type = (MethodType)7, RequestId = "r" }, null, "x", "room=1 +1s by=node", 1, 1));
 +        Assert.True(new MmsTrace().Enabled);   // default on
 +    }
++}
+-- 
+2.47.3
+
+
+From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 10:09:10 -0800
+Subject: [PATCH 15/18] Results-hang timing (logging only, default on):
+ RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
+ to its next request; LogResultGap config; 5 tests
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Controllers/GameController.cs |  7 ++
+ Server-Infinite/Lobbies/ResultGapTrace.cs     | 93 +++++++++++++++++++
+ .../Models/Config/CardServerConfig.cs         |  4 +
+ .../Matchmaking.Tests/ResultGapTraceTests.cs  | 77 +++++++++++++++
+ 4 files changed, 181 insertions(+)
+ create mode 100644 Server-Infinite/Lobbies/ResultGapTrace.cs
+ create mode 100644 Tests/Matchmaking.Tests/ResultGapTraceTests.cs
+
+diff --git a/Server-Infinite/Controllers/GameController.cs b/Server-Infinite/Controllers/GameController.cs
+index 9af353c..c53e333 100644
+--- a/Server-Infinite/Controllers/GameController.cs
++++ b/Server-Infinite/Controllers/GameController.cs
+@@ -28,6 +28,8 @@ public class GameController : BaseController<GameController>
+         this.scopeFactory = scopeFactory;
+     }
+     
++    private static readonly ServerInfinite.Lobbies.ResultGapTrace ResultGap = new();
++
+     [Route("")]
+     [HttpPost]
+     [Produces("application/protobuf")]
+@@ -39,6 +41,11 @@ public class GameController : BaseController<GameController>
+         
+         var baseAddress = Request.Host.ToString();
+ 
++        // exvs2-lobbies: results-screen timing (logging only)
++        if (config.LogResultGap)
++            foreach (var line in ResultGap.Observe(request.Type, request.PcbSerial, Environment.TickCount64 / 1000.0))
++                Logger.LogInformation("{Line}", line);
++
+         // exvs2-lobbies results-hang draft: PostMatchWatchdogMs (default 0 = off). The handler runs in its own DI scope so
+         // it can finish (and save) after the early reply.
+         if (ServerInfinite.Lobbies.PostMatchWatchdog.Applies(config.PostMatchWatchdogMs, request.Type))
+diff --git a/Server-Infinite/Lobbies/ResultGapTrace.cs b/Server-Infinite/Lobbies/ResultGapTrace.cs
+new file mode 100644
+index 0000000..c753f1e
+--- /dev/null
++++ b/Server-Infinite/Lobbies/ResultGapTrace.cs
+@@ -0,0 +1,93 @@
++using nue.protocol.exvs;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>
++/// exvs2-lobbies results-hang trace (2026-11-14, logging only, replies unchanged). Times the results screen from the
++/// card server's side: when a cabinet sends its result save (SaveVsmOnResult etc.) the clock starts; the next request
++/// from the same cabinet (pcb serial) stops it and is logged as RESULT-GAP. While nothing arrives, any other request
++/// (the LMs poll LoadRanking every 10 s) sweeps the open clocks and logs RESULT-WAIT at 30/60/120/300/600 s, so a hang
++/// shows up in the log while it is happening. A repeated save is logged as a retry. Only the last 4 characters of the
++/// pcb serial are printed; no card data.
++/// </summary>
++public sealed class ResultGapTrace
++{
++    private static readonly HashSet<MethodType> Saves = new()
++    {
++        MethodType.MthdSaveVsmResult, MethodType.MthdSaveVsmOnResult, MethodType.MthdSaveVscResult,
++        MethodType.MthdSaveVstResult, MethodType.MthdSaveVsmToResult, MethodType.MthdSavePracticeResult,
++        MethodType.MthdSaveStageResult, MethodType.MthdSaveTournamentResult
++    };
++
++    private static readonly double[] Marks = { 30, 60, 120, 300, 600 };
++
++    private sealed class Open
++    {
++        public MethodType Save;
++        public double At;
++        public int Tries = 1;
++        public int MarksDone;
++    }
++
++    private readonly Dictionary<string, Open> _open = new();
++    private readonly object _gate = new();
++
++    public bool Enabled { get; set; } = true;
++
++    public static bool IsResultSave(MethodType t) => Saves.Contains(t);
++
++    public static string Short(string? pcb) =>
++        string.IsNullOrEmpty(pcb) ? "-" : pcb.Length <= 4 ? pcb : "…" + pcb[^4..];
++
++    /// <summary>Lines to log for this request (possibly none). <paramref name="now"/> in seconds.</summary>
++    public List<string> Observe(MethodType type, string? pcbSerial, double now)
++    {
++        var lines = new List<string>();
++        if (!Enabled) return lines;
++        lock (_gate)
++        {
++            var pcb = pcbSerial ?? "";
++            // sweep: report cabinets that have been silent since their result save
++            foreach (var (key, o) in _open)
++            {
++                if (key == pcb) continue;
++                while (o.MarksDone < Marks.Length && now - o.At >= Marks[o.MarksDone])
++                {
++                    lines.Add(FormattableString.Invariant($"RESULT-WAIT pcb={Short(key)} {Name(o.Save)} answered, no request from this cabinet for {Marks[o.MarksDone]:0}s"));
++                    o.MarksDone++;
++                }
++            }
++            if (pcb.Length == 0) return lines;
++
++            _open.TryGetValue(pcb, out var open);
++            if (IsResultSave(type))
++            {
++                if (open != null && open.Save == type)
++                {
++                    open.Tries++;
++                    lines.Add(FormattableString.Invariant($"RESULT-SAVE pcb={Short(pcb)} {Name(type)} retry #{open.Tries} +{now - open.At:0.0}s"));
++                    return lines;
++                }
++                if (open != null)
++                    lines.Add(Gap(pcb, open, type, now));
++                _open[pcb] = new Open { Save = type, At = now };
++                lines.Add($"RESULT-SAVE pcb={Short(pcb)} {Name(type)} (results screen clock started)");
++                if (_open.Count > 4096) _open.Clear();
++                return lines;
++            }
++            if (open != null)
++            {
++                lines.Add(Gap(pcb, open, type, now));
++                _open.Remove(pcb);
++            }
++        }
++        return lines;
++    }
++
++    private static string Gap(string pcb, Open o, MethodType next, double now) =>
++        FormattableString.Invariant($"RESULT-GAP pcb={Short(pcb)} {Name(o.Save)} -> next {Name(next)} after {now - o.At:0.0}s") +
++        (o.Tries > 1 ? $" (save sent {o.Tries}x)" : "");
++
++    private static string Name(MethodType t) =>
++        Enum.IsDefined(typeof(MethodType), t) ? t.ToString() : $"type{(int)t}";
++}
+diff --git a/Server-Infinite/Models/Config/CardServerConfig.cs b/Server-Infinite/Models/Config/CardServerConfig.cs
+index 9ebd1a3..ffe283f 100644
+--- a/Server-Infinite/Models/Config/CardServerConfig.cs
++++ b/Server-Infinite/Models/Config/CardServerConfig.cs
+@@ -31,6 +31,10 @@ public class CardServerConfig
+     /// <summary>exvs2-lobbies: mask AccessCode / ChipId / SessionId / Token values in the "Request is" dump. Logging only.</summary>
+     public bool MaskCardSecretsInLog { get; set; } = true;
+ 
++    /// <summary>exvs2-lobbies: RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines that time each cabinet's results screen from
++    /// its result save to its next request (Lobbies/ResultGapTrace.cs). Logging only.</summary>
++    public bool LogResultGap { get; set; } = true;
++
+     /// <summary>exvs2-lobbies: values of the LoadBlackList reply (the game's online-match quality limits). Defaults are
+     /// upstream's fixed values, so nothing changes unless they are edited.</summary>
+     public LoadBlackListConfigurations LoadBlackList { get; set; } = new();
+diff --git a/Tests/Matchmaking.Tests/ResultGapTraceTests.cs b/Tests/Matchmaking.Tests/ResultGapTraceTests.cs
+new file mode 100644
+index 0000000..e276bd6
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/ResultGapTraceTests.cs
+@@ -0,0 +1,77 @@
++using nue.protocol.exvs;
++using ServerInfinite.Lobbies;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// results-hang timing (2026-11-14): logging only.
++public class ResultGapTraceTests
++{
++    private const string Cab = "28951428XXXG", Lm = "289511281397";
++
++    [Fact]
++    public void ReplayOfTheHungMatchOn20261114()
++    {
++        // 10:00:47 SaveVsmOnResult, then only the LM's LoadRanking polls every 10 s
++        var t = new ResultGapTrace();
++        var start = t.Observe(MethodType.MthdSaveVsmOnResult, Cab, 0);
++        Assert.Equal(new[] { "RESULT-SAVE pcb=…XXXG MthdSaveVsmOnResult (results screen clock started)" }, start);
++        var lines = new List<string>();
++        for (var s = 10; s <= 130; s += 10) lines.AddRange(t.Observe(MethodType.MthdLoadRanking, Lm, s));
++        Assert.Equal(new[]
++        {
++            "RESULT-WAIT pcb=…XXXG MthdSaveVsmOnResult answered, no request from this cabinet for 30s",
++            "RESULT-WAIT pcb=…XXXG MthdSaveVsmOnResult answered, no request from this cabinet for 60s",
++            "RESULT-WAIT pcb=…XXXG MthdSaveVsmOnResult answered, no request from this cabinet for 120s"
++        }, lines);
++        var end = t.Observe(MethodType.MthdSaveUserPlayResearchData, Cab, 185.2);
++        Assert.Equal(new[] { "RESULT-GAP pcb=…XXXG MthdSaveVsmOnResult -> next MthdSaveUserPlayResearchData after 185.2s" }, end);
++        Assert.Empty(t.Observe(MethodType.MthdLoadRanking, Lm, 1000));   // closed
++    }
++
++    [Fact]
++    public void RetryIsCountedAndShownInTheGap()
++    {
++        var t = new ResultGapTrace();
++        t.Observe(MethodType.MthdSaveVsmOnResult, Cab, 0);
++        Assert.Equal(new[] { "RESULT-SAVE pcb=…XXXG MthdSaveVsmOnResult retry #2 +10.0s" },
++            t.Observe(MethodType.MthdSaveVsmOnResult, Cab, 10));
++        Assert.Equal(new[] { "RESULT-GAP pcb=…XXXG MthdSaveVsmOnResult -> next MthdLoadCard after 12.0s (save sent 2x)" },
++            t.Observe(MethodType.MthdLoadCard, Cab, 12));
++    }
++
++    [Fact]
++    public void NoClockWithoutAResultSaveAndOffWhenDisabled()
++    {
++        var t = new ResultGapTrace();
++        Assert.Empty(t.Observe(MethodType.MthdLoadCard, Cab, 0));
++        Assert.Empty(t.Observe(MethodType.MthdLoadRanking, Lm, 500));
++        var off = new ResultGapTrace { Enabled = false };
++        Assert.Empty(off.Observe(MethodType.MthdSaveVsmOnResult, Cab, 0));
++        Assert.Empty(off.Observe(MethodType.MthdLoadRanking, Lm, 100));
++    }
++
++    [Fact]
++    public void TwoCabinetsAreTimedSeparately()
++    {
++        var t = new ResultGapTrace();
++        t.Observe(MethodType.MthdSaveVsmOnResult, "AAAAAAAA0001", 0);
++        t.Observe(MethodType.MthdSaveVsmOnResult, "AAAAAAAA0002", 0.5);
++        var l = t.Observe(MethodType.MthdLoadRanking, Lm, 31);
++        Assert.Equal(2, l.Count);
++        Assert.Contains("pcb=…0001", l[0] + l[1]);
++        Assert.Contains("pcb=…0002", l[0] + l[1]);
++        Assert.Equal(new[] { "RESULT-GAP pcb=…0002 MthdSaveVsmOnResult -> next MthdPing after 39.5s" },
++            t.Observe(MethodType.MthdPing, "AAAAAAAA0002", 40));
++        Assert.Single(t.Observe(MethodType.MthdLoadRanking, Lm, 61));       // only 0001 still open
++    }
++
++    [Fact]
++    public void ShortSerialAndEmptySerial()
++    {
++        Assert.Equal("-", ResultGapTrace.Short(null));
++        Assert.Equal("ab", ResultGapTrace.Short("ab"));
++        Assert.Equal("…7890", ResultGapTrace.Short("1234567890"));
++        Assert.Empty(new ResultGapTrace().Observe(MethodType.MthdSaveVsmOnResult, "", 0));
++    }
++}
+-- 
+2.47.3
+
+
+From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 22:31:13 -0800
+Subject: [PATCH 16/18] Rolling fill timer: FillAfter restarts on each new
+ compatible joiner
+
+FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
+(default 90, 0 = no cap) is a hard cap from the first searcher. Four
+compatible solos still shuffle into one 2v2 immediately; pre-formed pairs
+stay together. 16 tests including the 2026-11-14 four-cab timeline
+(joins at t=0, 24, 30.5, 42).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |   4 +-
+ Server-Infinite/Configurations/server.json    |   2 +
+ Server-Infinite/Matchmaking/FillTimerMode.cs  |  10 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  52 ++++-
+ .../Config/OnlineMatchingConfigurations.cs    |  17 +-
+ Server-Infinite/Program.cs                    |   2 +
+ Tests/Matchmaking.Tests/FillTimerTests.cs     | 195 ++++++++++++++++++
+ .../Matchmaking.Tests/HumansVsCpuSimTests.cs  |   5 +-
+ 8 files changed, 281 insertions(+), 6 deletions(-)
+ create mode 100644 Server-Infinite/Matchmaking/FillTimerMode.cs
+ create mode 100644 Tests/Matchmaking.Tests/FillTimerTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 2809d7c..7cab576 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -45,7 +45,9 @@
+                                // instead of coturn; StunHost must be this host's IP as cabinets reach it
+   "BuiltinStunPort": 0, "BuiltinStunAltPort": 0, "BuiltinStunAltIp": "",   // 0 = StunPort / port+1; "" = single-IP
+   "PollingIntervalSeconds": 3,
+-  "FillAfterSeconds": 15,      // short-handed room (>= 2 humans) after this wait; 3 works on a LAN, 10-15 public
++  "FillAfterSeconds": 15,      // short-handed room (>= 2 humans) after this wait; Rolling restarts on each new joiner
++  "FillTimerMode": "Rolling",  // Rolling (default) or FromFirst (pre-v8: timer from the oldest waiter)
++  "MaxFillWaitSeconds": 90,    // hard cap from the first searcher; 0 = no cap
+   "AllowPartialRooms": true,
+   "CpuStandInSeats": false,    // experimental: list a CPU client for each empty seat (did not fix the results hang)
+   "HumansTeamVsCpu": false,    // experimental: 2 humans -> teammates vs 2 CPU stand-ins (results-hang fix #1)
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 5f58b1b..4bc01a3 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -43,6 +43,8 @@
+       "StunPass": "",
+       "PollingIntervalSeconds": 3,
+       "FillAfterSeconds": 15,
++      "FillTimerMode": "Rolling",
++      "MaxFillWaitSeconds": 90,
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+       "AllowPartialRooms": true,
+diff --git a/Server-Infinite/Matchmaking/FillTimerMode.cs b/Server-Infinite/Matchmaking/FillTimerMode.cs
+new file mode 100644
+index 0000000..77bcf89
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/FillTimerMode.cs
+@@ -0,0 +1,10 @@
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>How the short-handed-room fill timer is measured. See <see cref="Matchmaker.FillTimerMode"/>.</summary>
++public enum FillTimerMode
++{
++    /// <summary>FillAfterSeconds restarts each time a new compatible searcher joins the queue.</summary>
++    Rolling = 0,
++    /// <summary>FillAfterSeconds is measured from the oldest waiter (pre-v8 behaviour).</summary>
++    FromFirst = 1,
++}
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 68afadd..a3b7fa3 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -10,7 +10,10 @@ namespace ServerInfinite.Matchmaking;
+ ///   team sortie (partner cabinet "Y" or CPU stand-in "N" in groups[0], 2 slots, never split).
+ /// * Buckets: (mucha_game_id, version, world_id, attr1 [, attr2 for "hard"/ranked worlds]).
+ /// * Rooms are 2 sides x 2 slots: 4 solos -> random shuffle (ranked: closest levels / even split),
+-///   team + 2 solos, team + team. After FillAfter seconds a short-handed room (>= 2 humans) may form.
++///   team + 2 solos, team + team. After FillAfter seconds a short-handed room (>= 2 humans) may form
++///   (FillTimerMode=Rolling, default: the wait restarts on each new compatible joiner; FromFirst: wait
++///   is measured from the oldest searcher). MaxFillWait (default 90s, 0 = no cap) is a hard cap from the
++///   first searcher after which a partial room may start even if joiners keep arriving.
+ /// * Ranked (Class Match G) = worlds 13 (solo) / 14 (team); attr2 = class (hard key), attr4 = level,
+ ///   level band widens with waiting time.
+ /// * group_id (team) is decided here; the cabinet only derives "same team as the first listed client".
+@@ -155,6 +158,17 @@ public sealed class Matchmaker
+ 
+     public double FillAfter { get; set; }
+     public bool AllowPartial { get; set; }
++    /// <summary>
++    /// Rolling (default): FillAfter is measured from the most recent compatible joiner, so a late
++    /// searcher can still land in the same room. FromFirst: existing behaviour — FillAfter is
++    /// measured from the oldest waiter (anchor).
++    /// </summary>
++    public FillTimerMode FillTimerMode { get; set; } = FillTimerMode.Rolling;
++    /// <summary>
++    /// Hard cap, in seconds, from the first searcher in the compatible pool after which a
++    /// short-handed room may start even if the rolling timer keeps resetting. 0 = no cap.
++    /// </summary>
++    public double MaxFillWait { get; set; } = 90;
+     public double SoftWait { get; set; }
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+@@ -198,14 +212,46 @@ public sealed class Matchmaker
+     /// <summary>Shop overrides: a shop on several public IPs / a range (see OnlineMatching.ShopKeys).</summary>
+     public IReadOnlyList<(string Name, System.Net.IPNetwork Net)> ShopKeys { get; set; } = Array.Empty<(string, System.Net.IPNetwork)>();
+ 
+-    public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0)
++    public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0,
++        FillTimerMode fillTimerMode = FillTimerMode.Rolling, double maxFillWait = 90)
+     {
+         FillAfter = fillAfter;
+         AllowPartial = allowPartial;
+         SoftWait = softWait;
++        FillTimerMode = fillTimerMode;
++        MaxFillWait = maxFillWait;
+         _rng = seed == 0 ? new Random() : new Random(seed);
+     }
+ 
++    /// <summary>Parse OnlineMatching.FillTimerMode. Unrecognized or empty values become Rolling.</summary>
++    public static FillTimerMode ParseFillTimerMode(string? s)
++    {
++        if (string.IsNullOrWhiteSpace(s)) return FillTimerMode.Rolling;
++        if (s.Equals("FromFirst", StringComparison.OrdinalIgnoreCase)) return FillTimerMode.FromFirst;
++        return FillTimerMode.Rolling;
++    }
++
++    /// <summary>
++    /// Whether a short-handed room may form for this compatible set ({<paramref name="a"/>} + <paramref name="pool"/>).
++    /// Rolling: FillAfter since the most recent join, or MaxFillWait since the first join (if MaxFillWait &gt; 0).
++    /// FromFirst: FillAfter since the anchor <paramref name="a"/>, or the same MaxFillWait cap.
++    /// </summary>
++    private bool ReadyForPartial(Unit a, List<Unit> pool, double now)
++    {
++        if (!AllowPartial) return false;
++        var first = a.Created;
++        var last = a.Created;
++        foreach (var u in pool)
++        {
++            if (u.Created < first) first = u.Created;
++            if (u.Created > last) last = u.Created;
++        }
++        if (MaxFillWait > 0 && now - first >= MaxFillWait) return true;
++        if (FillTimerMode == FillTimerMode.FromFirst)
++            return now - a.Created >= FillAfter;
++        return now - last >= FillAfter;
++    }
++
+     public int QueueLength { get { lock (_gate) return _queue.Count; } }
+ 
+     public ErrorCode Entry(Request.EntryMatching e, double now, string? sourceIp = null)
+@@ -485,7 +531,7 @@ public sealed class Matchmaker
+                     var a = bucket[i];
+                     var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now)).Take(PoolMax).ToList();
+                     var sides = BestRoom(a, pool, idx, now, false);
+-                    if (sides == null && AllowPartial && now - a.Created >= FillAfter)
++                    if (sides == null && ReadyForPartial(a, pool, now))
+                     {
+                         sides = BestRoom(a, pool, idx, now, true);
+                         // results-hang fix #1: two humans -> teammates vs two CPU stand-ins (3-human short rooms unchanged)
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 708f0e4..0b8a57b 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -37,8 +37,23 @@ public class OnlineMatchingConfigurations
+ 
+     /// <summary>Seconds between CheckMatching polls (EntryMatching.poling_interval).</summary>
+     public uint PollingIntervalSeconds { get; set; } = 3;
+-    /// <summary>Seconds the oldest waiter waits for a full 2v2 before a short-handed (1v1 / 2v1) room may form.</summary>
++    /// <summary>
++    /// Seconds to wait for a full 2v2 before a short-handed (1v1 / 2v1) room may form.
++    /// Rolling (default, see FillTimerMode): measured from the most recent compatible joiner.
++    /// FromFirst: measured from the oldest waiter (pre-v8 behaviour).
++    /// </summary>
+     public double FillAfterSeconds { get; set; } = 15;
++    /// <summary>
++    /// "Rolling" (default): the FillAfterSeconds timer restarts each time a new compatible searcher
++    /// joins the queue, so late cabinets can still land in the same room. "FromFirst": the timer is
++    /// measured from the oldest waiter (pre-v8 behaviour).
++    /// </summary>
++    public string FillTimerMode { get; set; } = "Rolling";
++    /// <summary>
++    /// Hard cap, in seconds, measured from the first searcher in the compatible pool, after which a
++    /// short-handed room may start even if joiners keep resetting the rolling timer. 0 = no cap.
++    /// </summary>
++    public double MaxFillWaitSeconds { get; set; } = 90;
+     /// <summary>Allow short-handed rooms at all (false = only full 4-slot rooms).</summary>
+     public bool AllowPartialRooms { get; set; } = true;
+     /// <summary>Short-handed rooms: list a CPU stand-in client ("N", PCB00000NPC, the cabinet's 2nd node id, same
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 1f9c8a8..00f1949 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -97,6 +97,8 @@ try
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
++            FillTimerMode = ServerInfinite.Matchmaking.Matchmaker.ParseFillTimerMode(mm.FillTimerMode),
++            MaxFillWait = mm.MaxFillWaitSeconds,
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
+diff --git a/Tests/Matchmaking.Tests/FillTimerTests.cs b/Tests/Matchmaking.Tests/FillTimerTests.cs
+new file mode 100644
+index 0000000..146efda
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/FillTimerTests.cs
+@@ -0,0 +1,195 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// Rolling fill timer (v8): FillAfter restarts on each new compatible joiner, with a MaxFillWait cap
++// from the first searcher. Tonight's 4-cab Class Solo (2026-11-14) joined at t=0, 24, 30.5, 42 and
++// split into two 1v1s under FromFirst; Rolling should have made one shuffled 2v2.
++public class FillTimerTests
++{
++    private uint _node = 2000;
++
++    private static Client Cl(uint node, bool human = true, string loc = "LOC1")
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = human ? $"P{node}" : Matchmaker.NpcSerial, LocId = loc, PrefCode = 13,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = human ? "Y" : "N" });
++        return c;
++    }
++
++    private Request.EntryMatching Entry(uint world, string sortie = "S", long attr2 = 0, long level = 0)
++    {
++        var me = ++_node;
++        var loc = $"L{me}";
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me, true, loc), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = attr2 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = level });
++        if (sortie == "T")
++            e.Groups.Add(new Request.EntryMatching.Group { Client = Cl(++_node, true, loc), Player = new Player { BanapassportAmId = 9000 + me } });
++        return e;
++    }
++
++    // Class Solo, same class/level as tonight's cabins (world 13, attr2=1, level=3).
++    private Request.EntryMatching ClassSolo() => Entry(13, "S", attr2: 1, level: 3);
++
++    private static Matchmaker Rolling(double fillAfter = 30, double maxFillWait = 90) =>
++        new(fillAfter: fillAfter, allowPartial: true, softWait: 15, seed: 1,
++            fillTimerMode: FillTimerMode.Rolling, maxFillWait: maxFillWait) { StaleAfter = 1e6 };
++
++    private static Matchmaker FromFirst(double fillAfter = 30, double maxFillWait = 90) =>
++        new(fillAfter: fillAfter, allowPartial: true, softWait: 15, seed: 1,
++            fillTimerMode: FillTimerMode.FromFirst, maxFillWait: maxFillWait) { StaleAfter = 1e6 };
++
++    [Fact]
++    public void TonightTimeline_RollingMakesOneFourPlayerRoom()
++    {
++        // Joins at t=0, 24, 30.5, 42 (FillAfter=30). FromFirst formed a 1v1 at t=30;
++        // Rolling keeps waiting and shuffles all four into one 2v2 when the fourth arrives.
++        var mm = Rolling();
++        var a = ClassSolo(); var b = ClassSolo(); var c = ClassSolo(); var d = ClassSolo();
++        mm.Entry(a, 0);
++        mm.Entry(b, 24);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 30).Room);
++        mm.Entry(c, 30.5);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 31).Room);
++        mm.Entry(d, 42);
++        var room = mm.Check(a.Myclient.NodeId, 42).Room!;
++        Assert.Equal(4, room.Clients.Count);
++        Assert.Equal(4, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++        Assert.Equal(2, room.Clients.Count(x => x.GroupId == 0));
++        Assert.Equal(2, room.Clients.Count(x => x.GroupId == 1));
++        foreach (var e in new[] { a, b, c, d })
++            Assert.Same(room, mm.Check(e.Myclient.NodeId, 42).Room);
++    }
++
++    [Fact]
++    public void Rolling_TwoSearchers_NoRoomAtFillAfterFromFirst()
++    {
++        var mm = Rolling();
++        var a = ClassSolo(); var b = ClassSolo();
++        mm.Entry(a, 0);
++        mm.Entry(b, 24);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 30).Room);
++    }
++
++    [Fact]
++    public void FromFirst_TwoSearchers_FormsPartialAtFillAfterFromOldest()
++    {
++        var mm = FromFirst();
++        var a = ClassSolo(); var b = ClassSolo();
++        mm.Entry(a, 0);
++        mm.Entry(b, 24);
++        var room = mm.Check(a.Myclient.NodeId, 30).Room!;
++        Assert.Equal(2, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void Rolling_SecondJoinsAt20_NoRoomAt30_RoomAt50()
++    {
++        var mm = Rolling();
++        var a = Entry(23); var b = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 20);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 30).Room);
++        var room = mm.Check(a.Myclient.NodeId, 50).Room!;
++        Assert.Equal(2, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void Rolling_ThreeJoinsEvery25s_PartialAt80NotBefore()
++    {
++        // Three solos join every 25s (t=0, 25, 50). A fourth never arrives, so no full 2v2.
++        // Rolling is due 30s after the last join (t=80). A 4th cabinet at t=75 would have
++        // filled a 2v2 immediately instead.
++        var mm = Rolling(fillAfter: 30, maxFillWait: 90);
++        var a = Entry(23); var b = Entry(23); var c = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 25);
++        mm.Entry(c, 50);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 79).Room);
++        var room = mm.Check(a.Myclient.NodeId, 80).Room!;
++        Assert.Equal(3, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void MaxFillWait_PartialAllowedAt90FromFirstWhenRollingWouldWaitLonger()
++    {
++        // Joins at 0, 25, 70 (every-25s-style late third). Rolling due at 100; cap at 90.
++        var mm = Rolling(fillAfter: 30, maxFillWait: 90);
++        var a = Entry(23); var b = Entry(23); var c = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 25);
++        mm.Entry(c, 70);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 89).Room);
++        var room = mm.Check(a.Myclient.NodeId, 90).Room!;
++        Assert.Equal(3, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void MaxFillWait_ZeroMeansNoCap()
++    {
++        var mm = Rolling(fillAfter: 30, maxFillWait: 0);
++        var a = Entry(23); var b = Entry(23); var c = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 25);
++        mm.Entry(c, 70);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 90).Room);
++        var room = mm.Check(a.Myclient.NodeId, 100).Room!;
++        Assert.Equal(3, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void FourCompatibleSolosStillShuffleImmediatelyIntoOne2v2()
++    {
++        var mm = Rolling();
++        var es = Enumerable.Range(0, 4).Select(_ => ClassSolo()).ToList();
++        foreach (var e in es) mm.Entry(e, 0);
++        var room = mm.Check(es[0].Myclient.NodeId, 1).Room!;
++        Assert.Equal(4, room.Clients.Count);
++        Assert.Equal(2, room.Clients.Count(x => x.GroupId == 0));
++        foreach (var e in es) Assert.Same(room, mm.Check(e.Myclient.NodeId, 1).Room);
++    }
++
++    [Fact]
++    public void PreFormedPairsStayTogetherEvenWhenTheyArriveStaggered()
++    {
++        var mm = Rolling();
++        var teamA = Entry(14, "T", attr2: 1, level: 3);
++        var teamB = Entry(14, "T", attr2: 1, level: 3);
++        mm.Entry(teamA, 0);
++        mm.Entry(teamB, 40);
++        var room = mm.Check(teamA.Myclient.NodeId, 40).Room!;
++        Assert.Equal(4, room.Clients.Count);
++        var gA = room.Clients.First(c => c.Client.NodeId == teamA.Myclient.NodeId).GroupId;
++        var gAPartner = room.Clients.First(c => c.Client.NodeId == teamA.Groups[0].Client.NodeId).GroupId;
++        var gB = room.Clients.First(c => c.Client.NodeId == teamB.Myclient.NodeId).GroupId;
++        var gBPartner = room.Clients.First(c => c.Client.NodeId == teamB.Groups[0].Client.NodeId).GroupId;
++        Assert.Equal(gA, gAPartner);
++        Assert.Equal(gB, gBPartner);
++        Assert.NotEqual(gA, gB);
++    }
++
++    [Theory]
++    [InlineData(null, FillTimerMode.Rolling)]
++    [InlineData("", FillTimerMode.Rolling)]
++    [InlineData("Rolling", FillTimerMode.Rolling)]
++    [InlineData("rolling", FillTimerMode.Rolling)]
++    [InlineData("FromFirst", FillTimerMode.FromFirst)]
++    [InlineData("fromfirst", FillTimerMode.FromFirst)]
++    [InlineData("nope", FillTimerMode.Rolling)]
++    public void ParseFillTimerMode(string? value, FillTimerMode expected)
++    {
++        Assert.Equal(expected, Matchmaker.ParseFillTimerMode(value));
++    }
++}
+diff --git a/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs b/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs
+index 9942148..f189356 100644
+--- a/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs
++++ b/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs
+@@ -65,7 +65,10 @@ public class HumansVsCpuSimTests
+ 
+     private static Outcome Run(List<Cab> cabs, bool flag)
+     {
+-        var mm = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 7)
++        // This sim compares HumansVsCpu packing, not the fill timer; pin FromFirst so a change
++        // in the default mode does not shift when short rooms form.
++        var mm = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 7,
++            fillTimerMode: FillTimerMode.FromFirst)
+         { StaleAfter = 1e6, HumansVsCpu = flag, Realms = null };
+         foreach (var c in cabs)
+         {
+-- 
+2.47.3
+
+
+From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 23:10:30 -0800
+Subject: [PATCH 17/18] In-store fill override: InStoreFillAfterSeconds (60) /
+ InStoreMaxFillWaitSeconds (120) for worlds 15/16
+
+2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
+The shared 30s rolling window formed a 1v1 at t=32 and the late pair a second 1v1 (both hung
+after results). In-store cabinets are one shop, so wait longer for a full 2v2. Online worlds
+unchanged. 5 tests incl. tonight's timeline.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Configurations/server.json    |   2 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  18 ++-
+ .../Config/OnlineMatchingConfigurations.cs    |   7 ++
+ Server-Infinite/Program.cs                    |   2 +
+ Tests/Matchmaking.Tests/InStoreFillTests.cs   | 105 ++++++++++++++++++
+ 5 files changed, 131 insertions(+), 3 deletions(-)
+ create mode 100644 Tests/Matchmaking.Tests/InStoreFillTests.cs
+
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 4bc01a3..2ba1783 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -45,6 +45,8 @@
+       "FillAfterSeconds": 15,
+       "FillTimerMode": "Rolling",
+       "MaxFillWaitSeconds": 90,
++      "InStoreFillAfterSeconds": 60,
++      "InStoreMaxFillWaitSeconds": 120,
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+       "AllowPartialRooms": true,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index a3b7fa3..2c2d389 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -169,6 +169,15 @@ public sealed class Matchmaker
+     /// short-handed room may start even if the rolling timer keeps resetting. 0 = no cap.
+     /// </summary>
+     public double MaxFillWait { get; set; } = 90;
++    /// <summary>
++    /// In-store worlds (15/16) only: FillAfter override in seconds (0 = use <see cref="FillAfter"/>).
++    /// In-store cabinets are all in one shop and usually set up one after another by the same people,
++    /// so a longer wait for a full 2v2 costs little (2026-11-14 23:00: second pair joined 40-43s after
++    /// the first, missing a 30s rolling window, and the two 1v1s both hung on results).
++    /// </summary>
++    public double InStoreFillAfter { get; set; } = 0;
++    /// <summary>In-store worlds only: MaxFillWait override in seconds (0 = use <see cref="MaxFillWait"/>).</summary>
++    public double InStoreMaxFillWait { get; set; } = 0;
+     public double SoftWait { get; set; }
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+@@ -246,10 +255,13 @@ public sealed class Matchmaker
+             if (u.Created < first) first = u.Created;
+             if (u.Created > last) last = u.Created;
+         }
+-        if (MaxFillWait > 0 && now - first >= MaxFillWait) return true;
++        var inStore = InStoreWorlds.Contains(a.World);
++        var fillAfter = inStore && InStoreFillAfter > 0 ? InStoreFillAfter : FillAfter;
++        var maxFillWait = inStore && InStoreMaxFillWait > 0 ? InStoreMaxFillWait : MaxFillWait;
++        if (maxFillWait > 0 && now - first >= maxFillWait) return true;
+         if (FillTimerMode == FillTimerMode.FromFirst)
+-            return now - a.Created >= FillAfter;
+-        return now - last >= FillAfter;
++            return now - a.Created >= fillAfter;
++        return now - last >= fillAfter;
+     }
+ 
+     public int QueueLength { get { lock (_gate) return _queue.Count; } }
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 0b8a57b..692c0a7 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -54,6 +54,13 @@ public class OnlineMatchingConfigurations
+     /// short-handed room may start even if joiners keep resetting the rolling timer. 0 = no cap.
+     /// </summary>
+     public double MaxFillWaitSeconds { get; set; } = 90;
++    /// <summary>
++    /// In-store match (worlds 15/16) only: FillAfterSeconds override (0 = same as FillAfterSeconds).
++    /// Cabinets in one shop are usually carded in one after another, so wait longer for a full 2v2.
++    /// </summary>
++    public double InStoreFillAfterSeconds { get; set; } = 60;
++    /// <summary>In-store match only: MaxFillWaitSeconds override (0 = same as MaxFillWaitSeconds).</summary>
++    public double InStoreMaxFillWaitSeconds { get; set; } = 120;
+     /// <summary>Allow short-handed rooms at all (false = only full 4-slot rooms).</summary>
+     public bool AllowPartialRooms { get; set; } = true;
+     /// <summary>Short-handed rooms: list a CPU stand-in client ("N", PCB00000NPC, the cabinet's 2nd node id, same
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 00f1949..63798e2 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -99,6 +99,8 @@ try
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+             FillTimerMode = ServerInfinite.Matchmaking.Matchmaker.ParseFillTimerMode(mm.FillTimerMode),
+             MaxFillWait = mm.MaxFillWaitSeconds,
++            InStoreFillAfter = mm.InStoreFillAfterSeconds,
++            InStoreMaxFillWait = mm.InStoreMaxFillWaitSeconds,
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
+diff --git a/Tests/Matchmaking.Tests/InStoreFillTests.cs b/Tests/Matchmaking.Tests/InStoreFillTests.cs
+new file mode 100644
+index 0000000..1eb99cd
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/InStoreFillTests.cs
+@@ -0,0 +1,105 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// In-store fill override (2026-11-14 23:00 PT). Offline in-store shuffle, one shop, four cabinets:
++// cab3 joined at t=0, cab2 at t=2, cab1 at t=42, cab4 at t=45. With the shared 30s rolling window a
++// 1v1 formed at t=32 and the late pair made a second 1v1 (both hung after results). In-store waits
++// longer (InStoreFillAfter=60, InStoreMaxFillWait=120) so all four shuffle into one 2v2.
++public class InStoreFillTests
++{
++    private uint _node = 5000;
++
++    private Request.EntryMatching Entry(uint world, string local, string global = "192.168.1.245")
++    {
++        var me = ++_node;
++        var c = new Client
++        {
++            NodeId = me, PcbSerial = $"P{me}", LocId = "JPN1", PrefCode = 13,
++            LocalIpaddress = local, GlobalIpaddress = local,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = c, MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = world == 15 ? 0x100000 : 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = 0 });
++        return e;
++    }
++
++    private static Matchmaker New(double inStoreFill = 60, double inStoreCap = 120) =>
++        new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1,
++            fillTimerMode: FillTimerMode.Rolling, maxFillWait: 90)
++        {
++            StaleAfter = 1e6, Realms = NetDiag.DefaultRealms,
++            InStoreFillAfter = inStoreFill, InStoreMaxFillWait = inStoreCap
++        };
++
++    private (Request.EntryMatching a, Request.EntryMatching b, Request.EntryMatching c, Request.EntryMatching d) Four(uint world) =>
++        (Entry(world, "192.168.1.71"), Entry(world, "192.168.1.73"), Entry(world, "192.168.1.69"), Entry(world, "192.168.1.72"));
++
++    [Fact]
++    public void TonightInStoreTimeline_OneTwoVsTwo()
++    {
++        var mm = New();
++        var (a, b, c, d) = Four(15);
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 32).Room);   // the 30s window that split them tonight
++        mm.Entry(c, 42);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 43).Room);
++        mm.Entry(d, 45);
++        var room = mm.Check(a.Myclient.NodeId, 45).Room!;
++        Assert.Equal(4, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++        foreach (var e in new[] { a, b, c, d }) Assert.Same(room, mm.Check(e.Myclient.NodeId, 45).Room);
++    }
++
++    [Fact]
++    public void WithoutOverride_TonightInStoreTimelineSplitsIntoTwo1v1s()
++    {
++        var mm = New(inStoreFill: 0, inStoreCap: 0);
++        var (a, b, c, d) = Four(15);
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        var first = mm.Check(a.Myclient.NodeId, 32).Room!;
++        Assert.Equal(2, first.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++        mm.Entry(c, 42); mm.Entry(d, 45);
++        Assert.Null(mm.Check(c.Myclient.NodeId, 46).Room);
++        var second = mm.Check(c.Myclient.NodeId, 76).Room!;
++        Assert.NotSame(first, second);
++    }
++
++    [Fact]
++    public void InStorePairStillPlaysAfterSixtySecondsAlone()
++    {
++        var mm = New();
++        var (a, b, _, _) = Four(15);
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 61).Room);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 62).Room);
++    }
++
++    [Fact]
++    public void InStoreCapLimitsRollingResets()
++    {
++        var mm = New();
++        var a = Entry(15, "192.168.1.71"); var b = Entry(15, "192.168.1.73"); var c = Entry(15, "192.168.1.69");
++        mm.Entry(a, 0); mm.Entry(b, 55); mm.Entry(c, 110);   // rolling would wait until 170
++        Assert.Null(mm.Check(a.Myclient.NodeId, 119).Room);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 120).Room);
++    }
++
++    [Fact]
++    public void OnlineWorldsKeepTheSharedFillAfter()
++    {
++        var mm = New();
++        var a = Entry(23, "192.168.1.71"); var b = Entry(23, "192.168.1.73");
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 32).Room);   // Mix still uses 30s
++    }
++}
+-- 
+2.47.3
+
+
+From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 23:17:43 -0800
+Subject: [PATCH 18/18] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+ 2-client rooms, group 0 vs 1, matched at once
+
+Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
+already sends only the 2 humans; CpuStandInSeats is off); the one 4-human 2v2 cleared results.
+Fes 1on1 (mode 0x13 -> world 20) is the game's own 1v1 rule with no CPU seats. Solo searches there
+pair first-come (never shuffled into a 2v2, no fill timer, no stand-ins); team entries refused.
+OneOnOneWorlds="" restores the old 2v2 handling. 10 tests.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Configurations/server.json    |   1 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  58 +++++++++-
+ .../Config/OnlineMatchingConfigurations.cs    |   5 +
+ Server-Infinite/Program.cs                    |   1 +
+ Tests/Matchmaking.Tests/OneOnOneTests.cs      | 109 ++++++++++++++++++
+ 5 files changed, 173 insertions(+), 1 deletion(-)
+ create mode 100644 Tests/Matchmaking.Tests/OneOnOneTests.cs
+
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 2ba1783..724ab7e 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -47,6 +47,7 @@
+       "MaxFillWaitSeconds": 90,
+       "InStoreFillAfterSeconds": 60,
+       "InStoreMaxFillWaitSeconds": 120,
++      "OneOnOneWorlds": "20",
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+       "AllowPartialRooms": true,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 2c2d389..e26b012 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -48,7 +48,7 @@ public sealed class Matchmaker
+         [13] = ("class-solo", Policy.Class), [14] = ("class-team", Policy.Class),
+         [15] = ("instore-solo", Policy.Hard), [16] = ("instore-team", Policy.Hard),
+         [17] = ("shop-setting", Policy.Hard),
+-        [18] = ("free-solo", Policy.Soft), [19] = ("free-team", Policy.Soft), [20] = ("free-solo-b", Policy.Soft),
++        [18] = ("free-solo", Policy.Soft), [19] = ("free-team", Policy.Soft), [20] = ("fes-1on1", Policy.Soft),
+         [25] = ("free-mixed", Policy.Soft), [23] = ("mix-match", Policy.Soft),
+         [CasualRecruitWorld] = ("recruit-casual", Policy.Pair), [RankedRecruitWorld] = ("recruit-ranked", Policy.Pair),
+         [6] = ("tag-solo", Policy.Hard), [7] = ("tag-team", Policy.Hard), [24] = ("tag-mixed", Policy.Hard),
+@@ -79,6 +79,8 @@ public sealed class Matchmaker
+         public bool Ranked;
+         /// <summary>Pair world (5/21/22): two solo cabinets become partners; see <see cref="Matchmaker"/>.</summary>
+         public bool Pair;
++        /// <summary>1on1 world (Fes 1on1, code 0x13 -> world 20): one human per side, 2-seat room, no CPU seats.</summary>
++        public bool OneOnOne;
+         /// <summary>attr2 as sent (world 5: the pair key; world 22: the team class).</summary>
+         public long Attr2;
+         public string Key = "";
+@@ -178,6 +180,18 @@ public sealed class Matchmaker
+     public double InStoreFillAfter { get; set; } = 0;
+     /// <summary>In-store worlds only: MaxFillWait override in seconds (0 = use <see cref="MaxFillWait"/>).</summary>
+     public double InStoreMaxFillWait { get; set; } = 0;
++    /// <summary>
++    /// no-CPU 1v1 (2026-11-14): worlds whose rule is a real 1on1 (one human per side). Default {20} = Fes 1on1
++    /// (mode code 0x13 "フェス 1on1" -> world 20, analysis/partner-invites.md section 2). Two compatible solo
++    /// searches become a 2-client room at once (group 0 vs group 1), never a 2v2 shuffle, no fill timer, no CPU
++    /// stand-ins. Empty set = treat those worlds like any other 2v2 world (pre-v9 behaviour).
++    /// </summary>
++    public HashSet<uint> OneOnOneWorlds { get; set; } = new() { 20 };
++
++    /// <summary>Parse OnlineMatching.OneOnOneWorlds ("20", "20,30", "" = none).</summary>
++    public static HashSet<uint> ParseWorlds(string? s) =>
++        (s ?? "").Split(new[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries)
++            .Select(x => uint.TryParse(x, out var v) ? v : 0).Where(v => v != 0).ToHashSet();
+     public double SoftWait { get; set; }
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+@@ -269,6 +283,7 @@ public sealed class Matchmaker
+     public ErrorCode Entry(Request.EntryMatching e, double now, string? sourceIp = null)
+     {
+         var t = Unit.From(e, now);
++        t.OneOnOne = !t.Pair && OneOnOneWorlds.Contains(t.World);
+         if (Realms != null)
+             t.Realms = t.Humans.Select(c => NetDiag.Realm(c.GlobalIpaddress, Realms)).Where(r => r != "unknown").ToHashSet();
+         if (InStoreWorlds.Contains(t.World) && !string.Equals(InStoreScope, "ShopCode", StringComparison.OrdinalIgnoreCase))
+@@ -287,6 +302,11 @@ public sealed class Matchmaker
+                 Log?.Invoke($"entry {t.WorldName} node={e.Myclient.NodeId} refused: pair worlds take solo entries only (groups={t.Slots - 1})");
+                 return ErrorCode.ErrMatchCondition;
+             }
++            if (t.OneOnOne && t.Slots > 1)
++            {
++                Log?.Invoke($"entry {t.WorldName} node={e.Myclient.NodeId} refused: 1on1 worlds take solo entries only (groups={t.Slots - 1})");
++                return ErrorCode.ErrMatchCondition;
++            }
+             foreach (var c in t.Humans)
+                 if (_byNode.TryGetValue(c.NodeId, out var owner) &&
+                     owner.Clients.Any(x => x.NodeId == c.NodeId && x.PcbSerial != c.PcbSerial))
+@@ -421,6 +441,7 @@ public sealed class Matchmaker
+     {
+         if (a.Key != b.Key) return false;
+         if (a.Pair != b.Pair) return false;
++        if (a.OneOnOne != b.OneOnOne) return false;
+         if (a.Pair && a.World == OnlineTagWorld && a.Attr2 == 0) return false;   // no pair key: never pair at random
+         if (a.NodeIds.Overlaps(b.NodeIds)) return false;                 // same cabinet(s)
+         if (a.Pair && a.Humans.Any(c => b.Humans.Any(c2 => NetDiag.SameCabinet(c, c2)))) return false;   // never with itself
+@@ -525,6 +546,19 @@ public sealed class Matchmaker
+             foreach (var bucket in _queue.GroupBy(u => u.Key).Select(g => g.ToList()))
+             {
+                 var idx = bucket.Select((u, i) => (u, i)).ToDictionary(x => x.u, x => x.i);
++                if (bucket[0].OneOnOne)
++                {
++                    // 1on1 worlds: first come, first matched; exactly 2 cabinets, one per side; no fill timer / CPU seats
++                    for (var i = 0; i < bucket.Count && !made; i++)
++                    {
++                        var b = bucket.Skip(i + 1).FirstOrDefault(u => Compatible(bucket[i], u, now));
++                        if (b == null) continue;
++                        MakeOneOnOneRoom(bucket[i], b, now);
++                        made = true;
++                    }
++                    if (made) break;
++                    continue;
++                }
+                 if (bucket[0].Pair)
+                 {
+                     // pair worlds: first come, first paired; exactly 2 cabinets; never short rooms / CPU fill
+@@ -656,6 +690,28 @@ public sealed class Matchmaker
+         Log?.Invoke(NetDiag.MatchLine(room.RoomId, clients.Select(c => (c.GroupId, c.Client)), src, Realms));
+     }
+ 
++    /// <summary>1on1 worlds: two clients, the earlier searcher in group 0, the other in group 1 (same order for both).</summary>
++    private void MakeOneOnOneRoom(Unit a, Unit b, double now)
++    {
++        var ordered = new[] { a, b }.OrderBy(u => u.Created).ThenBy(u => u.LeaderNode).ToList();
++        var room = new Room
++        {
++            RoomId = _nextRoom++, At = now, World = a.World, Humans = 2,
++            Clients = new List<RoomClient> { new(0, ordered[0].Clients[0]), new(1, ordered[1].Clients[0]) },
++        };
++        foreach (var u in ordered)
++        {
++            _queue.Remove(u);
++            u.Room = room;
++            RememberRoom(u, room);
++        }
++        Log?.Invoke($"MATCH room={room.RoomId} {a.WorldName} 1on1 S[{ordered[0].LeaderNode}] vs S[{ordered[1].LeaderNode}] " +
++                    "(humans=2/2, no CPU seats)");
++        var src = new Dictionary<uint, string>();
++        foreach (var u in ordered) foreach (var kv in u.SourceByNode) src[kv.Key] = kv.Value;
++        Log?.Invoke(NetDiag.MatchLine(room.RoomId, room.Clients.Select(c => (c.GroupId, c.Client)), src, Realms));
++    }
++
+     /// <summary>
+     /// Pair worlds: one room with the two cabinets, both group 0, in a fixed order so both see the same list.
+     /// World 5: lower am_id first = the cabinet the game makes the leader (own pilot id &lt; partner id, assuming
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 692c0a7..207a63d 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -61,6 +61,11 @@ public class OnlineMatchingConfigurations
+     public double InStoreFillAfterSeconds { get; set; } = 60;
+     /// <summary>In-store match only: MaxFillWaitSeconds override (0 = same as MaxFillWaitSeconds).</summary>
+     public double InStoreMaxFillWaitSeconds { get; set; } = 120;
++    /// <summary>
++    /// no-CPU 1v1: comma-separated worlds played as a real 1on1 (2-client room, group 0 vs group 1, matched as soon
++    /// as two compatible solos search, no CPU seats). Default "20" = Fes 1on1. "" = off.
++    /// </summary>
++    public string OneOnOneWorlds { get; set; } = "20";
+     /// <summary>Allow short-handed rooms at all (false = only full 4-slot rooms).</summary>
+     public bool AllowPartialRooms { get; set; } = true;
+     /// <summary>Short-handed rooms: list a CPU stand-in client ("N", PCB00000NPC, the cabinet's 2nd node id, same
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 63798e2..dc550b3 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -101,6 +101,7 @@ try
+             MaxFillWait = mm.MaxFillWaitSeconds,
+             InStoreFillAfter = mm.InStoreFillAfterSeconds,
+             InStoreMaxFillWait = mm.InStoreMaxFillWaitSeconds,
++            OneOnOneWorlds = ServerInfinite.Matchmaking.Matchmaker.ParseWorlds(mm.OneOnOneWorlds),
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
+diff --git a/Tests/Matchmaking.Tests/OneOnOneTests.cs b/Tests/Matchmaking.Tests/OneOnOneTests.cs
+new file mode 100644
+index 0000000..d09631a
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/OneOnOneTests.cs
+@@ -0,0 +1,109 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// no-CPU 1v1 (2026-11-14): every results hang was 2 humans + 2 game-made CPU seats in a 2v2-rule room; the
++// one 4-human 2v2 cleared results. Fes 1on1 (code 0x13 -> world 20) is the game's own 1v1 rule with no CPUs.
++public class OneOnOneTests
++{
++    private uint _node = 7000;
++
++    private Request.EntryMatching Entry(uint world, bool team = false, long attr2 = 0)
++    {
++        var me = ++_node;
++        Client Cl(uint n) { var c = new Client { NodeId = n, PcbSerial = $"P{n}", LocId = $"L{me}", PrefCode = 13,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent };
++            c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" }); return c; }
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = attr2 });
++        if (team) e.Groups.Add(new Request.EntryMatching.Group { Client = Cl(++_node), Player = new Player { BanapassportAmId = 9000 + me } });
++        return e;
++    }
++
++    private static Matchmaker New() => new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1) { StaleAfter = 1e6 };
++
++    [Fact]
++    public void TwoSolosMatchImmediatelyAsTwoClientRoom()
++    {
++        var mm = New();
++        var a = Entry(20); var b = Entry(20);
++        mm.Entry(a, 0); mm.Entry(b, 5);
++        var room = mm.Check(a.Myclient.NodeId, 5).Room!;
++        Assert.Equal(2, room.Clients.Count);
++        Assert.Equal(2, room.Humans);
++        Assert.Equal(a.Myclient.NodeId, room.Clients[0].Client.NodeId);
++        Assert.Equal(0u, room.Clients[0].GroupId);
++        Assert.Equal(b.Myclient.NodeId, room.Clients[1].Client.NodeId);
++        Assert.Equal(1u, room.Clients[1].GroupId);
++        Assert.All(room.Clients, c => Assert.True(Matchmaker.Unit.IsHuman(c.Client)));
++        Assert.Same(room, mm.Check(b.Myclient.NodeId, 5).Room);
++    }
++
++    [Fact]
++    public void FourSolosBecomeTwo1v1sNeverA2v2()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 4).Select(_ => Entry(20)).ToList();
++        foreach (var e in es) mm.Entry(e, 0);
++        var rooms = es.Select(e => mm.Check(e.Myclient.NodeId, 0).Room).Distinct().ToList();
++        Assert.Equal(2, rooms.Count);
++        Assert.All(rooms, r => Assert.Equal(2, r!.Clients.Count));
++    }
++
++    [Fact]
++    public void LoneSoloNeverGetsAPartialOrCpuRoom()
++    {
++        var mm = New();
++        mm.CpuStandIns = true;   // even with stand-ins on, a 1on1 world gets none
++        var a = Entry(20);
++        mm.Entry(a, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 120).Room);
++        var b = Entry(20);
++        mm.Entry(b, 121);
++        var room = mm.Check(a.Myclient.NodeId, 121).Room!;
++        Assert.Equal(2, room.Clients.Count);
++        Assert.DoesNotContain(room.Clients, c => c.Client.PcbSerial == Matchmaker.NpcSerial);
++    }
++
++    [Fact]
++    public void TeamEntryIsRefusedIn1on1World()
++    {
++        var mm = New();
++        Assert.Equal(ErrorCode.ErrMatchCondition, mm.Entry(Entry(20, team: true), 0));
++    }
++
++    [Fact]
++    public void OtherWorldsUnchanged_TwoSolosWaitForFill()
++    {
++        var mm = New();
++        var a = Entry(23); var b = Entry(23);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 10).Room);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 31).Room);
++    }
++
++    [Fact]
++    public void EmptyOneOnOneWorlds_World20BehavesLikeA2v2World()
++    {
++        var mm = New(); mm.OneOnOneWorlds = Matchmaker.ParseWorlds("");
++        var a = Entry(20); var b = Entry(20);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 10).Room);
++    }
++
++    [Theory]
++    [InlineData("20", new uint[] { 20 })]
++    [InlineData("20, 30;x", new uint[] { 20, 30 })]
++    [InlineData("", new uint[0])]
++    [InlineData(null, new uint[0])]
++    public void ParseWorlds(string? s, uint[] expected) =>
++        Assert.Equal(expected.OrderBy(x => x), Matchmaker.ParseWorlds(s).OrderBy(x => x));
 +}
 -- 
 2.47.3

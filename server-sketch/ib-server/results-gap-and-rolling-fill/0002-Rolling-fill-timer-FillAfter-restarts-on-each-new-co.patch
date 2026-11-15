@@ -1,0 +1,423 @@
+From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 22:31:13 -0800
+Subject: [PATCH 2/4] Rolling fill timer: FillAfter restarts on each new
+ compatible joiner
+
+FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
+(default 90, 0 = no cap) is a hard cap from the first searcher. Four
+compatible solos still shuffle into one 2v2 immediately; pre-formed pairs
+stay together. 16 tests including the 2026-11-14 four-cab timeline
+(joins at t=0, 24, 30.5, 42).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |   4 +-
+ Server-Infinite/Configurations/server.json    |   2 +
+ Server-Infinite/Matchmaking/FillTimerMode.cs  |  10 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  52 ++++-
+ .../Config/OnlineMatchingConfigurations.cs    |  17 +-
+ Server-Infinite/Program.cs                    |   2 +
+ Tests/Matchmaking.Tests/FillTimerTests.cs     | 195 ++++++++++++++++++
+ .../Matchmaking.Tests/HumansVsCpuSimTests.cs  |   5 +-
+ 8 files changed, 281 insertions(+), 6 deletions(-)
+ create mode 100644 Server-Infinite/Matchmaking/FillTimerMode.cs
+ create mode 100644 Tests/Matchmaking.Tests/FillTimerTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 2809d7c..7cab576 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -45,7 +45,9 @@
+                                // instead of coturn; StunHost must be this host's IP as cabinets reach it
+   "BuiltinStunPort": 0, "BuiltinStunAltPort": 0, "BuiltinStunAltIp": "",   // 0 = StunPort / port+1; "" = single-IP
+   "PollingIntervalSeconds": 3,
+-  "FillAfterSeconds": 15,      // short-handed room (>= 2 humans) after this wait; 3 works on a LAN, 10-15 public
++  "FillAfterSeconds": 15,      // short-handed room (>= 2 humans) after this wait; Rolling restarts on each new joiner
++  "FillTimerMode": "Rolling",  // Rolling (default) or FromFirst (pre-v8: timer from the oldest waiter)
++  "MaxFillWaitSeconds": 90,    // hard cap from the first searcher; 0 = no cap
+   "AllowPartialRooms": true,
+   "CpuStandInSeats": false,    // experimental: list a CPU client for each empty seat (did not fix the results hang)
+   "HumansTeamVsCpu": false,    // experimental: 2 humans -> teammates vs 2 CPU stand-ins (results-hang fix #1)
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 5f58b1b..4bc01a3 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -43,6 +43,8 @@
+       "StunPass": "",
+       "PollingIntervalSeconds": 3,
+       "FillAfterSeconds": 15,
++      "FillTimerMode": "Rolling",
++      "MaxFillWaitSeconds": 90,
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+       "AllowPartialRooms": true,
+diff --git a/Server-Infinite/Matchmaking/FillTimerMode.cs b/Server-Infinite/Matchmaking/FillTimerMode.cs
+new file mode 100644
+index 0000000..77bcf89
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/FillTimerMode.cs
+@@ -0,0 +1,10 @@
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>How the short-handed-room fill timer is measured. See <see cref="Matchmaker.FillTimerMode"/>.</summary>
++public enum FillTimerMode
++{
++    /// <summary>FillAfterSeconds restarts each time a new compatible searcher joins the queue.</summary>
++    Rolling = 0,
++    /// <summary>FillAfterSeconds is measured from the oldest waiter (pre-v8 behaviour).</summary>
++    FromFirst = 1,
++}
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 68afadd..a3b7fa3 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -10,7 +10,10 @@ namespace ServerInfinite.Matchmaking;
+ ///   team sortie (partner cabinet "Y" or CPU stand-in "N" in groups[0], 2 slots, never split).
+ /// * Buckets: (mucha_game_id, version, world_id, attr1 [, attr2 for "hard"/ranked worlds]).
+ /// * Rooms are 2 sides x 2 slots: 4 solos -> random shuffle (ranked: closest levels / even split),
+-///   team + 2 solos, team + team. After FillAfter seconds a short-handed room (>= 2 humans) may form.
++///   team + 2 solos, team + team. After FillAfter seconds a short-handed room (>= 2 humans) may form
++///   (FillTimerMode=Rolling, default: the wait restarts on each new compatible joiner; FromFirst: wait
++///   is measured from the oldest searcher). MaxFillWait (default 90s, 0 = no cap) is a hard cap from the
++///   first searcher after which a partial room may start even if joiners keep arriving.
+ /// * Ranked (Class Match G) = worlds 13 (solo) / 14 (team); attr2 = class (hard key), attr4 = level,
+ ///   level band widens with waiting time.
+ /// * group_id (team) is decided here; the cabinet only derives "same team as the first listed client".
+@@ -155,6 +158,17 @@ public sealed class Matchmaker
+ 
+     public double FillAfter { get; set; }
+     public bool AllowPartial { get; set; }
++    /// <summary>
++    /// Rolling (default): FillAfter is measured from the most recent compatible joiner, so a late
++    /// searcher can still land in the same room. FromFirst: existing behaviour — FillAfter is
++    /// measured from the oldest waiter (anchor).
++    /// </summary>
++    public FillTimerMode FillTimerMode { get; set; } = FillTimerMode.Rolling;
++    /// <summary>
++    /// Hard cap, in seconds, from the first searcher in the compatible pool after which a
++    /// short-handed room may start even if the rolling timer keeps resetting. 0 = no cap.
++    /// </summary>
++    public double MaxFillWait { get; set; } = 90;
+     public double SoftWait { get; set; }
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+@@ -198,14 +212,46 @@ public sealed class Matchmaker
+     /// <summary>Shop overrides: a shop on several public IPs / a range (see OnlineMatching.ShopKeys).</summary>
+     public IReadOnlyList<(string Name, System.Net.IPNetwork Net)> ShopKeys { get; set; } = Array.Empty<(string, System.Net.IPNetwork)>();
+ 
+-    public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0)
++    public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0,
++        FillTimerMode fillTimerMode = FillTimerMode.Rolling, double maxFillWait = 90)
+     {
+         FillAfter = fillAfter;
+         AllowPartial = allowPartial;
+         SoftWait = softWait;
++        FillTimerMode = fillTimerMode;
++        MaxFillWait = maxFillWait;
+         _rng = seed == 0 ? new Random() : new Random(seed);
+     }
+ 
++    /// <summary>Parse OnlineMatching.FillTimerMode. Unrecognized or empty values become Rolling.</summary>
++    public static FillTimerMode ParseFillTimerMode(string? s)
++    {
++        if (string.IsNullOrWhiteSpace(s)) return FillTimerMode.Rolling;
++        if (s.Equals("FromFirst", StringComparison.OrdinalIgnoreCase)) return FillTimerMode.FromFirst;
++        return FillTimerMode.Rolling;
++    }
++
++    /// <summary>
++    /// Whether a short-handed room may form for this compatible set ({<paramref name="a"/>} + <paramref name="pool"/>).
++    /// Rolling: FillAfter since the most recent join, or MaxFillWait since the first join (if MaxFillWait &gt; 0).
++    /// FromFirst: FillAfter since the anchor <paramref name="a"/>, or the same MaxFillWait cap.
++    /// </summary>
++    private bool ReadyForPartial(Unit a, List<Unit> pool, double now)
++    {
++        if (!AllowPartial) return false;
++        var first = a.Created;
++        var last = a.Created;
++        foreach (var u in pool)
++        {
++            if (u.Created < first) first = u.Created;
++            if (u.Created > last) last = u.Created;
++        }
++        if (MaxFillWait > 0 && now - first >= MaxFillWait) return true;
++        if (FillTimerMode == FillTimerMode.FromFirst)
++            return now - a.Created >= FillAfter;
++        return now - last >= FillAfter;
++    }
++
+     public int QueueLength { get { lock (_gate) return _queue.Count; } }
+ 
+     public ErrorCode Entry(Request.EntryMatching e, double now, string? sourceIp = null)
+@@ -485,7 +531,7 @@ public sealed class Matchmaker
+                     var a = bucket[i];
+                     var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now)).Take(PoolMax).ToList();
+                     var sides = BestRoom(a, pool, idx, now, false);
+-                    if (sides == null && AllowPartial && now - a.Created >= FillAfter)
++                    if (sides == null && ReadyForPartial(a, pool, now))
+                     {
+                         sides = BestRoom(a, pool, idx, now, true);
+                         // results-hang fix #1: two humans -> teammates vs two CPU stand-ins (3-human short rooms unchanged)
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 708f0e4..0b8a57b 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -37,8 +37,23 @@ public class OnlineMatchingConfigurations
+ 
+     /// <summary>Seconds between CheckMatching polls (EntryMatching.poling_interval).</summary>
+     public uint PollingIntervalSeconds { get; set; } = 3;
+-    /// <summary>Seconds the oldest waiter waits for a full 2v2 before a short-handed (1v1 / 2v1) room may form.</summary>
++    /// <summary>
++    /// Seconds to wait for a full 2v2 before a short-handed (1v1 / 2v1) room may form.
++    /// Rolling (default, see FillTimerMode): measured from the most recent compatible joiner.
++    /// FromFirst: measured from the oldest waiter (pre-v8 behaviour).
++    /// </summary>
+     public double FillAfterSeconds { get; set; } = 15;
++    /// <summary>
++    /// "Rolling" (default): the FillAfterSeconds timer restarts each time a new compatible searcher
++    /// joins the queue, so late cabinets can still land in the same room. "FromFirst": the timer is
++    /// measured from the oldest waiter (pre-v8 behaviour).
++    /// </summary>
++    public string FillTimerMode { get; set; } = "Rolling";
++    /// <summary>
++    /// Hard cap, in seconds, measured from the first searcher in the compatible pool, after which a
++    /// short-handed room may start even if joiners keep resetting the rolling timer. 0 = no cap.
++    /// </summary>
++    public double MaxFillWaitSeconds { get; set; } = 90;
+     /// <summary>Allow short-handed rooms at all (false = only full 4-slot rooms).</summary>
+     public bool AllowPartialRooms { get; set; } = true;
+     /// <summary>Short-handed rooms: list a CPU stand-in client ("N", PCB00000NPC, the cabinet's 2nd node id, same
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 1f9c8a8..00f1949 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -97,6 +97,8 @@ try
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
++            FillTimerMode = ServerInfinite.Matchmaking.Matchmaker.ParseFillTimerMode(mm.FillTimerMode),
++            MaxFillWait = mm.MaxFillWaitSeconds,
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
+diff --git a/Tests/Matchmaking.Tests/FillTimerTests.cs b/Tests/Matchmaking.Tests/FillTimerTests.cs
+new file mode 100644
+index 0000000..146efda
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/FillTimerTests.cs
+@@ -0,0 +1,195 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// Rolling fill timer (v8): FillAfter restarts on each new compatible joiner, with a MaxFillWait cap
++// from the first searcher. Tonight's 4-cab Class Solo (2026-11-14) joined at t=0, 24, 30.5, 42 and
++// split into two 1v1s under FromFirst; Rolling should have made one shuffled 2v2.
++public class FillTimerTests
++{
++    private uint _node = 2000;
++
++    private static Client Cl(uint node, bool human = true, string loc = "LOC1")
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = human ? $"P{node}" : Matchmaker.NpcSerial, LocId = loc, PrefCode = 13,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = human ? "Y" : "N" });
++        return c;
++    }
++
++    private Request.EntryMatching Entry(uint world, string sortie = "S", long attr2 = 0, long level = 0)
++    {
++        var me = ++_node;
++        var loc = $"L{me}";
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me, true, loc), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = attr2 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = level });
++        if (sortie == "T")
++            e.Groups.Add(new Request.EntryMatching.Group { Client = Cl(++_node, true, loc), Player = new Player { BanapassportAmId = 9000 + me } });
++        return e;
++    }
++
++    // Class Solo, same class/level as tonight's cabins (world 13, attr2=1, level=3).
++    private Request.EntryMatching ClassSolo() => Entry(13, "S", attr2: 1, level: 3);
++
++    private static Matchmaker Rolling(double fillAfter = 30, double maxFillWait = 90) =>
++        new(fillAfter: fillAfter, allowPartial: true, softWait: 15, seed: 1,
++            fillTimerMode: FillTimerMode.Rolling, maxFillWait: maxFillWait) { StaleAfter = 1e6 };
++
++    private static Matchmaker FromFirst(double fillAfter = 30, double maxFillWait = 90) =>
++        new(fillAfter: fillAfter, allowPartial: true, softWait: 15, seed: 1,
++            fillTimerMode: FillTimerMode.FromFirst, maxFillWait: maxFillWait) { StaleAfter = 1e6 };
++
++    [Fact]
++    public void TonightTimeline_RollingMakesOneFourPlayerRoom()
++    {
++        // Joins at t=0, 24, 30.5, 42 (FillAfter=30). FromFirst formed a 1v1 at t=30;
++        // Rolling keeps waiting and shuffles all four into one 2v2 when the fourth arrives.
++        var mm = Rolling();
++        var a = ClassSolo(); var b = ClassSolo(); var c = ClassSolo(); var d = ClassSolo();
++        mm.Entry(a, 0);
++        mm.Entry(b, 24);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 30).Room);
++        mm.Entry(c, 30.5);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 31).Room);
++        mm.Entry(d, 42);
++        var room = mm.Check(a.Myclient.NodeId, 42).Room!;
++        Assert.Equal(4, room.Clients.Count);
++        Assert.Equal(4, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++        Assert.Equal(2, room.Clients.Count(x => x.GroupId == 0));
++        Assert.Equal(2, room.Clients.Count(x => x.GroupId == 1));
++        foreach (var e in new[] { a, b, c, d })
++            Assert.Same(room, mm.Check(e.Myclient.NodeId, 42).Room);
++    }
++
++    [Fact]
++    public void Rolling_TwoSearchers_NoRoomAtFillAfterFromFirst()
++    {
++        var mm = Rolling();
++        var a = ClassSolo(); var b = ClassSolo();
++        mm.Entry(a, 0);
++        mm.Entry(b, 24);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 30).Room);
++    }
++
++    [Fact]
++    public void FromFirst_TwoSearchers_FormsPartialAtFillAfterFromOldest()
++    {
++        var mm = FromFirst();
++        var a = ClassSolo(); var b = ClassSolo();
++        mm.Entry(a, 0);
++        mm.Entry(b, 24);
++        var room = mm.Check(a.Myclient.NodeId, 30).Room!;
++        Assert.Equal(2, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void Rolling_SecondJoinsAt20_NoRoomAt30_RoomAt50()
++    {
++        var mm = Rolling();
++        var a = Entry(23); var b = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 20);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 30).Room);
++        var room = mm.Check(a.Myclient.NodeId, 50).Room!;
++        Assert.Equal(2, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void Rolling_ThreeJoinsEvery25s_PartialAt80NotBefore()
++    {
++        // Three solos join every 25s (t=0, 25, 50). A fourth never arrives, so no full 2v2.
++        // Rolling is due 30s after the last join (t=80). A 4th cabinet at t=75 would have
++        // filled a 2v2 immediately instead.
++        var mm = Rolling(fillAfter: 30, maxFillWait: 90);
++        var a = Entry(23); var b = Entry(23); var c = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 25);
++        mm.Entry(c, 50);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 79).Room);
++        var room = mm.Check(a.Myclient.NodeId, 80).Room!;
++        Assert.Equal(3, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void MaxFillWait_PartialAllowedAt90FromFirstWhenRollingWouldWaitLonger()
++    {
++        // Joins at 0, 25, 70 (every-25s-style late third). Rolling due at 100; cap at 90.
++        var mm = Rolling(fillAfter: 30, maxFillWait: 90);
++        var a = Entry(23); var b = Entry(23); var c = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 25);
++        mm.Entry(c, 70);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 89).Room);
++        var room = mm.Check(a.Myclient.NodeId, 90).Room!;
++        Assert.Equal(3, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void MaxFillWait_ZeroMeansNoCap()
++    {
++        var mm = Rolling(fillAfter: 30, maxFillWait: 0);
++        var a = Entry(23); var b = Entry(23); var c = Entry(23);
++        mm.Entry(a, 0);
++        mm.Entry(b, 25);
++        mm.Entry(c, 70);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 90).Room);
++        var room = mm.Check(a.Myclient.NodeId, 100).Room!;
++        Assert.Equal(3, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++    }
++
++    [Fact]
++    public void FourCompatibleSolosStillShuffleImmediatelyIntoOne2v2()
++    {
++        var mm = Rolling();
++        var es = Enumerable.Range(0, 4).Select(_ => ClassSolo()).ToList();
++        foreach (var e in es) mm.Entry(e, 0);
++        var room = mm.Check(es[0].Myclient.NodeId, 1).Room!;
++        Assert.Equal(4, room.Clients.Count);
++        Assert.Equal(2, room.Clients.Count(x => x.GroupId == 0));
++        foreach (var e in es) Assert.Same(room, mm.Check(e.Myclient.NodeId, 1).Room);
++    }
++
++    [Fact]
++    public void PreFormedPairsStayTogetherEvenWhenTheyArriveStaggered()
++    {
++        var mm = Rolling();
++        var teamA = Entry(14, "T", attr2: 1, level: 3);
++        var teamB = Entry(14, "T", attr2: 1, level: 3);
++        mm.Entry(teamA, 0);
++        mm.Entry(teamB, 40);
++        var room = mm.Check(teamA.Myclient.NodeId, 40).Room!;
++        Assert.Equal(4, room.Clients.Count);
++        var gA = room.Clients.First(c => c.Client.NodeId == teamA.Myclient.NodeId).GroupId;
++        var gAPartner = room.Clients.First(c => c.Client.NodeId == teamA.Groups[0].Client.NodeId).GroupId;
++        var gB = room.Clients.First(c => c.Client.NodeId == teamB.Myclient.NodeId).GroupId;
++        var gBPartner = room.Clients.First(c => c.Client.NodeId == teamB.Groups[0].Client.NodeId).GroupId;
++        Assert.Equal(gA, gAPartner);
++        Assert.Equal(gB, gBPartner);
++        Assert.NotEqual(gA, gB);
++    }
++
++    [Theory]
++    [InlineData(null, FillTimerMode.Rolling)]
++    [InlineData("", FillTimerMode.Rolling)]
++    [InlineData("Rolling", FillTimerMode.Rolling)]
++    [InlineData("rolling", FillTimerMode.Rolling)]
++    [InlineData("FromFirst", FillTimerMode.FromFirst)]
++    [InlineData("fromfirst", FillTimerMode.FromFirst)]
++    [InlineData("nope", FillTimerMode.Rolling)]
++    public void ParseFillTimerMode(string? value, FillTimerMode expected)
++    {
++        Assert.Equal(expected, Matchmaker.ParseFillTimerMode(value));
++    }
++}
+diff --git a/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs b/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs
+index 9942148..f189356 100644
+--- a/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs
++++ b/Tests/Matchmaking.Tests/HumansVsCpuSimTests.cs
+@@ -65,7 +65,10 @@ public class HumansVsCpuSimTests
+ 
+     private static Outcome Run(List<Cab> cabs, bool flag)
+     {
+-        var mm = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 7)
++        // This sim compares HumansVsCpu packing, not the fill timer; pin FromFirst so a change
++        // in the default mode does not shift when short rooms form.
++        var mm = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 7,
++            fillTimerMode: FillTimerMode.FromFirst)
+         { StaleAfter = 1e6, HumansVsCpu = flag, Realms = null };
+         foreach (var c in cabs)
+         {
+-- 
+2.47.3
+

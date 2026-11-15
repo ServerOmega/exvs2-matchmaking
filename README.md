@@ -86,8 +86,9 @@ prototype and C# sketches, docs, notes and analysis) is licensed under the
 
 - **Chiang-17/EXVS2-IB-Server** (the card server) and any of its code. Upstream has no
   license; all rights remain with its author. Nothing from it is relicensed here.
-- **`server-sketch/ib-server/online-matchmaking.patch`** and
-  **`release/package/files/online-matchmaking.patch`**. These patches contain upstream
+- **`server-sketch/ib-server/online-matchmaking.patch`**,
+  **`release/package/files/online-matchmaking.patch`**, and the follow-on series
+  **`server-sketch/ib-server/results-gap-and-rolling-fill/`**. These patches contain upstream
   context lines and only make sense applied to the card server above, so they are
   excluded from the GPL grant and offered as-is for personal use against your own copy.
 - **The game, its data, images and trademarks** (Bandai Namco / Sunrise). None of these

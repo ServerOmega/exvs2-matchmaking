@@ -65,7 +65,10 @@ Minimum for a matchmaker with built-in STUN:
 | `StunHost` | **This host's IP as the players reach it** (IP literal): your public IP for internet play, the overlay IP (Radmin/Tailscale/ZeroTier) for VPN play, the LAN IP on a LAN. Not `127.0.0.1` for remote players. When it is one of this PC's own addresses, the built-in STUN binds to it (needed on PCs with several adapters). |
 | `StunPort` | `3478` (default). Built-in STUN also uses `StunPort + 1` (`BuiltinStunAltPort`, 0 = port+1). |
 | `BuiltinStun` | `true` = STUN runs inside this server (no coturn). `false` = use an external STUN server at `StunHost:StunPort` (e.g. [coturn](../server-sketch/coturn/turnserver.conf)). |
-| `FillAfterSeconds` | Seconds the oldest waiting player waits for a full 2v2 before a short-handed room (1v1 / 2v1, at least 2 humans) forms. Default 15; 3 is fine for a LAN test; 10–15 for a public server. |
+| `FillAfterSeconds` | Seconds to wait for a full 2v2 before a short-handed room (1v1 / 2v1, at least 2 humans) forms. Default 15; 3 is fine for a LAN test; 10–15 for a public server. In the default `Rolling` mode this wait restarts when a new compatible cabinet joins. |
+| `FillTimerMode` / `MaxFillWaitSeconds` | `Rolling` (default) or `FromFirst`. `MaxFillWaitSeconds` (default 90, `0` = no cap) is a hard cap from the first searcher. |
+| `InStoreFillAfterSeconds` / `InStoreMaxFillWaitSeconds` | In-store worlds (15/16) only: default 60 / 120. Online Class/Mix keep the shared FillAfter / MaxFillWait. |
+| `OneOnOneWorlds` | Default `"20"` (Fes 1on1): two solos pair immediately into a 2-client 1v1 with no CPU seats. `""` = off. To offer Fes 1on1, also set that day's `FesConfigurations.*Type` to a `OneOnOne*` value and restart the cabinets. |
 | `AllowPartialRooms` | `true` = allow those short-handed rooms; `false` = only full 4-player rooms. |
 | `CpuStandInSeats` | **Experimental**, leave `false`. Lists a CPU client for each empty seat; it did not fix the results-screen hang. |
 | `PollingIntervalSeconds`, `StaleAfterSeconds`, `NetworkRealms`, `InStoreScope`, `ShopKeys`, `VerboseLog` | Optional; see the [config reference](../server-sketch/ib-server/README.md#configure). |

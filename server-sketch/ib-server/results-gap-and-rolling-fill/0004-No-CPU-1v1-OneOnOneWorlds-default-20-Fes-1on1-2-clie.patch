@@ -1,0 +1,298 @@
+From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 23:17:43 -0800
+Subject: [PATCH 4/4] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+ 2-client rooms, group 0 vs 1, matched at once
+
+Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
+already sends only the 2 humans; CpuStandInSeats is off); the one 4-human 2v2 cleared results.
+Fes 1on1 (mode 0x13 -> world 20) is the game's own 1v1 rule with no CPU seats. Solo searches there
+pair first-come (never shuffled into a 2v2, no fill timer, no stand-ins); team entries refused.
+OneOnOneWorlds="" restores the old 2v2 handling. 10 tests.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Configurations/server.json    |   1 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  58 +++++++++-
+ .../Config/OnlineMatchingConfigurations.cs    |   5 +
+ Server-Infinite/Program.cs                    |   1 +
+ Tests/Matchmaking.Tests/OneOnOneTests.cs      | 109 ++++++++++++++++++
+ 5 files changed, 173 insertions(+), 1 deletion(-)
+ create mode 100644 Tests/Matchmaking.Tests/OneOnOneTests.cs
+
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 2ba1783..724ab7e 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -47,6 +47,7 @@
+       "MaxFillWaitSeconds": 90,
+       "InStoreFillAfterSeconds": 60,
+       "InStoreMaxFillWaitSeconds": 120,
++      "OneOnOneWorlds": "20",
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+       "AllowPartialRooms": true,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 2c2d389..e26b012 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -48,7 +48,7 @@ public sealed class Matchmaker
+         [13] = ("class-solo", Policy.Class), [14] = ("class-team", Policy.Class),
+         [15] = ("instore-solo", Policy.Hard), [16] = ("instore-team", Policy.Hard),
+         [17] = ("shop-setting", Policy.Hard),
+-        [18] = ("free-solo", Policy.Soft), [19] = ("free-team", Policy.Soft), [20] = ("free-solo-b", Policy.Soft),
++        [18] = ("free-solo", Policy.Soft), [19] = ("free-team", Policy.Soft), [20] = ("fes-1on1", Policy.Soft),
+         [25] = ("free-mixed", Policy.Soft), [23] = ("mix-match", Policy.Soft),
+         [CasualRecruitWorld] = ("recruit-casual", Policy.Pair), [RankedRecruitWorld] = ("recruit-ranked", Policy.Pair),
+         [6] = ("tag-solo", Policy.Hard), [7] = ("tag-team", Policy.Hard), [24] = ("tag-mixed", Policy.Hard),
+@@ -79,6 +79,8 @@ public sealed class Matchmaker
+         public bool Ranked;
+         /// <summary>Pair world (5/21/22): two solo cabinets become partners; see <see cref="Matchmaker"/>.</summary>
+         public bool Pair;
++        /// <summary>1on1 world (Fes 1on1, code 0x13 -> world 20): one human per side, 2-seat room, no CPU seats.</summary>
++        public bool OneOnOne;
+         /// <summary>attr2 as sent (world 5: the pair key; world 22: the team class).</summary>
+         public long Attr2;
+         public string Key = "";
+@@ -178,6 +180,18 @@ public sealed class Matchmaker
+     public double InStoreFillAfter { get; set; } = 0;
+     /// <summary>In-store worlds only: MaxFillWait override in seconds (0 = use <see cref="MaxFillWait"/>).</summary>
+     public double InStoreMaxFillWait { get; set; } = 0;
++    /// <summary>
++    /// no-CPU 1v1 (2026-11-14): worlds whose rule is a real 1on1 (one human per side). Default {20} = Fes 1on1
++    /// (mode code 0x13 "フェス 1on1" -> world 20, analysis/partner-invites.md section 2). Two compatible solo
++    /// searches become a 2-client room at once (group 0 vs group 1), never a 2v2 shuffle, no fill timer, no CPU
++    /// stand-ins. Empty set = treat those worlds like any other 2v2 world (pre-v9 behaviour).
++    /// </summary>
++    public HashSet<uint> OneOnOneWorlds { get; set; } = new() { 20 };
++
++    /// <summary>Parse OnlineMatching.OneOnOneWorlds ("20", "20,30", "" = none).</summary>
++    public static HashSet<uint> ParseWorlds(string? s) =>
++        (s ?? "").Split(new[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries)
++            .Select(x => uint.TryParse(x, out var v) ? v : 0).Where(v => v != 0).ToHashSet();
+     public double SoftWait { get; set; }
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+@@ -269,6 +283,7 @@ public sealed class Matchmaker
+     public ErrorCode Entry(Request.EntryMatching e, double now, string? sourceIp = null)
+     {
+         var t = Unit.From(e, now);
++        t.OneOnOne = !t.Pair && OneOnOneWorlds.Contains(t.World);
+         if (Realms != null)
+             t.Realms = t.Humans.Select(c => NetDiag.Realm(c.GlobalIpaddress, Realms)).Where(r => r != "unknown").ToHashSet();
+         if (InStoreWorlds.Contains(t.World) && !string.Equals(InStoreScope, "ShopCode", StringComparison.OrdinalIgnoreCase))
+@@ -287,6 +302,11 @@ public sealed class Matchmaker
+                 Log?.Invoke($"entry {t.WorldName} node={e.Myclient.NodeId} refused: pair worlds take solo entries only (groups={t.Slots - 1})");
+                 return ErrorCode.ErrMatchCondition;
+             }
++            if (t.OneOnOne && t.Slots > 1)
++            {
++                Log?.Invoke($"entry {t.WorldName} node={e.Myclient.NodeId} refused: 1on1 worlds take solo entries only (groups={t.Slots - 1})");
++                return ErrorCode.ErrMatchCondition;
++            }
+             foreach (var c in t.Humans)
+                 if (_byNode.TryGetValue(c.NodeId, out var owner) &&
+                     owner.Clients.Any(x => x.NodeId == c.NodeId && x.PcbSerial != c.PcbSerial))
+@@ -421,6 +441,7 @@ public sealed class Matchmaker
+     {
+         if (a.Key != b.Key) return false;
+         if (a.Pair != b.Pair) return false;
++        if (a.OneOnOne != b.OneOnOne) return false;
+         if (a.Pair && a.World == OnlineTagWorld && a.Attr2 == 0) return false;   // no pair key: never pair at random
+         if (a.NodeIds.Overlaps(b.NodeIds)) return false;                 // same cabinet(s)
+         if (a.Pair && a.Humans.Any(c => b.Humans.Any(c2 => NetDiag.SameCabinet(c, c2)))) return false;   // never with itself
+@@ -525,6 +546,19 @@ public sealed class Matchmaker
+             foreach (var bucket in _queue.GroupBy(u => u.Key).Select(g => g.ToList()))
+             {
+                 var idx = bucket.Select((u, i) => (u, i)).ToDictionary(x => x.u, x => x.i);
++                if (bucket[0].OneOnOne)
++                {
++                    // 1on1 worlds: first come, first matched; exactly 2 cabinets, one per side; no fill timer / CPU seats
++                    for (var i = 0; i < bucket.Count && !made; i++)
++                    {
++                        var b = bucket.Skip(i + 1).FirstOrDefault(u => Compatible(bucket[i], u, now));
++                        if (b == null) continue;
++                        MakeOneOnOneRoom(bucket[i], b, now);
++                        made = true;
++                    }
++                    if (made) break;
++                    continue;
++                }
+                 if (bucket[0].Pair)
+                 {
+                     // pair worlds: first come, first paired; exactly 2 cabinets; never short rooms / CPU fill
+@@ -656,6 +690,28 @@ public sealed class Matchmaker
+         Log?.Invoke(NetDiag.MatchLine(room.RoomId, clients.Select(c => (c.GroupId, c.Client)), src, Realms));
+     }
+ 
++    /// <summary>1on1 worlds: two clients, the earlier searcher in group 0, the other in group 1 (same order for both).</summary>
++    private void MakeOneOnOneRoom(Unit a, Unit b, double now)
++    {
++        var ordered = new[] { a, b }.OrderBy(u => u.Created).ThenBy(u => u.LeaderNode).ToList();
++        var room = new Room
++        {
++            RoomId = _nextRoom++, At = now, World = a.World, Humans = 2,
++            Clients = new List<RoomClient> { new(0, ordered[0].Clients[0]), new(1, ordered[1].Clients[0]) },
++        };
++        foreach (var u in ordered)
++        {
++            _queue.Remove(u);
++            u.Room = room;
++            RememberRoom(u, room);
++        }
++        Log?.Invoke($"MATCH room={room.RoomId} {a.WorldName} 1on1 S[{ordered[0].LeaderNode}] vs S[{ordered[1].LeaderNode}] " +
++                    "(humans=2/2, no CPU seats)");
++        var src = new Dictionary<uint, string>();
++        foreach (var u in ordered) foreach (var kv in u.SourceByNode) src[kv.Key] = kv.Value;
++        Log?.Invoke(NetDiag.MatchLine(room.RoomId, room.Clients.Select(c => (c.GroupId, c.Client)), src, Realms));
++    }
++
+     /// <summary>
+     /// Pair worlds: one room with the two cabinets, both group 0, in a fixed order so both see the same list.
+     /// World 5: lower am_id first = the cabinet the game makes the leader (own pilot id &lt; partner id, assuming
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 692c0a7..207a63d 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -61,6 +61,11 @@ public class OnlineMatchingConfigurations
+     public double InStoreFillAfterSeconds { get; set; } = 60;
+     /// <summary>In-store match only: MaxFillWaitSeconds override (0 = same as MaxFillWaitSeconds).</summary>
+     public double InStoreMaxFillWaitSeconds { get; set; } = 120;
++    /// <summary>
++    /// no-CPU 1v1: comma-separated worlds played as a real 1on1 (2-client room, group 0 vs group 1, matched as soon
++    /// as two compatible solos search, no CPU seats). Default "20" = Fes 1on1. "" = off.
++    /// </summary>
++    public string OneOnOneWorlds { get; set; } = "20";
+     /// <summary>Allow short-handed rooms at all (false = only full 4-slot rooms).</summary>
+     public bool AllowPartialRooms { get; set; } = true;
+     /// <summary>Short-handed rooms: list a CPU stand-in client ("N", PCB00000NPC, the cabinet's 2nd node id, same
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 63798e2..dc550b3 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -101,6 +101,7 @@ try
+             MaxFillWait = mm.MaxFillWaitSeconds,
+             InStoreFillAfter = mm.InStoreFillAfterSeconds,
+             InStoreMaxFillWait = mm.InStoreMaxFillWaitSeconds,
++            OneOnOneWorlds = ServerInfinite.Matchmaking.Matchmaker.ParseWorlds(mm.OneOnOneWorlds),
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
+diff --git a/Tests/Matchmaking.Tests/OneOnOneTests.cs b/Tests/Matchmaking.Tests/OneOnOneTests.cs
+new file mode 100644
+index 0000000..d09631a
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/OneOnOneTests.cs
+@@ -0,0 +1,109 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// no-CPU 1v1 (2026-11-14): every results hang was 2 humans + 2 game-made CPU seats in a 2v2-rule room; the
++// one 4-human 2v2 cleared results. Fes 1on1 (code 0x13 -> world 20) is the game's own 1v1 rule with no CPUs.
++public class OneOnOneTests
++{
++    private uint _node = 7000;
++
++    private Request.EntryMatching Entry(uint world, bool team = false, long attr2 = 0)
++    {
++        var me = ++_node;
++        Client Cl(uint n) { var c = new Client { NodeId = n, PcbSerial = $"P{n}", LocId = $"L{me}", PrefCode = 13,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent };
++            c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" }); return c; }
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = attr2 });
++        if (team) e.Groups.Add(new Request.EntryMatching.Group { Client = Cl(++_node), Player = new Player { BanapassportAmId = 9000 + me } });
++        return e;
++    }
++
++    private static Matchmaker New() => new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1) { StaleAfter = 1e6 };
++
++    [Fact]
++    public void TwoSolosMatchImmediatelyAsTwoClientRoom()
++    {
++        var mm = New();
++        var a = Entry(20); var b = Entry(20);
++        mm.Entry(a, 0); mm.Entry(b, 5);
++        var room = mm.Check(a.Myclient.NodeId, 5).Room!;
++        Assert.Equal(2, room.Clients.Count);
++        Assert.Equal(2, room.Humans);
++        Assert.Equal(a.Myclient.NodeId, room.Clients[0].Client.NodeId);
++        Assert.Equal(0u, room.Clients[0].GroupId);
++        Assert.Equal(b.Myclient.NodeId, room.Clients[1].Client.NodeId);
++        Assert.Equal(1u, room.Clients[1].GroupId);
++        Assert.All(room.Clients, c => Assert.True(Matchmaker.Unit.IsHuman(c.Client)));
++        Assert.Same(room, mm.Check(b.Myclient.NodeId, 5).Room);
++    }
++
++    [Fact]
++    public void FourSolosBecomeTwo1v1sNeverA2v2()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 4).Select(_ => Entry(20)).ToList();
++        foreach (var e in es) mm.Entry(e, 0);
++        var rooms = es.Select(e => mm.Check(e.Myclient.NodeId, 0).Room).Distinct().ToList();
++        Assert.Equal(2, rooms.Count);
++        Assert.All(rooms, r => Assert.Equal(2, r!.Clients.Count));
++    }
++
++    [Fact]
++    public void LoneSoloNeverGetsAPartialOrCpuRoom()
++    {
++        var mm = New();
++        mm.CpuStandIns = true;   // even with stand-ins on, a 1on1 world gets none
++        var a = Entry(20);
++        mm.Entry(a, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 120).Room);
++        var b = Entry(20);
++        mm.Entry(b, 121);
++        var room = mm.Check(a.Myclient.NodeId, 121).Room!;
++        Assert.Equal(2, room.Clients.Count);
++        Assert.DoesNotContain(room.Clients, c => c.Client.PcbSerial == Matchmaker.NpcSerial);
++    }
++
++    [Fact]
++    public void TeamEntryIsRefusedIn1on1World()
++    {
++        var mm = New();
++        Assert.Equal(ErrorCode.ErrMatchCondition, mm.Entry(Entry(20, team: true), 0));
++    }
++
++    [Fact]
++    public void OtherWorldsUnchanged_TwoSolosWaitForFill()
++    {
++        var mm = New();
++        var a = Entry(23); var b = Entry(23);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 10).Room);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 31).Room);
++    }
++
++    [Fact]
++    public void EmptyOneOnOneWorlds_World20BehavesLikeA2v2World()
++    {
++        var mm = New(); mm.OneOnOneWorlds = Matchmaker.ParseWorlds("");
++        var a = Entry(20); var b = Entry(20);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 10).Room);
++    }
++
++    [Theory]
++    [InlineData("20", new uint[] { 20 })]
++    [InlineData("20, 30;x", new uint[] { 20, 30 })]
++    [InlineData("", new uint[0])]
++    [InlineData(null, new uint[0])]
++    public void ParseWorlds(string? s, uint[] expected) =>
++        Assert.Equal(expected.OrderBy(x => x), Matchmaker.ParseWorlds(s).OrderBy(x => x));
++}
+-- 
+2.47.3
+

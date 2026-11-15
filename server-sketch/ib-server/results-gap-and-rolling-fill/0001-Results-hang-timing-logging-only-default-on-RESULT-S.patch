@@ -1,0 +1,242 @@
+From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 10:09:10 -0800
+Subject: [PATCH 1/4] Results-hang timing (logging only, default on):
+ RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
+ to its next request; LogResultGap config; 5 tests
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Controllers/GameController.cs |  7 ++
+ Server-Infinite/Lobbies/ResultGapTrace.cs     | 93 +++++++++++++++++++
+ .../Models/Config/CardServerConfig.cs         |  4 +
+ .../Matchmaking.Tests/ResultGapTraceTests.cs  | 77 +++++++++++++++
+ 4 files changed, 181 insertions(+)
+ create mode 100644 Server-Infinite/Lobbies/ResultGapTrace.cs
+ create mode 100644 Tests/Matchmaking.Tests/ResultGapTraceTests.cs
+
+diff --git a/Server-Infinite/Controllers/GameController.cs b/Server-Infinite/Controllers/GameController.cs
+index 9af353c..c53e333 100644
+--- a/Server-Infinite/Controllers/GameController.cs
++++ b/Server-Infinite/Controllers/GameController.cs
+@@ -28,6 +28,8 @@ public class GameController : BaseController<GameController>
+         this.scopeFactory = scopeFactory;
+     }
+     
++    private static readonly ServerInfinite.Lobbies.ResultGapTrace ResultGap = new();
++
+     [Route("")]
+     [HttpPost]
+     [Produces("application/protobuf")]
+@@ -39,6 +41,11 @@ public class GameController : BaseController<GameController>
+         
+         var baseAddress = Request.Host.ToString();
+ 
++        // exvs2-lobbies: results-screen timing (logging only)
++        if (config.LogResultGap)
++            foreach (var line in ResultGap.Observe(request.Type, request.PcbSerial, Environment.TickCount64 / 1000.0))
++                Logger.LogInformation("{Line}", line);
++
+         // exvs2-lobbies results-hang draft: PostMatchWatchdogMs (default 0 = off). The handler runs in its own DI scope so
+         // it can finish (and save) after the early reply.
+         if (ServerInfinite.Lobbies.PostMatchWatchdog.Applies(config.PostMatchWatchdogMs, request.Type))
+diff --git a/Server-Infinite/Lobbies/ResultGapTrace.cs b/Server-Infinite/Lobbies/ResultGapTrace.cs
+new file mode 100644
+index 0000000..c753f1e
+--- /dev/null
++++ b/Server-Infinite/Lobbies/ResultGapTrace.cs
+@@ -0,0 +1,93 @@
++using nue.protocol.exvs;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>
++/// exvs2-lobbies results-hang trace (2026-11-14, logging only, replies unchanged). Times the results screen from the
++/// card server's side: when a cabinet sends its result save (SaveVsmOnResult etc.) the clock starts; the next request
++/// from the same cabinet (pcb serial) stops it and is logged as RESULT-GAP. While nothing arrives, any other request
++/// (the LMs poll LoadRanking every 10 s) sweeps the open clocks and logs RESULT-WAIT at 30/60/120/300/600 s, so a hang
++/// shows up in the log while it is happening. A repeated save is logged as a retry. Only the last 4 characters of the
++/// pcb serial are printed; no card data.
++/// </summary>
++public sealed class ResultGapTrace
++{
++    private static readonly HashSet<MethodType> Saves = new()
++    {
++        MethodType.MthdSaveVsmResult, MethodType.MthdSaveVsmOnResult, MethodType.MthdSaveVscResult,
++        MethodType.MthdSaveVstResult, MethodType.MthdSaveVsmToResult, MethodType.MthdSavePracticeResult,
++        MethodType.MthdSaveStageResult, MethodType.MthdSaveTournamentResult
++    };
++
++    private static readonly double[] Marks = { 30, 60, 120, 300, 600 };
++
++    private sealed class Open
++    {
++        public MethodType Save;
++        public double At;
++        public int Tries = 1;
++        public int MarksDone;
++    }
++
++    private readonly Dictionary<string, Open> _open = new();
++    private readonly object _gate = new();
++
++    public bool Enabled { get; set; } = true;
++
++    public static bool IsResultSave(MethodType t) => Saves.Contains(t);
++
++    public static string Short(string? pcb) =>
++        string.IsNullOrEmpty(pcb) ? "-" : pcb.Length <= 4 ? pcb : "…" + pcb[^4..];
++
++    /// <summary>Lines to log for this request (possibly none). <paramref name="now"/> in seconds.</summary>
++    public List<string> Observe(MethodType type, string? pcbSerial, double now)
++    {
++        var lines = new List<string>();
++        if (!Enabled) return lines;
++        lock (_gate)
++        {
++            var pcb = pcbSerial ?? "";
++            // sweep: report cabinets that have been silent since their result save
++            foreach (var (key, o) in _open)
++            {
++                if (key == pcb) continue;
++                while (o.MarksDone < Marks.Length && now - o.At >= Marks[o.MarksDone])
++                {
++                    lines.Add(FormattableString.Invariant($"RESULT-WAIT pcb={Short(key)} {Name(o.Save)} answered, no request from this cabinet for {Marks[o.MarksDone]:0}s"));
++                    o.MarksDone++;
++                }
++            }
++            if (pcb.Length == 0) return lines;
++
++            _open.TryGetValue(pcb, out var open);
++            if (IsResultSave(type))
++            {
++                if (open != null && open.Save == type)
++                {
++                    open.Tries++;
++                    lines.Add(FormattableString.Invariant($"RESULT-SAVE pcb={Short(pcb)} {Name(type)} retry #{open.Tries} +{now - open.At:0.0}s"));
++                    return lines;
++                }
++                if (open != null)
++                    lines.Add(Gap(pcb, open, type, now));
++                _open[pcb] = new Open { Save = type, At = now };
++                lines.Add($"RESULT-SAVE pcb={Short(pcb)} {Name(type)} (results screen clock started)");
++                if (_open.Count > 4096) _open.Clear();
++                return lines;
++            }
++            if (open != null)
++            {
++                lines.Add(Gap(pcb, open, type, now));
++                _open.Remove(pcb);
++            }
++        }
++        return lines;
++    }
++
++    private static string Gap(string pcb, Open o, MethodType next, double now) =>
++        FormattableString.Invariant($"RESULT-GAP pcb={Short(pcb)} {Name(o.Save)} -> next {Name(next)} after {now - o.At:0.0}s") +
++        (o.Tries > 1 ? $" (save sent {o.Tries}x)" : "");
++
++    private static string Name(MethodType t) =>
++        Enum.IsDefined(typeof(MethodType), t) ? t.ToString() : $"type{(int)t}";
++}
+diff --git a/Server-Infinite/Models/Config/CardServerConfig.cs b/Server-Infinite/Models/Config/CardServerConfig.cs
+index 9ebd1a3..ffe283f 100644
+--- a/Server-Infinite/Models/Config/CardServerConfig.cs
++++ b/Server-Infinite/Models/Config/CardServerConfig.cs
+@@ -31,6 +31,10 @@ public class CardServerConfig
+     /// <summary>exvs2-lobbies: mask AccessCode / ChipId / SessionId / Token values in the "Request is" dump. Logging only.</summary>
+     public bool MaskCardSecretsInLog { get; set; } = true;
+ 
++    /// <summary>exvs2-lobbies: RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines that time each cabinet's results screen from
++    /// its result save to its next request (Lobbies/ResultGapTrace.cs). Logging only.</summary>
++    public bool LogResultGap { get; set; } = true;
++
+     /// <summary>exvs2-lobbies: values of the LoadBlackList reply (the game's online-match quality limits). Defaults are
+     /// upstream's fixed values, so nothing changes unless they are edited.</summary>
+     public LoadBlackListConfigurations LoadBlackList { get; set; } = new();
+diff --git a/Tests/Matchmaking.Tests/ResultGapTraceTests.cs b/Tests/Matchmaking.Tests/ResultGapTraceTests.cs
+new file mode 100644
+index 0000000..e276bd6
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/ResultGapTraceTests.cs
+@@ -0,0 +1,77 @@
++using nue.protocol.exvs;
++using ServerInfinite.Lobbies;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// results-hang timing (2026-11-14): logging only.
++public class ResultGapTraceTests
++{
++    private const string Cab = "28951428XXXG", Lm = "289511281397";
++
++    [Fact]
++    public void ReplayOfTheHungMatchOn20261114()
++    {
++        // 10:00:47 SaveVsmOnResult, then only the LM's LoadRanking polls every 10 s
++        var t = new ResultGapTrace();
++        var start = t.Observe(MethodType.MthdSaveVsmOnResult, Cab, 0);
++        Assert.Equal(new[] { "RESULT-SAVE pcb=…XXXG MthdSaveVsmOnResult (results screen clock started)" }, start);
++        var lines = new List<string>();
++        for (var s = 10; s <= 130; s += 10) lines.AddRange(t.Observe(MethodType.MthdLoadRanking, Lm, s));
++        Assert.Equal(new[]
++        {
++            "RESULT-WAIT pcb=…XXXG MthdSaveVsmOnResult answered, no request from this cabinet for 30s",
++            "RESULT-WAIT pcb=…XXXG MthdSaveVsmOnResult answered, no request from this cabinet for 60s",
++            "RESULT-WAIT pcb=…XXXG MthdSaveVsmOnResult answered, no request from this cabinet for 120s"
++        }, lines);
++        var end = t.Observe(MethodType.MthdSaveUserPlayResearchData, Cab, 185.2);
++        Assert.Equal(new[] { "RESULT-GAP pcb=…XXXG MthdSaveVsmOnResult -> next MthdSaveUserPlayResearchData after 185.2s" }, end);
++        Assert.Empty(t.Observe(MethodType.MthdLoadRanking, Lm, 1000));   // closed
++    }
++
++    [Fact]
++    public void RetryIsCountedAndShownInTheGap()
++    {
++        var t = new ResultGapTrace();
++        t.Observe(MethodType.MthdSaveVsmOnResult, Cab, 0);
++        Assert.Equal(new[] { "RESULT-SAVE pcb=…XXXG MthdSaveVsmOnResult retry #2 +10.0s" },
++            t.Observe(MethodType.MthdSaveVsmOnResult, Cab, 10));
++        Assert.Equal(new[] { "RESULT-GAP pcb=…XXXG MthdSaveVsmOnResult -> next MthdLoadCard after 12.0s (save sent 2x)" },
++            t.Observe(MethodType.MthdLoadCard, Cab, 12));
++    }
++
++    [Fact]
++    public void NoClockWithoutAResultSaveAndOffWhenDisabled()
++    {
++        var t = new ResultGapTrace();
++        Assert.Empty(t.Observe(MethodType.MthdLoadCard, Cab, 0));
++        Assert.Empty(t.Observe(MethodType.MthdLoadRanking, Lm, 500));
++        var off = new ResultGapTrace { Enabled = false };
++        Assert.Empty(off.Observe(MethodType.MthdSaveVsmOnResult, Cab, 0));
++        Assert.Empty(off.Observe(MethodType.MthdLoadRanking, Lm, 100));
++    }
++
++    [Fact]
++    public void TwoCabinetsAreTimedSeparately()
++    {
++        var t = new ResultGapTrace();
++        t.Observe(MethodType.MthdSaveVsmOnResult, "AAAAAAAA0001", 0);
++        t.Observe(MethodType.MthdSaveVsmOnResult, "AAAAAAAA0002", 0.5);
++        var l = t.Observe(MethodType.MthdLoadRanking, Lm, 31);
++        Assert.Equal(2, l.Count);
++        Assert.Contains("pcb=…0001", l[0] + l[1]);
++        Assert.Contains("pcb=…0002", l[0] + l[1]);
++        Assert.Equal(new[] { "RESULT-GAP pcb=…0002 MthdSaveVsmOnResult -> next MthdPing after 39.5s" },
++            t.Observe(MethodType.MthdPing, "AAAAAAAA0002", 40));
++        Assert.Single(t.Observe(MethodType.MthdLoadRanking, Lm, 61));       // only 0001 still open
++    }
++
++    [Fact]
++    public void ShortSerialAndEmptySerial()
++    {
++        Assert.Equal("-", ResultGapTrace.Short(null));
++        Assert.Equal("ab", ResultGapTrace.Short("ab"));
++        Assert.Equal("…7890", ResultGapTrace.Short("1234567890"));
++        Assert.Empty(new ResultGapTrace().Observe(MethodType.MthdSaveVsmOnResult, "", 0));
++    }
++}
+-- 
+2.47.3
+

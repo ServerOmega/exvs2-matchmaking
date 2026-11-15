@@ -1,0 +1,216 @@
+From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 23:10:30 -0800
+Subject: [PATCH 3/4] In-store fill override: InStoreFillAfterSeconds (60) /
+ InStoreMaxFillWaitSeconds (120) for worlds 15/16
+
+2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
+The shared 30s rolling window formed a 1v1 at t=32 and the late pair a second 1v1 (both hung
+after results). In-store cabinets are one shop, so wait longer for a full 2v2. Online worlds
+unchanged. 5 tests incl. tonight's timeline.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Configurations/server.json    |   2 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  18 ++-
+ .../Config/OnlineMatchingConfigurations.cs    |   7 ++
+ Server-Infinite/Program.cs                    |   2 +
+ Tests/Matchmaking.Tests/InStoreFillTests.cs   | 105 ++++++++++++++++++
+ 5 files changed, 131 insertions(+), 3 deletions(-)
+ create mode 100644 Tests/Matchmaking.Tests/InStoreFillTests.cs
+
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 4bc01a3..2ba1783 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -45,6 +45,8 @@
+       "FillAfterSeconds": 15,
+       "FillTimerMode": "Rolling",
+       "MaxFillWaitSeconds": 90,
++      "InStoreFillAfterSeconds": 60,
++      "InStoreMaxFillWaitSeconds": 120,
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+       "AllowPartialRooms": true,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index a3b7fa3..2c2d389 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -169,6 +169,15 @@ public sealed class Matchmaker
+     /// short-handed room may start even if the rolling timer keeps resetting. 0 = no cap.
+     /// </summary>
+     public double MaxFillWait { get; set; } = 90;
++    /// <summary>
++    /// In-store worlds (15/16) only: FillAfter override in seconds (0 = use <see cref="FillAfter"/>).
++    /// In-store cabinets are all in one shop and usually set up one after another by the same people,
++    /// so a longer wait for a full 2v2 costs little (2026-11-14 23:00: second pair joined 40-43s after
++    /// the first, missing a 30s rolling window, and the two 1v1s both hung on results).
++    /// </summary>
++    public double InStoreFillAfter { get; set; } = 0;
++    /// <summary>In-store worlds only: MaxFillWait override in seconds (0 = use <see cref="MaxFillWait"/>).</summary>
++    public double InStoreMaxFillWait { get; set; } = 0;
+     public double SoftWait { get; set; }
+     /// <summary>s without CheckMatching (from any of the unit's cabinets) before a waiting unit is dropped.</summary>
+     public double StaleAfter { get; set; } = 20;
+@@ -246,10 +255,13 @@ public sealed class Matchmaker
+             if (u.Created < first) first = u.Created;
+             if (u.Created > last) last = u.Created;
+         }
+-        if (MaxFillWait > 0 && now - first >= MaxFillWait) return true;
++        var inStore = InStoreWorlds.Contains(a.World);
++        var fillAfter = inStore && InStoreFillAfter > 0 ? InStoreFillAfter : FillAfter;
++        var maxFillWait = inStore && InStoreMaxFillWait > 0 ? InStoreMaxFillWait : MaxFillWait;
++        if (maxFillWait > 0 && now - first >= maxFillWait) return true;
+         if (FillTimerMode == FillTimerMode.FromFirst)
+-            return now - a.Created >= FillAfter;
+-        return now - last >= FillAfter;
++            return now - a.Created >= fillAfter;
++        return now - last >= fillAfter;
+     }
+ 
+     public int QueueLength { get { lock (_gate) return _queue.Count; } }
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 0b8a57b..692c0a7 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -54,6 +54,13 @@ public class OnlineMatchingConfigurations
+     /// short-handed room may start even if joiners keep resetting the rolling timer. 0 = no cap.
+     /// </summary>
+     public double MaxFillWaitSeconds { get; set; } = 90;
++    /// <summary>
++    /// In-store match (worlds 15/16) only: FillAfterSeconds override (0 = same as FillAfterSeconds).
++    /// Cabinets in one shop are usually carded in one after another, so wait longer for a full 2v2.
++    /// </summary>
++    public double InStoreFillAfterSeconds { get; set; } = 60;
++    /// <summary>In-store match only: MaxFillWaitSeconds override (0 = same as MaxFillWaitSeconds).</summary>
++    public double InStoreMaxFillWaitSeconds { get; set; } = 120;
+     /// <summary>Allow short-handed rooms at all (false = only full 4-slot rooms).</summary>
+     public bool AllowPartialRooms { get; set; } = true;
+     /// <summary>Short-handed rooms: list a CPU stand-in client ("N", PCB00000NPC, the cabinet's 2nd node id, same
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 00f1949..63798e2 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -99,6 +99,8 @@ try
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+             FillTimerMode = ServerInfinite.Matchmaking.Matchmaker.ParseFillTimerMode(mm.FillTimerMode),
+             MaxFillWait = mm.MaxFillWaitSeconds,
++            InStoreFillAfter = mm.InStoreFillAfterSeconds,
++            InStoreMaxFillWait = mm.InStoreMaxFillWaitSeconds,
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0
+diff --git a/Tests/Matchmaking.Tests/InStoreFillTests.cs b/Tests/Matchmaking.Tests/InStoreFillTests.cs
+new file mode 100644
+index 0000000..1eb99cd
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/InStoreFillTests.cs
+@@ -0,0 +1,105 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// In-store fill override (2026-11-14 23:00 PT). Offline in-store shuffle, one shop, four cabinets:
++// cab3 joined at t=0, cab2 at t=2, cab1 at t=42, cab4 at t=45. With the shared 30s rolling window a
++// 1v1 formed at t=32 and the late pair made a second 1v1 (both hung after results). In-store waits
++// longer (InStoreFillAfter=60, InStoreMaxFillWait=120) so all four shuffle into one 2v2.
++public class InStoreFillTests
++{
++    private uint _node = 5000;
++
++    private Request.EntryMatching Entry(uint world, string local, string global = "192.168.1.245")
++    {
++        var me = ++_node;
++        var c = new Client
++        {
++            NodeId = me, PcbSerial = $"P{me}", LocId = "JPN1", PrefCode = 13,
++            LocalIpaddress = local, GlobalIpaddress = local,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = c, MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = world == 15 ? 0x100000 : 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = 0 });
++        return e;
++    }
++
++    private static Matchmaker New(double inStoreFill = 60, double inStoreCap = 120) =>
++        new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1,
++            fillTimerMode: FillTimerMode.Rolling, maxFillWait: 90)
++        {
++            StaleAfter = 1e6, Realms = NetDiag.DefaultRealms,
++            InStoreFillAfter = inStoreFill, InStoreMaxFillWait = inStoreCap
++        };
++
++    private (Request.EntryMatching a, Request.EntryMatching b, Request.EntryMatching c, Request.EntryMatching d) Four(uint world) =>
++        (Entry(world, "192.168.1.71"), Entry(world, "192.168.1.73"), Entry(world, "192.168.1.69"), Entry(world, "192.168.1.72"));
++
++    [Fact]
++    public void TonightInStoreTimeline_OneTwoVsTwo()
++    {
++        var mm = New();
++        var (a, b, c, d) = Four(15);
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 32).Room);   // the 30s window that split them tonight
++        mm.Entry(c, 42);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 43).Room);
++        mm.Entry(d, 45);
++        var room = mm.Check(a.Myclient.NodeId, 45).Room!;
++        Assert.Equal(4, room.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++        foreach (var e in new[] { a, b, c, d }) Assert.Same(room, mm.Check(e.Myclient.NodeId, 45).Room);
++    }
++
++    [Fact]
++    public void WithoutOverride_TonightInStoreTimelineSplitsIntoTwo1v1s()
++    {
++        var mm = New(inStoreFill: 0, inStoreCap: 0);
++        var (a, b, c, d) = Four(15);
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        var first = mm.Check(a.Myclient.NodeId, 32).Room!;
++        Assert.Equal(2, first.Clients.Count(x => Matchmaker.Unit.IsHuman(x.Client)));
++        mm.Entry(c, 42); mm.Entry(d, 45);
++        Assert.Null(mm.Check(c.Myclient.NodeId, 46).Room);
++        var second = mm.Check(c.Myclient.NodeId, 76).Room!;
++        Assert.NotSame(first, second);
++    }
++
++    [Fact]
++    public void InStorePairStillPlaysAfterSixtySecondsAlone()
++    {
++        var mm = New();
++        var (a, b, _, _) = Four(15);
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 61).Room);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 62).Room);
++    }
++
++    [Fact]
++    public void InStoreCapLimitsRollingResets()
++    {
++        var mm = New();
++        var a = Entry(15, "192.168.1.71"); var b = Entry(15, "192.168.1.73"); var c = Entry(15, "192.168.1.69");
++        mm.Entry(a, 0); mm.Entry(b, 55); mm.Entry(c, 110);   // rolling would wait until 170
++        Assert.Null(mm.Check(a.Myclient.NodeId, 119).Room);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 120).Room);
++    }
++
++    [Fact]
++    public void OnlineWorldsKeepTheSharedFillAfter()
++    {
++        var mm = New();
++        var a = Entry(23, "192.168.1.71"); var b = Entry(23, "192.168.1.73");
++        mm.Entry(a, 0); mm.Entry(b, 2);
++        Assert.NotNull(mm.Check(a.Myclient.NodeId, 32).Room);   // Mix still uses 30s
++    }
++}
+-- 
+2.47.3
+

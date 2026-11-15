@@ -128,3 +128,20 @@ Fake cabinets + fake cards only, PC offline, no game / DLL run. Details: `analys
 * `server-sketch/loadtest/hangsim_e2e.py`: off 6/6, on 6/6. Regression: `hangfix_e2e.py` off 10/10, on 15/15;
   `online_tag_e2e.py` 28/28.
 
+## Rolling fill, in-store wait, and Fes 1on1 (2026-11-14, patch commits 15–18)
+
+Docs: [`server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md`](server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md).
+The four commits are in `online-matchmaking.patch` (now 18 commits) and as a standalone series in
+`server-sketch/ib-server/results-gap-and-rolling-fill/`.
+
+* [x] Rolling fill timer (`FillTimerMode=Rolling`, `FillAfterSeconds` 30, `MaxFillWaitSeconds` 90): four cabinets
+  in Mix searched staggered and merged into one 2v2; that **4-human room cleared the results screen**.
+* [x] In-store shuffle goes through the matchmaker. A 30 s shared window closed a 1v1 ~10 s before the late pair
+  searched; those 2-human + 2-CPU rooms hung after results. Fix: `InStoreFillAfterSeconds` 60 /
+  `InStoreMaxFillWaitSeconds` 120 (unit tests include that timeline). **Needs a 4-cab in-store retest** with
+  everyone searching within a minute.
+* [ ] Fes 1on1 (`OneOnOneWorlds` default `"20"`): two cabinets pick フェス (banner says 1on1), play, and either
+  clear results or hang. Restart the cabinets after setting that day's `FesConfigurations.*Type` to a
+  `OneOnOne*` value (e.g. `OneOnOneAllCost`); the Fes rule loads at boot. The 2-client group 0 vs 1 room is
+  untested in the real game.
+* Logging: `LogResultGap` (default on) times the hang (`RESULT-SAVE` / `RESULT-WAIT` / `RESULT-GAP`).
