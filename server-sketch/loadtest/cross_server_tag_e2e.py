@@ -14,6 +14,7 @@ matchmaker (server A's in-process MMS). Fake cards and fake cabinets only.
   4b. Friends (2026-11-15): a results-screen friend request (RegisterOption 306) from a card on A to a card on B
      is pending until B accepts (or B also asks); then both list each other and share a joined online tag team.
      Block / NG flow, LoadCard field 25, paging / search / bulk, /tag/friends behind the shared secret.
+     Teams tab (2026-11-15): friend rows resolve to their team; /Cards/Teams and the team editor deep link serve the app.
 
 Usage:
   cross_server_tag_e2e.py --url-a http://127.0.0.1:28101/ --url-b http://127.0.0.1:28102/
@@ -479,6 +480,16 @@ def main():
         t1 = [t for t in (F1.teams() or {}).get("teams") or [] if t.get("partnerPilotId") == F2.pilot and t.get("isRemote")]
         check("friends: B's Teams tab lists the new joined team with A", len(t2) == 1, str(len(t2)))
         check("friends: A's Teams tab lists the same team after a sync", len(t1) == 1 and t1[0].get("sharedTagCode") == t2[0].get("sharedTagCode") if t1 and t2 else False, "")
+        # WebUI Teams tab (2026-11-15): each friend row links to the team whose partner is that friend's pilot id
+        for me, other in ((F1, F2), (F2, F1)):
+            rows = [i for i in me.friends().get("items") or [] if i.get("pilotId") == other.pilot]
+            linked = [t for t in (me.teams() or {}).get("teams") or [] if t.get("partnerPilotId") == other.pilot and t.get("id")]
+            check("teams tab: %d's friend row %d resolves to exactly one team with an id to link to" % (me.pilot, other.pilot),
+                  len(rows) == 1 and len(linked) == 1, "rows=%d teams=%d" % (len(rows), len(linked)))
+        for route in ("/Cards/Teams/%s" % F1.chip, "/Cards/Customize/%s?tab=teams&team=1" % F1.chip, "/Cards/Friends/%s?tab=teams" % F1.chip):
+            st, body = raw_status(F1.url, route)
+            check("teams tab: WebUI route %s serves the app" % re.sub(r"/Cards/(\w+)/[^?]+", r"/Cards/\1/<chip>", route),
+                  st == 200 and b"<html" in body.lower(), "status=%s" % st)
         for me, other in ((F1, F2), (F2, F1)):
             try:
                 tags = list(me.load_card().mobile_user_group.tag_teams)
