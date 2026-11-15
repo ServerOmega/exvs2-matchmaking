@@ -136,6 +136,24 @@ class Card:
         if ng: o.ng_pilot_id = ng
         return post_pb(self.url, q, strict=False)
 
+    def save_vs(self, partner=0, foes=(), online=True, cpu=()):
+        """A versus result (SaveVsmOnResult / SaveVsmResult) naming the partner and foes by pilot id."""
+        q = base(pb.MTHD_SAVE_VSM_ON_RESULT if online else pb.MTHD_SAVE_VSM_RESULT, self.serial)
+        s = q.save_vsm_on_result if online else q.save_vsm_result
+        s.pilot_id = self.pilot; s.session_id = self.session; s.shuffle_flag = False
+        r = s.result; r.played_at = int(time.time()); r.win_flag = True
+        if partner:
+            r.partner.pilot_id = partner; r.partner.cpu_flag = 1 if partner in cpu else 0
+        for f in foes:
+            g = r.foes.add(); g.pilot_id = f; g.cpu_flag = 1 if f in cpu else 0
+        return post_pb(self.url, q, strict=False)
+
+    def last_played(self, other, tab="friends"):
+        for i in self.friends(tab, page_size=100).get("items") or []:
+            if i.get("pilotId") == other:
+                return i.get("lastPlayedUtc")
+        return None
+
     def friends(self, tab="friends", q=None, sort="added", dir=None, page=1, page_size=25):
         body = {"accessCode": self.access, "chipId": self.chip, "tab": tab, "sort": sort, "page": page, "pageSize": page_size}
         if q is not None: body["q"] = q
@@ -482,6 +500,43 @@ def main():
         check("friends: two game requests in opposite directions become a friendship", ok, "")
         check("friends: the mutual friendship made a C-B online tag team",
               any(t.get("partnerPilotId") == B.pilot for t in (C.teams() or {}).get("teams") or []), "")
+
+        # last played from real results (2026-11-15): the saved versus result's partner + foes, across card servers
+        time.sleep(16)   # /tag bucket refill
+        lp_c_before = C.last_played(B)
+        lp_f_before = F1.last_played(F2.pilot)
+        time.sleep(1.2)
+        r = F2.save_vs(partner=9_000_123, foes=[F1.pilot, 9_000_124, 9_000_125], cpu=(9_000_125,))   # B-side online result
+        check("friends: SaveVsmOnResult still answers Success", r.error == 0, "error=%s" % r.error)
+        lp_f = None
+        for _ in range(20):
+            lp_f = F1.last_played(F2.pilot)
+            if lp_f and lp_f != lp_f_before:
+                break
+            time.sleep(0.5)
+        check("friends: an online result on B stamps last played for the friend on A (opponent)",
+              bool(lp_f) and lp_f != lp_f_before and (not lp_f_before or lp_f > lp_f_before), "%s -> %s" % (lp_f_before, lp_f))
+        check("friends: the same stamp is seen from B's side", F2.last_played(F1.pilot) == lp_f, "")
+        check("friends: a result with non-friends adds no friends or requests",
+              (F2.friends().get("counts") or {}).get("friends") == 1 and (F2.friends().get("counts") or {}).get("outgoing") == 0, str(F2.friends().get("counts")))
+        time.sleep(1.2)
+        r = C.save_vs(partner=B.pilot, foes=[], online=False)                                      # A-side in-store result
+        check("friends: SaveVsmResult (in-store) still answers Success", r.error == 0, "error=%s" % r.error)
+        lp_c = None
+        for _ in range(20):
+            lp_c = B.last_played(C.pilot)
+            if lp_c and lp_c != lp_c_before:
+                break
+            time.sleep(0.5)
+        check("friends: an in-store result on A stamps last played for the teammate friend on B",
+              bool(lp_c) and lp_c != lp_c_before, "%s -> %s" % (lp_c_before, lp_c))
+        srt = [i.get("pilotId") for i in B.friends(sort="lastPlayed", dir="desc").get("items") or []]
+        check("friends: sort by last played puts the latest match first", srt[:1] == [C.pilot], str(srt[:3]))
+        r = F1.save_vs(partner=0, foes=[F2.pilot], cpu=(F2.pilot,))                                 # CPU-flagged: ignored
+        time.sleep(1.5)
+        check("friends: a CPU-flagged slot does not stamp last played", F1.last_played(F2.pilot) == lp_f, "")
+        st, _ = raw_status(url_a, "/tag/friends/played", None, {"pilotId": F1.pilot, "others": [F2.pilot]})
+        check("friends: POST /tag/friends/played without the secret is refused (401)", st == 401, "status=%d" % st)
 
         time.sleep(16)   # /tag bucket refill (this section makes ~150 matchmaker calls in total)
         # block: B-side F2 blocks F1, team kept (no explicit choice)

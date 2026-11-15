@@ -347,6 +347,10 @@ With the update:
   list (up to 100 newest) is sent to the game on card insert, which keeps blocked players out of partner recruit.
 * If the matchmaker is down, requests and blocks are kept on your card server and sent later (up to 7 days).
 * Limits per card: 500 friends, 500 blocked, 100 sent / 200 received requests; unanswered requests expire after 30 days.
+* **Last played** on the Friends page updates after real matches: when your card server saves a versus result (online
+  or in-store) it tells the matchmaker who your partner and opponents were, and every friend among them gets the new
+  time. It works across card servers; only one of the two players' card servers needs the update. Sort by *Last played*
+  to see who you played most recently. (`CardServerConfig.Friends.TrackLastPlayed`, default true.)
 * Host: the matchmaker keeps `friends.json` next to `tag_invites.json`; `tools/vps/deploy.sh` never overwrites it
   and backs it up before each upload. `CardServerConfig.Friends.Enabled` (default true) turns the whole feature off.
 
