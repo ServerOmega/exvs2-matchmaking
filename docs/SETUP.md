@@ -329,10 +329,26 @@ renames on card insert and lets either member delete a team is **not yet in a pu
 card server and the matchmaker run that update, a renamed partner can stay stale and a deleted team can
 reappear after a card insert.
 
-**Friend requests** (results-screen OPTION → hold Start → フレンド申請) are **not supported yet** (planned).
-They are partner-only and both players must be on cards. Keep `CardServerConfig.PostMatchStubs` **true** so
-the game gets an empty reply; with it false the game shows an "Unhandled case" error. A friend request does
-not create an online-tag team today.
+**Friend requests and block lists** (results-screen OPTION → hold Start → フレンド申請 / NG) — **not yet in a
+published package** (coming with the next card-server + matchmaker update; until then keep
+`CardServerConfig.PostMatchStubs` **true** so the game gets an empty reply instead of an "Unhandled case" error).
+With the update:
+
+* A friend request from the results screen goes from **your** card server to the shared matchmaker (same
+  `OnlineTag.TagSecret` as online tag; nothing new to open or configure). Your partner may be on another card server.
+* When **both** players send a request (or the other player accepts it on the web page) you become friends, and
+  the matchmaker makes an **online tag team for the two of you** (or reuses the one you already have). Reinsert the
+  card, or open Customize → Teams, to see it.
+* Each card's web page has a **Friends** page (card menu → Friends): Friends / Requests / Blocked tabs with counts,
+  search by name or pilot ID, sort, pages of 10–100, select several rows for accept / decline / remove / block /
+  unblock, and *Add a friend by pilot ID*. Removing a friend or blocking someone does **not** delete your online tag
+  team unless you tick "Also delete our online tag teams".
+* **Block** (NG, or Block on the web page) removes the friendship / request and stops requests both ways. Your block
+  list (up to 100 newest) is sent to the game on card insert, which keeps blocked players out of partner recruit.
+* If the matchmaker is down, requests and blocks are kept on your card server and sent later (up to 7 days).
+* Limits per card: 500 friends, 500 blocked, 100 sent / 200 received requests; unanswered requests expire after 30 days.
+* Host: the matchmaker keeps `friends.json` next to `tag_invites.json`; `tools/vps/deploy.sh` never overwrites it
+  and backs it up before each upload. `CardServerConfig.Friends.Enabled` (default true) turns the whole feature off.
 
 **In the game (both setups):**
 
@@ -364,7 +380,8 @@ Partner recruit (パートナー急募, random partner) also pairs two players, 
 | Online tag: one cabinet searches alone, matchmaker log `TAG-WAIT … waiting for partner N: partner not searching` | the partner's cabinet never started an Online Tag search (still in menus, picked another mode, or started more than ~90 s later). `… partner is in the queue as node=… but cannot pair` = the partner searched another mode (e.g. Team mode with a CPU partner) — see [SECURITY.md](SECURITY.md#reading-tag-wait-why-an-online-tag-pair-didnt-form) |
 | "Create a code" / "Join" fails; card server log `The matchmaker refused this card server: OnlineTag.TagSecret in server.json is missing or does not match the matchmaker's.`; matchmaker `SEC-REFUSE 401 … /tag … /tag without a valid shared secret` | `OnlineTag.TagSecret` missing or different from the matchmaker's (A8). Get the host's value privately, paste it, restart the card server. |
 | Online tag: partner name stays old, or a deleted team comes back after a card insert | names are stored at create/join; the rename/delete sync is not in a published package yet (B5) |
-| Results screen フレンド申請 (friend request) errors, or log `Unhandled case` for RegisterOption | not supported yet (planned). Keep `PostMatchStubs` true (B5) |
+| Results screen フレンド申請 (friend request) errors, or log `Unhandled case` for RegisterOption | card server older than the friends update: keep `PostMatchStubs` true (B5) |
+| Friend request sent but nothing on the Friends page; card server log `RegisterOption: … (matchmaker unreachable, queued for retry: …)` | the matchmaker is unreachable, refused the TagSecret (see the TagSecret row), or still runs an older build (`404`). The request is retried on the next card insert |
 | Two LMs on one home network steal each other's cabinets | LM discovery is a LAN broadcast (B3b): run one LM, or isolate the two PCs |
 | Card website or cabinet gets HTTP 403, log `SEC-REFUSE 403` | the source isn't allowed by `Security.AccessMode`: a VPN range missing from `ExtraAllowedCidrs`, or a cabinet on the internet using a `PublicMatchmaker` server as its card server (use your own card server, A6) |
 | `SEC-REFUSE 429` | rate limit (`/match` 1200/min, `/tag` 240/min per source IP) — normally only a misbehaving script |

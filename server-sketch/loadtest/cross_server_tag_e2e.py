@@ -11,6 +11,9 @@ matchmaker (server A's in-process MMS). Fake cards and fake cabinets only.
   3. A third card on a fresh identity does not appear in either team.
   4. Fake cabs talk to A's /match: the two partners pair on world 5; an unrelated cab with a
      colliding local-style attr2 (or a different code) does not join them.
+  4b. Friends (2026-11-15): a results-screen friend request (RegisterOption 306) from a card on A to a card on B
+     is pending until B accepts (or B also asks); then both list each other and share a joined online tag team.
+     Block / NG flow, LoadCard field 25, paging / search / bulk, /tag/friends behind the shared secret.
 
 Usage:
   cross_server_tag_e2e.py --url-a http://127.0.0.1:28101/ --url-b http://127.0.0.1:28102/
@@ -30,6 +33,7 @@ import game_server_nue_pb2 as pb
 
 RESULTS = []
 CHILDREN = []
+EXTRA_CARDS = []   # friends section cards, included in the log-leak checks
 # security hardening 2026-11-15: shared /tag secret for this run only (random, never printed)
 TAG_SECRET = secrets.token_urlsafe(32)
 
@@ -123,6 +127,31 @@ class Card:
     def upsert_teams(self, teams):
         return json_call(self.url, "/ui/team/upsertTeams", {
             "accessCode": self.access, "chipId": self.chip, "teams": teams})
+
+    # friends 2026-11-15 (card secrets only in POST bodies)
+    def register_option(self, friend=0, ng=0):
+        q = base(pb.MTHD_REGISTER_OPTION, self.serial)
+        o = q.register_option; o.mobile_user_id = self.pilot
+        if friend: o.friend_pilot_id = friend
+        if ng: o.ng_pilot_id = ng
+        return post_pb(self.url, q, strict=False)
+
+    def friends(self, tab="friends", q=None, sort="added", dir=None, page=1, page_size=25):
+        body = {"accessCode": self.access, "chipId": self.chip, "tab": tab, "sort": sort, "page": page, "pageSize": page_size}
+        if q is not None: body["q"] = q
+        if dir: body["dir"] = dir
+        return json_call(self.url, "/ui/friends/list", body) or {}
+
+    def friend_ids(self, tab="friends"):
+        return [i.get("pilotId") for i in self.friends(tab, page_size=100).get("items") or []]
+
+    def friend_act(self, action, ids, delete_tag_teams=False):
+        return json_call(self.url, "/ui/friends/" + action, {
+            "accessCode": self.access, "chipId": self.chip, "pilotIds": list(ids), "deleteTagTeams": delete_tag_teams}) or {}
+
+    def friend_target(self, action, pilot, delete_tag_teams=False):
+        return json_call(self.url, "/ui/friends/" + action, {
+            "accessCode": self.access, "chipId": self.chip, "pilotId": pilot, "deleteTagTeams": delete_tag_teams}) or {}
 
 
 class Cab:
@@ -394,6 +423,142 @@ def main():
         if rx[1] and ra[1]:
             check("unrelated room is not the partners' room", rx[1] != ra[1], str(rx))
 
+
+        # 4b. friend requests and block lists (2026-11-15), across the two card servers
+        time.sleep(16)   # let the /tag token bucket refill (burst 60, 4/s) so this section never sees a 429
+        F1 = Card(url_a, 3, run, "XSPCBFR01")
+        F2 = Card(url_b, 2, run, "XSPCBFR02")
+        EXTRA_CARDS.extend([F1, F2])
+        print("friend cards: F1=%d F2=%d" % (F1.pilot, F2.pilot))
+        r = F1.register_option(friend=F2.pilot)
+        check("friends: RegisterOption (306) answers Success with an empty register_option body",
+              r.error == 0 and r.HasField("register_option"), "error=%s" % r.error)
+        inc = []
+        for _ in range(20):
+            inc = F2.friends("incoming").get("items") or []
+            if any(i.get("pilotId") == F1.pilot for i in inc):
+                break
+            time.sleep(0.5)
+        f1name = F1.friends().get("yourName")
+        hit = next((i for i in inc if i.get("pilotId") == F1.pilot), {})
+        check("friends: A-side game request reaches the B-side player as a received request", bool(hit), str([i.get("pilotId") for i in inc]))
+        check("friends: the request carries the sender's current name", hit.get("name") == f1name, "name ok" if hit.get("name") == f1name else "mismatch")
+        check("friends: the request is marked as from the game and stamps last played", hit.get("source") == "game" and bool(hit.get("lastPlayedUtc")), str(hit.get("source")))
+        check("friends: the sender sees it as a sent request", F2.pilot in F1.friend_ids("outgoing"), "")
+        check("friends: no tag team before the request is accepted",
+              not any(t.get("partnerPilotId") == F2.pilot for t in (F1.teams() or {}).get("teams") or []), "")
+        acc = F2.friend_act("accept", [F1.pilot])
+        res = (acc.get("results") or [{}])[0]
+        check("friends: B accepts on the Friends page", acc.get("success") and res.get("result") == "Accepted", str(res.get("result")))
+        check("friends: accepting created one online tag team", acc.get("tagTeamsCreated") == 1, str(acc.get("tagTeamsCreated")))
+        check("friends: both see each other as friends",
+              F1.pilot in F2.friend_ids() and F2.pilot in F1.friend_ids(), "")
+        lst = F2.friends()
+        check("friends: tab counts after accept (1 friend, 0 requests)",
+              (lst.get("counts") or {}).get("friends") == 1 and (lst.get("counts") or {}).get("incoming") == 0, str(lst.get("counts")))
+        check("friends: the friend row shows the shared online tag team", any(i.get("hasTagTeam") for i in lst.get("items") or []), "")
+        t2 = [t for t in (F2.teams() or {}).get("teams") or [] if t.get("partnerPilotId") == F1.pilot and t.get("isRemote")]
+        t1 = [t for t in (F1.teams() or {}).get("teams") or [] if t.get("partnerPilotId") == F2.pilot and t.get("isRemote")]
+        check("friends: B's Teams tab lists the new joined team with A", len(t2) == 1, str(len(t2)))
+        check("friends: A's Teams tab lists the same team after a sync", len(t1) == 1 and t1[0].get("sharedTagCode") == t2[0].get("sharedTagCode") if t1 and t2 else False, "")
+        for me, other in ((F1, F2), (F2, F1)):
+            try:
+                tags = list(me.load_card().mobile_user_group.tag_teams)
+                check("friends: LoadCard of %d lists the friend %d as an online tag partner" % (me.pilot, other.pilot),
+                      any(t.partner_id == other.pilot for t in tags), str([t.partner_id for t in tags]))
+            except Exception as ex:
+                check("friends: LoadCard strict parse after friendship (%d)" % me.pilot, False, repr(ex))
+
+        # mutual: both ask from the results screen (C on A, B on B)
+        C.register_option(friend=B.pilot)
+        time.sleep(1.0)
+        B.register_option(friend=C.pilot)
+        ok = False
+        for _ in range(20):
+            if C.pilot in B.friend_ids() and B.pilot in C.friend_ids():
+                ok = True
+                break
+            time.sleep(0.5)
+        check("friends: two game requests in opposite directions become a friendship", ok, "")
+        check("friends: the mutual friendship made a C-B online tag team",
+              any(t.get("partnerPilotId") == B.pilot for t in (C.teams() or {}).get("teams") or []), "")
+
+        time.sleep(16)   # /tag bucket refill (this section makes ~150 matchmaker calls in total)
+        # block: B-side F2 blocks F1, team kept (no explicit choice)
+        blk = F2.friend_act("block", [F1.pilot], delete_tag_teams=False)
+        check("friends: block answers Blocked", ((blk.get("results") or [{}])[0]).get("result") == "Blocked", str(blk.get("results")))
+        check("friends: blocking ends the friendship on both sides", F1.pilot not in F2.friend_ids() and F2.pilot not in F1.friend_ids(), "")
+        check("friends: the blocked player is on the Blocked tab", F1.pilot in F2.friend_ids("blocked"), "")
+        check("friends: blocking without the option keeps the online tag team",
+              any(t.get("partnerPilotId") == F1.pilot for t in (F2.teams() or {}).get("teams") or []), "")
+        w = F1.friend_target("request", F2.pilot)
+        check("friends: the blocked player cannot send a request from the web", ((w.get("results") or [{}])[0]).get("result") == "RefusedBlocked", str(w.get("results")))
+        F1.register_option(friend=F2.pilot)
+        time.sleep(1.5)
+        check("friends: a game request from the blocked player is dropped",
+              F1.pilot not in F2.friend_ids("incoming") and F2.pilot not in F1.friend_ids("outgoing"), "")
+        w = F2.friend_target("request", F1.pilot)
+        check("friends: the blocker must unblock before requesting", ((w.get("results") or [{}])[0]).get("result") == "RefusedYouBlocked", "")
+        try:
+            ng = list(F2.load_card().mobile_user_group.partner_recruit_am_id_nglist)
+            check("friends: LoadCard field 25 (partner_recruit_am_id_nglist) carries the block", F1.pilot in ng, str(ng))
+        except Exception as ex:
+            check("friends: LoadCard strict parse with an NG list", False, repr(ex))
+        try:
+            check("friends: no NG list for a card without blocks", len(list(F1.load_card().mobile_user_group.partner_recruit_am_id_nglist)) == 0, "")
+        except Exception as ex:
+            check("friends: LoadCard strict parse without an NG list", False, repr(ex))
+        # NG from the results screen
+        A.register_option(ng=9_000_777)
+        ok = False
+        for _ in range(20):
+            if 9_000_777 in A.friend_ids("blocked"):
+                ok = True
+                break
+            time.sleep(0.5)
+        check("friends: ng_pilot_id from the game adds a block", ok, "")
+        unb = F2.friend_act("unblock", [F1.pilot])
+        check("friends: unblock answers Unblocked", ((unb.get("results") or [{}])[0]).get("result") == "Unblocked", "")
+        try:
+            check("friends: the NG list is empty again after unblocking", F1.pilot not in list(F2.load_card().mobile_user_group.partner_recruit_am_id_nglist), "")
+        except Exception as ex:
+            check("friends: LoadCard after unblock", False, repr(ex))
+
+        time.sleep(16)   # /tag bucket refill
+        # remove with the explicit "also delete online tag teams" choice
+        rm = C.friend_act("remove", [B.pilot], delete_tag_teams=True)
+        check("friends: remove answers Removed and deletes the shared tag team", ((rm.get("results") or [{}])[0]).get("result") == "Removed"
+              and (rm.get("tagTeamsDeleted") or 0) >= 1, str((rm.get("results"), rm.get("tagTeamsDeleted"))))
+        check("friends: C's Teams tab no longer lists the C-B team",
+              not any(t.get("partnerPilotId") == B.pilot for t in (C.teams() or {}).get("teams") or []), "")
+
+        # big lists: bulk block 30, page / search / bulk unblock (one matchmaker call per bulk action)
+        ids = list(range(9_000_801, 9_000_831))
+        bb = A.friend_act("block", ids)
+        check("friends: bulk block of 30 ids", bb.get("success") and len(bb.get("results") or []) == 30, str(len(bb.get("results") or [])))
+        p2 = A.friends("blocked", page=2, page_size=10)
+        check("friends: blocked tab pages server-side (31 total, 4 pages, 10 on page 2)",
+              p2.get("total") == 31 and p2.get("totalPages") == 4 and p2.get("page") == 2 and len(p2.get("items") or []) == 10,
+              "total=%s pages=%s n=%s" % (p2.get("total"), p2.get("totalPages"), len(p2.get("items") or [])))
+        sr = A.friends("blocked", q="9000815")
+        check("friends: search by pilot id finds exactly one", [i.get("pilotId") for i in sr.get("items") or []] == [9_000_815], "")
+        big = A.friends("blocked", page_size=5000)
+        check("friends: page size is capped at 100", big.get("pageSize") == 100, str(big.get("pageSize")))
+        ub = A.friend_act("unblock", ids)
+        check("friends: bulk unblock", ub.get("success") and (A.friends("blocked").get("counts") or {}).get("blocked") == 1, "")
+        check("friends: more than 100 ids in one call is refused", not A.friend_act("block", list(range(9_100_001, 9_100_102))).get("success"), "")
+
+        # card checks and /tag/friends security
+        bad = json_call(url_a, "/ui/friends/list", {"accessCode": "0" * 20, "chipId": F1.chip, "tab": "friends"}) or {}
+        check("friends: a wrong access code gets no list", not bad.get("success") and not bad.get("items"), "")
+        st, _ = raw_status(url_a, "/tag/friends/%d" % F1.pilot)
+        check("friends: GET /tag/friends without the secret is refused (401)", st == 401, "status=%d" % st)
+        st, _ = raw_status(url_a, "/tag/friends/%d?tab=friends&page=1&pageSize=25" % F1.pilot, {"X-Tag-Secret": TAG_SECRET})
+        check("friends: GET /tag/friends with the secret works (200)", st == 200, "status=%d" % st)
+        st, _ = raw_status(url_a, "/tag/friends/request", body={"fromPilotId": 9_000_901, "toPilotId": F1.pilot})
+        check("friends: POST /tag/friends/request without the secret is refused (401)", st == 401, "status=%d" % st)
+        time.sleep(16)   # refill the /tag bucket again before the rate-limit check below
+
         # 5. security hardening (2026-11-15)
         sec = {"X-Tag-Secret": TAG_SECRET}
         for path in ("/tag/invites/for/%d" % A.pilot, "/tag/invites/%s" % code):
@@ -463,7 +628,8 @@ def main():
                                 pass
                 check("server %s log never contains the shared secret" % name, TAG_SECRET not in txt, "")
                 check("server %s log never contains the partner code" % name, code not in txt, "")
-                leaks = [c.access for c in (A, B, C) if c.access in txt] + [c.chip for c in (A, B, C) if c.chip in txt]
+                cards = (A, B, C) + tuple(EXTRA_CARDS)
+                leaks = [c.access for c in cards if c.access in txt] + [c.chip for c in cards if c.chip in txt]
                 check("fix2: server %s log never contains a card access code or chip id" % name, not leaks, "%d leaks" % len(leaks))
                 check("fix2: server %s log shows masked WebUI paths" % name,
                       "/ui/team/getTeams/<masked:" in txt or name == "B" and "<masked:" in txt or "getTeams" not in txt, "")
