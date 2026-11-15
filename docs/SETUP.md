@@ -186,6 +186,15 @@ The file is `29\testmode_pcb.json` inside your game folder (the folder with the 
 3. Never use **EXIT & SAVE** in the in-game test menu, and don't edit the file while the game runs (the game
    rewrites it).
 
+### B2b. Give every cabinet its own serial
+The matchmaker tells cabinets apart by **serial + public IP**. Two cabinets with the same serial (the default,
+or a game folder copied from someone else) behind the same internet connection knock each other out of the
+queue: the log repeats `drop nodes=[…] reason=same cabinet entered again` and they never match.
+* Pick a random 4-character serial of letters and digits (make up your own; don't reuse an example).
+* Set the same value in `SnowLauncher.ini` (`[Game_Config]` → `Serial=`) and in the game's `config.ini`
+  (`serial =`). Every game folder needs a different serial, including extra cabinets on one PC.
+* Close the game and SnowLauncher before editing, then relaunch.
+
 ### B3. Point the cabinet at the server
 * **Card server = the matchmaker:** set your POC client's card-server address to the matchmaker host and port
   (28080). Nothing else is needed: RegisterPcb tells the cabinet the matchmaker URL and the STUN server.
@@ -252,6 +261,7 @@ Partner recruit (パートナー急募, random partner) also pairs two players, 
 | Symptom | Likely cause / fix |
 |---|---|
 | No `NET register-pcb` line for your cabinet | the cabinet isn't talking to this card server: check the address/port (SnowLauncher: local server on 28080), firewall |
+| Log repeats `drop nodes=[…] reason=same cabinet entered again` | two cabinets share a serial: give each its own (B2b) |
 | `register-pcb` but no `MMS IssueNodeId` / no `NET entry` | `battleMode` isn't 0 in the active entry, or `Enabled` is false on the card server the cabinet uses |
 | Stuck searching; `NET entry ... class=stun-missing` or a `NET-WARN ... no STUN global address` | STUN not reachable: UDP 3478/3479 blocked or forwarded wrong, or `StunHost` isn't the host's reachable IP (on a multi-adapter host it must be one of its own IPs) |
 | `entry ...` lines but never `MATCH` | players are in different modes, or in different network realms (e.g. one on Radmin, one on the internet — they can never reach each other), or only one player queued |

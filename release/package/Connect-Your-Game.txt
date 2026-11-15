@@ -65,6 +65,20 @@ B. Switch the game to ONLINE matching  (battleMode 0)
   LM running (in our tests each cabinet had its own LM running; playing online with the LM closed is untested).
 
 
+
+B2. Give your game its OWN serial  (everyone must be different)
+---------------------------------------------------------------
+  The matchmaker tells cabinets apart by their serial + internet address. Two players with the SAME serial
+  (for example both kept the default, or copied a game folder from a friend) kick each other out of the queue
+  and never match. In the server log this shows as:  drop nodes=[...] reason=same cabinet entered again
+    - Close the game and SnowLauncher first.
+    - Pick a random 4-character serial made of letters and digits, e.g.  k7Qm  (don't copy this one, make
+      up your own). Every cabinet / game folder needs a different one, even on the same PC.
+    - Put the SAME value in both places:
+          SnowLauncher.ini   [Game_Config]   Serial=k7Qm
+          config.ini                         serial =k7Qm   (keep the line format your file already uses)
+    - Restart SnowLauncher so it reads the new value.
+
 C. Network for the battle itself
 --------------------------------
   The matchmaking server only introduces players. The battle runs DIRECTLY between the players' games (P2P, UDP).

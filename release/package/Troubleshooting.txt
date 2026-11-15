@@ -31,6 +31,9 @@ Players can't match - read the server log (window or Logs\log-<date>.txt)
   "NET register-pcb" but no "MMS IssueNodeId" / "NET entry"
       -> battleMode isn't 0 in the active entry of <game folder>\29\testmode_pcb.json, or "Enabled" is false on the card server
          that player uses.
+  "drop nodes=[...] reason=same cabinet entered again" (repeating every second or two)
+      -> two cabinets share the same serial (and internet address): give every cabinet its own random
+         serial in SnowLauncher.ini (Serial=) and config.ini (serial =). See Connect-Your-Game.txt, B2.
   "NET-WARN register-pcb ... loopback"
       -> a remote player was given 127.0.0.1: set StunHost to your public/VPN IP (2-Configure.bat).
   "NET entry ... class=stun-missing" / stuck on searching
