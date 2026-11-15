@@ -6,7 +6,7 @@
 > testmode_lm.json edit, network optimizations, debugging notes). Those files must be restored
 > from the user's PC / a backup if needed — they were **not** rewritten from memory.
 
-Goal: MBON-style lobbies / large-pool online play for EXVS2 Infinite Boost.
+Goal: a universal matchmaking server / large-pool online play for EXVS2 Infinite Boost.
 
 ## Present on the box now
 - `analysis/matchmaking.md` — WAN/MMS + STUN + "16-player" analysis (restored) + 2026-11-13 follow-up.
@@ -36,4 +36,3 @@ Goal: MBON-style lobbies / large-pool online play for EXVS2 Infinite Boost.
 
 ## Open
 - Names of battleMode values (read testmode_pcb.json at home); exvs `OnlineMatchingMode` ↔ play-mode 1..6; hole-punch packet format (capture live).
-- Implement LoadRoom / RegisterRoom in an IB-Server source build (earlier plan).

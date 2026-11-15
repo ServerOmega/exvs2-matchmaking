@@ -19,7 +19,7 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 - [ ] Results screen hangs after every 2-cabinet versus match (also in local LM mode, no matchmaker): retest with cab2 in Windows Sandbox and on two real PCs
 - [x] Box: one server for LM-store, home and multi-LM players (`server-sketch/loadtest/lm_mix.py`, 14 fake players): 14/14 matched on both servers after the serial+IP fix (3/14 before). Fake cabinets only ([analysis/lm-and-online.md](analysis/lm-and-online.md) §4)
 - [ ] Real game, LM store: find **where battleMode is set**: on the LM machine (`testmode_lm.json` / LM test menu, pushed to the cabinets) or on each cabinet (`testmode_pcb.json`)? Which file / menu, and does a cabinet's own value survive an LM sync? Use backups and `svd1.py`; no EXIT & SAVE
-- [ ] Real game, LM store: what the **LM machine itself** does when battleMode is 0 (still in-store/LAN lobby? stays idle? any HTTP to the card server or MMS? capture with tcpdump)
+- [ ] Real game, LM store: what the **LM machine itself** does when battleMode is 0 (still in-store/LAN matching? stays idle? any HTTP to the card server or MMS? capture with tcpdump)
 - [ ] Real game: in-store match (world 15/16) from two different stores never meets; one store's cabinets do (server log `entry instore-... key=...|ip:<public IP>`)
 - [x] Box: in-store match stays per shop although all stores send shop code JPN1 (`lm_mix.py --case instore`: 3 stores → 3 separate rooms; the same cabinets mix in Mix Match). Fake cabinets only
 - [ ] Real game, LM store: with `battleMode: 0`, does an LM-attached cabinet go online, and does its in-store partner show up in `groups` (team sortie)? Keep both cabinets' `NET entry` lines
@@ -82,9 +82,8 @@ Box, fake cabinets + fake cards (2026-11-14): 7 unit tests (`HangFixTests`) + `s
 - [ ] Same layout in LM mode, chosen by hand (teammates)
 - [ ] During a hang: card key on one cabinet, then the other (card-reader symptom)
 
-## Lobbies / Custom Match
+## Custom Match
 - [ ] Press Custom Match with the LM running and log what the game requests
-- [ ] Implement LoadRoom / RegisterRoom handlers and check whether rooms appear
 
 ## Housekeeping
 - [ ] Log-capture script for the user's launch method

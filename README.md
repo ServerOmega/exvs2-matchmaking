@@ -21,8 +21,8 @@ network allows. See [analysis/lm-and-online.md](analysis/lm-and-online.md).
 
 See [TESTING.md](TESTING.md) for the checklist of things that still need a real-game test.
 
-Research and prototypes for **MBON-console-style lobbies/rooms** and a **universal online
-matchmaking server** for arcade *Mobile Suit Gundam: Extreme Vs. 2 Infinite Boost* (EXVS2 IB).
+Research and prototypes for a **universal online matchmaking server** for arcade
+*Mobile Suit Gundam: Extreme Vs. 2 Infinite Boost* (EXVS2 IB).
 The goal is a large shared player pool, beyond the Live Monitor (LM) store model's
 16-terminal LAN limit.
 
