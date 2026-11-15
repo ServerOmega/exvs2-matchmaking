@@ -25,6 +25,18 @@ Build the zip: `release/make-release.sh v0.4.1-pre` → `release/dist/` (not com
 
 ## Changelog
 
+* **Unreleased** — docs only (no server rebuild). Online-tag shared secret (`TagSecret`): where a matchmaking
+  host finds, generates and rotates it (including `/opt/exvs2-mm/Configurations/server.json` on a Linux VPS)
+  and where a card-server operator pastes it; mismatch symptoms. SnowLauncher: `PCB_IpAddress` / `LM_IpAddress`
+  are this PC's LAN IP; the launcher keeps the ini in memory (close it before editing); start the patched
+  server first so it holds port 28080. Every cabinet needs its own card (20-digit access code, 32-hex chip id
+  in `card.ini` and `SnowLauncher.ini`), not only its own serial. LM discovery is a LAN broadcast: one LM per
+  home network, or isolate, when two people in one house simulate internet play. VPS / shared matchmaker
+  default port is **28080** (28090 may still be accepted as a legacy alias; point new `MatchUrl` at 28080).
+  Friend requests (フレンド申請) are not supported yet — keep `PostMatchStubs` true. Online-tag partner names
+  are stored at create/join; a rename/delete sync is not in a published package yet. Confirmed 2026-11-15:
+  a second person's from-scratch build paired in Online Tag and completed a 4-human Mix Match through the
+  VPS (same house).
 * **v0.4.1-pre (2026-11-15)** — docs only, same `online-matchmaking.patch` as v0.4.0-pre (rebuild not needed).
   `testmode_pcb.json` is in `<game folder>\29\`; how to set `battleMode` to 0 by hand in Notepad (only `value`,
   leave `type`, every `group` of the active `settingFile`, game closed, back up first). Every cabinet needs its

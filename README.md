@@ -3,10 +3,12 @@
 > ⚠️ **Experimental — work in progress.**
 >
 > **2026-11-13: first real-game test.** Two cabinets on one PC queued online through the patched card server
-> (`server-sketch/ib-server`), matched, and played full matches; results were saved. Not yet tried between two
-> separate machines or over the internet, and the results screen hangs after every 2-cabinet versus match on one
-> PC (also without the matchmaker — see [the test report](analysis/real-game-test-2026-11-13.md)).
-> The Python MMS and the `server-sketch/csharp` handlers are still untested sketches.
+> (`server-sketch/ib-server`), matched, and played full matches; results were saved. The results screen hangs
+> after every 2-cabinet versus match on one PC (also without the matchmaker — see
+> [the test report](analysis/real-game-test-2026-11-13.md)).
+> **2026-11-15:** a second person's from-scratch card-server build paired in Online Tag and completed a
+> 4-human Mix Match through a shared VPS matchmaker (two PCs, same house). A two-location NAT test is still
+> pending. The Python MMS and the `server-sketch/csharp` handlers are still untested sketches.
 
 > **2v2 matches only form with at least 4 human players.** With `NoCpuPartner` (default on), 2v2 modes never fill empty seats with CPU partners. Fewer than 4 searchers wait until each cabinet's own matching timeout (~150 s), then return to practice mode and can search again. Fes 1on1 (world 20) still needs only 2 players.
 
@@ -39,7 +41,7 @@ included. You must already have a copy of the game; this repo is notes, analysis
 | Research | `analysis/` — WAN/MMS + STUN protocol notes, LAN 16-slot limit, server design, [networking issues (Windows/NAT/VPN)](analysis/networking-issues.md), [LM + non-LM players on one server](analysis/lm-and-online.md), [LM over VPN, online over internet](analysis/lm-over-vpn-split.md), [partner invites / online tag](analysis/partner-invites.md) | Findings from static analysis; not proven in a live match |
 | Python MMS sketch | `server-sketch/python/` — stdlib HTTP protobuf prototype + fake cabinets | Exercised against simulated cabinets only, **not** against the game |
 | C# handler sketch | `server-sketch/csharp/` — IB-Server-style handlers + RegisterPcb notes | **Uncompiled**, not wired into a running server |
-| Card server patch (step 3) | `server-sketch/ib-server/` — patch for Chiang-17/EXVS2-IB-Server: RegisterPcb MATCH+STUN, in-process matchmaker, built-in STUN, IB class-match tables, ranked result storage, online tag (same-server invite or **cross-server partner code**) + partner recruit pairing, **NoCpuPartner** (4-human 2v2 rooms), **security hardening** (public allowlist, `/tag` shared secret, source-IP binding, rate limits, log masking — [docs/SECURITY.md](docs/SECURITY.md)) | Builds (Linux + win-x64), **251** unit tests pass; **real game: 2026-11-13 two cabinets on one PC; 2026-11-15 Fes 1on1 through the VPS matchmaker; 2026-11-15 5:57 AM PT cross-server online tag** (two card servers, shared `/tag` store, world-5 pair formed); **2026-11-15 7:33 AM PT four cabinets: two online-tag pairs (one cross-server, one same-server) formed 2v2 rooms and completed several games** with the security build ([TESTING.md](TESTING.md#security-hardening-and-4-cabinet-online-tag-2026-11-15)) ([report](analysis/real-game-test-2026-11-13.md)) |
+| Card server patch (step 3) | `server-sketch/ib-server/` — patch for Chiang-17/EXVS2-IB-Server: RegisterPcb MATCH+STUN, in-process matchmaker, built-in STUN, IB class-match tables, ranked result storage, online tag (same-server invite or **cross-server partner code**) + partner recruit pairing, **NoCpuPartner** (4-human 2v2 rooms), **security hardening** (public allowlist, `/tag` shared secret, source-IP binding, rate limits, log masking — [docs/SECURITY.md](docs/SECURITY.md)) | Builds (Linux + win-x64), **251** unit tests pass; **real game: 2026-11-13 two cabinets on one PC; 2026-11-15 Fes 1on1 through the VPS matchmaker; 2026-11-15 5:57 AM PT cross-server online tag** (two card servers, shared `/tag` store, world-5 pair formed); **2026-11-15 7:33 AM PT four cabinets: two online-tag pairs (one cross-server, one same-server) formed 2v2 rooms and completed several games** with the security build; **2026-11-15 9:52 AM PT a second person's from-scratch build** paired in Online Tag and completed a 4-human Mix Match through the VPS (same house) ([TESTING.md](TESTING.md#from-scratch-build-and-same-house-vps-test-2026-11-15)) ([report](analysis/real-game-test-2026-11-13.md)) |
 | Real-game test | [`analysis/real-game-test-2026-11-13.md`](analysis/real-game-test-2026-11-13.md) — results, fixes, results-screen hang investigation, two-cabinets-on-one-PC recipe | Two cabinets on one PC only |
 | Load test | `server-sketch/loadtest/` — 100–500 simulated cabinets against both matchmakers ([results](analysis/load-test.md)) | Fake cabinets only; found and fixed 7 matchmaker bugs |
 | STUN | `server-sketch/coturn/turnserver.conf` — STUN-only coturn example (TEST-NET placeholder IPs) | Config only; not deployed |

@@ -19,8 +19,10 @@ IMPORTANT - 2v2 matches:
 NEW in v0.4.0-pre - security:
   2-Configure.bat now sets who may reach the server ("AccessMode") and a shared secret for online tag
   across card servers ("TagSecret"). A server on a PUBLIC IP answers only matchmaking from the internet by
-  default; the card website stays LAN-only. Read Public-Server.txt -> Security before hosting.
-  Full details: https://github.com/ServerOmega/exvs2-matchmaking/blob/main/docs/SECURITY.md
+  default; the card website stays LAN-only. Read Public-Server.txt -> Security before hosting: it also
+  says where a host finds TagSecret later (server.json / /opt/exvs2-mm/Configurations/server.json) and
+  where a player pastes it. Full details: https://github.com/ServerOmega/exvs2-matchmaking/blob/main/docs/SETUP.md
+  and https://github.com/ServerOmega/exvs2-matchmaking/blob/main/docs/SECURITY.md
 
 
 Why do I have to "build" it?

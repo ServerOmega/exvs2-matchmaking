@@ -131,8 +131,24 @@ Security  (v0.4.0-pre; full details: docs/SECURITY.md on the project page)
                           over plain HTTP. Only if players really must use Way 1 over the internet.
     VPN ranges (Tailscale 100.64.0.0/10, Radmin 26.0.0.0/8, Hamachi 25.0.0.0/8) go in "ExtraAllowedCidrs".
   - "TagSecret" (CardServerConfig -> OnlineTag): online tag across card servers needs the SAME secret on the
-    matchmaker and every card server. 2-Configure "1 = HOST" generates one and shows it once; give it to the
-    other card servers' hosts PRIVATELY. Never post it or share server.json.
+    matchmaker and every card server. Share it only privately, and only with operators of card servers you
+    trust. Never post it or share server.json.
+      Generate / first look: 2-Configure "1 = HOST" generates one if missing and shows it once (yellow).
+      linux/configure.sh generates one if missing (it does not print it).
+      To read it later (do this on your own screen):
+        Windows:  (Get-Content -Raw .\server\Configurations\server.json | ConvertFrom-Json).CardServerConfig.OnlineTag.TagSecret
+        Linux package:  python3 -c "import json;print(json.load(open('server-linux/Configurations/server.json'))['CardServerConfig']['OnlineTag']['TagSecret'])"
+        Linux VPS (typical install /opt/exvs2-mm; the secret lives only in this file, mode 0640):
+          jq -r '.CardServerConfig.OnlineTag.TagSecret' /opt/exvs2-mm/Configurations/server.json
+          or: ssh root@<VPS_IP> "python3 -c \"import json;print(json.load(open('/opt/exvs2-mm/Configurations/server.json'))['CardServerConfig']['OnlineTag']['TagSecret'])\""
+      Players paste it when 2-Configure "2 = PLAY" asks, or as "TagSecret" under OnlineTag in their
+      server.json, then restart their card server.
+      To rotate: write a new value on the matchmaker, copy it to every card server, restart all of them.
+      If it is missing or different, "Create a code" / "Join" fails; the card server logs "The matchmaker
+      refused this card server: OnlineTag.TagSecret ..." and the matchmaker logs "SEC-REFUSE 401 ... /tag".
+  - Listen port: use TCP 28080 (the game's default). If you used to publish the matchmaker on 28090, you can
+    keep a second Kestrel endpoint on 28090 so old MatchUrl values still work, but tell players to point new
+    configs at http://<your-ip>:28080/match.
   - Rate limits: /match 1200 and /tag 240 requests per minute per IP (HTTP 429 above that).
   - A search can only be checked / cancelled from the IP that started it.
   - Logs mask public IPs (a.b.x.x), partner codes (AB******) and card access codes / chip ids.

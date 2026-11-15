@@ -37,14 +37,26 @@ matchmaker for online tag sets the **same** value:
 ```
 
 * Generate it once, e.g. `python3 -c "import secrets;print(secrets.token_urlsafe(32))"`. The package's configure
-  script generates one for a Host and asks a Player for the host's value.
-* VPS: `tools/vps/deploy.sh --host <VPS_IP> --tag-secret-file ~/.config/exvs2/tag_secret` sends it over ssh stdin
-  (never on a command line, never printed) and leaves `server.json` at mode `0640 root:exvs2mm`.
-* **Never commit it, never paste it in a public chat, never share `server.json`.** On Windows restrict the file to
-  your user (`icacls server.json /inheritance:r /grant:r "%USERNAME%:F"`).
-* No secret configured on the matchmaker = `/tag` answers LAN sources only.
+  script generates one for a Host and asks a Player for the host's value. Step-by-step (where hosts find it later,
+  where players paste it, how to rotate): [SETUP.md A8](SETUP.md#a8-online-tag-shared-secret-tagsecret).
+* **Windows / Linux package:** it is `CardServerConfig.OnlineTag.TagSecret` in `server\Configurations\server.json`
+  or `server-linux/Configurations/server.json`. Read it later with:
+  `(Get-Content -Raw .\server\Configurations\server.json | ConvertFrom-Json).CardServerConfig.OnlineTag.TagSecret`
+  or
+  `python3 -c "import json;print(json.load(open('server-linux/Configurations/server.json'))['CardServerConfig']['OnlineTag']['TagSecret'])"`.
+* **Linux VPS** (typical install `/opt/exvs2-mm`): it lives only in `/opt/exvs2-mm/Configurations/server.json`
+  (mode `0640`, owner `root`, group the service user). There is no separate secret file. Read:
+  `jq -r '.CardServerConfig.OnlineTag.TagSecret' /opt/exvs2-mm/Configurations/server.json`
+  or the same python one-liner over `ssh root@<VPS_IP>`. To set or rotate it, write the new value into that key
+  (or `deploy.sh --host <VPS_IP> --tag-secret-file FILE`, which sends the first line over SSH stdin and never
+  prints it), then put the same value on every card server and restart the matchmaker and all card servers.
+* Share it **only privately, and only with operators of card servers you trust**. **Never commit it, never paste
+  it in a public chat, never share `server.json`.** On Windows restrict the file to your user
+  (`icacls server.json /inheritance:r /grant:r "%USERNAME%:F"`).
+* No secret configured on the matchmaker = `/tag` answers LAN sources only (internet card servers get 401).
 * A card server with a missing / wrong secret logs: `The matchmaker refused this card server: OnlineTag.TagSecret
-  in server.json is missing or does not match the matchmaker's.`
+  in server.json is missing or does not match the matchmaker's.` The matchmaker logs
+  `SEC-REFUSE 401 … /tag … /tag without a valid shared secret`.
 
 A pilot can only register codes it created or joined (`/tag/register` keeps the others out), so knowing someone's
 code is not enough to steal their pairing from a third cabinet.

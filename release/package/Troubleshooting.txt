@@ -57,8 +57,30 @@ Online tag
                                   Matchmaker log "TAG-WAIT ... waiting for partner N: partner not searching"
                                   = the partner never started an Online Tag search; "... is in the queue as
                                   node=... but cannot pair" = the partner searched another mode.
-  "Create a code" / "Join" fails, card server log "The matchmaker refused this card server: OnlineTag.TagSecret"
+  "Create a code" / "Join" fails, card server log "The matchmaker refused this card server: OnlineTag.TagSecret
+   in server.json is missing or does not match the matchmaker's."
                                -> the card server's TagSecret is missing or differs from the matchmaker's.
+                                  Ask the host for it privately, paste it (2-Configure "2 = PLAY", or
+                                  CardServerConfig -> OnlineTag -> TagSecret in server.json), restart the
+                                  card server. Hosts: the value is in the matchmaker's server.json (Windows:
+                                  server\Configurations\server.json; Linux package: server-linux/Configurations/
+                                  server.json; VPS: /opt/exvs2-mm/Configurations/server.json). Read commands
+                                  and how to rotate: Public-Server.txt (Security) and the setup guide A8.
+  Partner name stays old, or a deleted team comes back after a card insert
+                               -> names are stored when the team is created or joined. A rename/delete sync
+                                  is not in a published package yet; until every server is updated this can
+                                  happen.
+  フレンド申請 (friend request) on the results screen errors, or the card server logs "Unhandled case"
+                               -> friend requests are not supported yet (planned). Keep PostMatchStubs true
+                                  in CardServerConfig so the game gets an empty reply instead of an error.
+  Two LMs on one home network steal each other's cabinets
+                               -> LM discovery is a LAN broadcast (UDP 49000). Run only one LM on that LAN,
+                                  or isolate the two PCs (different adapter/IP/subnet, or a firewall rule
+                                  blocking UDP 49000 between them). Never forward UDP 49000.
+  Two cabinets act as the same player (teams / names mixed up)
+                               -> they are using the same card. Each cabinet needs its own 20-digit access
+                                  code and 32-hex chip id in card.ini and SnowLauncher.ini. Do not copy
+                                  another folder's card. See Connect-Your-Game.txt, B3.
 
 Security refusals (v0.4.0-pre) - log line "SEC-REFUSE <status> ..."
 -------------------------------------------------------------------
@@ -77,7 +99,7 @@ Settings reference (server\Configurations\server.json -> CardServerConfig)
                    CpuStandInSeats (keep false),
                    LogResultGap, LogPostMatchTraffic, PollingIntervalSeconds, StaleAfterSeconds,
                    NetworkRealms, VerboseLog ...
-  OnlineTag:       SendTagTeams, TagStatus, MaxTeams, OneTimeInviteCode
+  OnlineTag:       SendTagTeams, TagStatus, MaxTeams, OneTimeInviteCode, TagSecret, ServerId
   Full list: https://github.com/ServerOmega/exvs2-matchmaking/blob/main/server-sketch/ib-server/README.md#configure
   Restart the server after editing. Keep a copy of the file before editing by hand.
 
@@ -85,23 +107,26 @@ KNOWN ISSUES (this is an early test build)
 ------------------------------------------
   1. Results screen hangs after a versus match when BOTH cabinets run on ONE PC. It also happens in local
      LM mode without this server. A 4-human 2v2 on 2026-11-14 cleared results; hung rooms were 2 humans +
-     2 game-added CPUs. Not seen in solo matches vs CPU. Matches between separate PCs are not tested yet.
-     (Under investigation.)
+     2 game-added CPUs. Not seen in solo matches vs CPU. (Under investigation.)
      Test options and tools that help narrow it down: see Results-Hang-Testing.txt.
      2v2 matches only form with 4 human players (NoCpuPartner, default on). Fes 1on1 needs 2.
   2. Two cabinets on one Windows PC (2026-11-13), plus a Fes 1on1 and a cross-server online-tag pair
-     through a remote matchmaker (2026-11-15). Matching between different homes / over a VPN still
-     needs more testers. Please report what happens.
+     through a remote matchmaker (2026-11-15). The same day, a second person's from-scratch card-server
+     build paired in Online Tag and completed a 4-human Mix Match through the VPS matchmaker (two PCs,
+     same house). A two-location NAT test (different homes / VPN) still needs more testers.
   3. Online tag was confirmed in the real game on 2026-11-15, including partners on different card
      servers that share one matchmaker (Create a code / Join on the Teams tab, then pick
      オンラインタッグ on TEAM SELECT). After the duo forms, a 2v2 still needs two more humans.
-     Partner recruit (random partner) is less tested.
+     Partner recruit (random partner) is less tested. Partner display names are stored at create/join;
+     a rename/delete sync is not in a published package yet (stale names or a deleted team can reappear).
   4. The matchmaker keeps the waiting list in memory: restarting the server drops players who are searching.
   5. No relay: two players who both have strict/CGNAT internet may never connect - use a VPN.
   6. Ranked (class match) results are trusted from the game; ranked pairing is by class and level only.
   7. The Linux build was tested on a Linux PC with fake cabinets (no real game against it yet).
   8. Switching the game to online (battleMode 0) is a manual edit of <game folder>\29\testmode_pcb.json
      (see Connect-Your-Game.txt, step B).
+  9. Friend requests (results-screen OPTION, フレンド申請) are not supported yet (planned). Keep
+     PostMatchStubs true so the game does not show an "Unhandled case" error.
 
 Reporting a problem: https://github.com/ServerOmega/exvs2-matchmaking/issues - include the server log lines
 around the problem. Remove access codes / card numbers / BootToken before posting anything.

@@ -1,8 +1,10 @@
 # Setup guide: host a matchmaking server, connect a cabinet
 
-> ⚠️ Experimental. Verified in the real game on 2026-11-13 with **two cabinets on one PC** only
-> ([test report](../analysis/real-game-test-2026-11-13.md)). Matching between separate machines / over the internet
-> is not yet tested. You must already have your own copy of the game; nothing here includes game files.
+> ⚠️ Experimental. Verified in the real game: **2026-11-13** two cabinets on one PC
+> ([test report](../analysis/real-game-test-2026-11-13.md)); **2026-11-15** a second person's from-scratch card-server
+> build paired in Online Tag and completed a 4-human Mix Match through a shared VPS matchmaker (same house; a
+> two-location NAT test is still pending). You must already have your own copy of the game; nothing here includes
+> game files.
 
 The matchmaking server is the **patched EXVS2-IB-Server** (card server + matchmaker + optional STUN in one exe),
 built from [`server-sketch/ib-server/online-matchmaking.patch`](../server-sketch/ib-server/online-matchmaking.patch).
@@ -93,7 +95,7 @@ The listen address/port is in `Configurations/kestrel.json` (`"Url": "http://0.0
 ### A3. Ports
 | Where | Port | Why |
 |---|---|---|
-| Server | **TCP 28080** (or whatever `kestrel.json` says) | card server + matchmaker `/match` (HTTP) |
+| Server | **TCP 28080** (or whatever `kestrel.json` says) | card server + matchmaker `/match` (HTTP). Use 28080 in new `MatchUrl` values. A host who used to publish on 28090 can keep a second Kestrel endpoint on 28090 as a legacy alias. |
 | Server | **UDP 3478 and 3479** (`StunPort`, `StunPort+1`) | built-in STUN (NAT test) — only with `BuiltinStun: true` |
 | Each player's PC | **UDP 48000** (+ terminal offset) | the game's own P2P battle socket; the game has no UPnP, so behind a strict NAT forward it, or use an overlay VPN |
 | LM stores only | UDP 49000 | LM broadcast, local network only — never forward it |
@@ -142,22 +144,69 @@ The cabinet then registers on its own card server, but queues on (and gets STUN 
 The card server only hands the cabinet the `MatchUrl` at boot; it never talks to the matchmaker itself, and nothing
 goes between the two servers before, during or after a match (the cabinet calls `MatchUrl` directly).
 Results are still saved to the player's own card server. This was tested on 2026-11-13 (one cabinet on a second
-card-server instance, one directly on the matchmaker; they matched and played).
+card-server instance, one directly on the matchmaker; they matched and played). Point `MatchUrl` at port **28080**
+(the default). If the host still accepts **28090** as a legacy alias, old configs keep working, but new ones should
+use 28080. For cross-server online tag, also set this card server's `OnlineTag.TagSecret` to the matchmaker's value
+(A8) and give it a distinct `OnlineTag.ServerId`.
 
-### A7. Security (access mode, `/tag` secret, logs)
+### A7. Security (access mode, logs)
 Full reference: [`docs/SECURITY.md`](SECURITY.md). In short, in `CardServerConfig`:
 ```json
-"Security": { "AccessMode": "PublicMatchmaker", "ExtraAllowedCidrs": "" },
-"OnlineTag": { "TagSecret": "<long random string, same on the matchmaker and every card server>" }
+"Security": { "AccessMode": "PublicMatchmaker", "ExtraAllowedCidrs": "" }
 ```
 * **Matchmaker on a VPS / port-forwarded PC:** `PublicMatchmaker` — the internet reaches only `/match`, `/mms`,
   `/tag` (and STUN on UDP); the card website and card APIs answer 403.
 * **Card server for your own cabinets:** `LanOnly` (default) — loopback / private networks only; add VPN ranges
   (Tailscale `100.64.0.0/10`, Radmin `26.0.0.0/8`, Hamachi `25.0.0.0/8`) to `ExtraAllowedCidrs`.
-* **Cross-server online tag** needs the same `OnlineTag.TagSecret` on the matchmaker and on every card server
-  (`/tag` answers 401 without it). VPS: `tools/vps/deploy.sh --host <VPS_IP> --tag-secret-file FILE`.
-  Never commit it or share `server.json`.
-* `2-Configure.bat` / `linux/configure.sh` (release package) set both for you.
+* `2-Configure.bat` / `linux/configure.sh` (release package) set the access mode for you.
+
+### A8. Online tag shared secret (`TagSecret`)
+Cross-server online tag (B5) uses a **shared secret**. The key is `CardServerConfig.OnlineTag.TagSecret` in
+`Configurations/server.json` on the **matchmaker and on every card server** that uses it. Card servers send it as
+the HTTP header `X-Tag-Secret`. Share it **only privately, and only with operators of card servers you trust**.
+Never post it in a public chat, never commit it, never share `server.json`. The startup log says `TagSecret=set`
+or `TagSecret=not set (/tag answers LAN only)` — it never prints the value. You can also set it with the
+environment variable `CardServerConfig__OnlineTag__TagSecret` (overrides the file).
+
+If the matchmaker has no secret, `/tag` answers only LAN / VPN sources and internet card servers get **401**.
+A missing or different secret on a card server makes "Create a code" / "Join" fail. The card server logs
+`The matchmaker refused this card server: OnlineTag.TagSecret in server.json is missing or does not match the
+matchmaker's.` and the matchmaker logs `SEC-REFUSE 401 … /tag … /tag without a valid shared secret`.
+
+#### Hosts: generate, find, rotate
+Generate a new secret once, e.g. `python3 -c "import secrets;print(secrets.token_urlsafe(32))"`.
+
+* **Windows package:** `2-Configure.bat` → "1 = HOST" generates one if missing and prints it **once** (yellow).
+  To read it later (do this on your own screen, not in a shared stream):
+  ```powershell
+  (Get-Content -Raw .\server\Configurations\server.json | ConvertFrom-Json).CardServerConfig.OnlineTag.TagSecret
+  ```
+* **Linux package:** `linux/configure.sh` generates one if missing (it does not print the value). Read it with:
+  ```bash
+  python3 -c "import json;print(json.load(open('server-linux/Configurations/server.json'))['CardServerConfig']['OnlineTag']['TagSecret'])"
+  ```
+* **Linux VPS** (typical install directory `/opt/exvs2-mm`): the secret lives only in
+  `/opt/exvs2-mm/Configurations/server.json` (mode `0640`, owner `root`, group the service user, e.g. `exvs2mm`).
+  There is no separate secret file. Read it over SSH (the command prints the secret on your terminal — do not
+  paste the output into a ticket or public chat):
+  ```bash
+  ssh root@<VPS_IP> "python3 -c \"import json;print(json.load(open('/opt/exvs2-mm/Configurations/server.json'))['CardServerConfig']['OnlineTag']['TagSecret'])\""
+  ```
+  or on the host: `jq -r '.CardServerConfig.OnlineTag.TagSecret' /opt/exvs2-mm/Configurations/server.json`.
+  To set or rotate it, put the new value in that key (the project's deploy script can do this with
+  `deploy.sh --host <VPS_IP> --tag-secret-file FILE`: it sends the first line of FILE over SSH stdin and never
+  prints it), then put the **same** value on every card server and restart the matchmaker and all card servers.
+  Until they are updated, "Create a code" / "Join" will fail with the 401 message above.
+
+#### Players running a card server: where to paste it
+Ask the matchmaker's host for the secret **privately**. Then either:
+
+* run `2-Configure.bat` and choose "2 = PLAY"; when it asks for the online-tag shared secret, paste it, or
+* in your card server's `Configurations/server.json`, under `CardServerConfig` → `OnlineTag`, set
+  `"TagSecret": "<the host's value>"`. Keep `Security.AccessMode` as `LanOnly`.
+
+Restart the card server after changing it. You also need `MatchUrl` / `StunHost` pointing at the matchmaker (A6)
+and a distinct `OnlineTag.ServerId`.
 
 ---
 
@@ -193,7 +242,26 @@ queue: the log repeats `drop nodes=[…] reason=same cabinet entered again` and 
 * Pick a random 4-character serial of letters and digits (make up your own; don't reuse an example).
 * Set the same value in `SnowLauncher.ini` (`[Game_Config]` → `Serial=`) and in the game's `config.ini`
   (`serial =`). Every game folder needs a different serial, including extra cabinets on one PC.
-* Close the game and SnowLauncher before editing, then relaunch.
+* Close the game and SnowLauncher before editing, then relaunch. SnowLauncher keeps the ini in memory, so an
+  edit made while it is open is ignored or overwritten.
+
+### B2c. Give every cabinet its own card
+A serial identifies the **cabinet**; a card identifies the **player**. Copying another game folder's `card.ini`
+(or the card fields in its `SnowLauncher.ini`) makes two cabinets the same player — teams, names and results get
+mixed up.
+* Access code: **20 decimal digits**. Chip id: **32 uppercase hex** characters (`0-9A-F`).
+* Put the **same** pair in the game folder's `card.ini` (`accessCode` / `chipId`, or `AccessCode` / `ChipId` if
+  your file already uses those names) and in `SnowLauncher.ini` (typically `[Game_Config]`, `AccessCode=` /
+  `ChipId=`).
+* Close SnowLauncher and the game first, then paste the new values and reopen.
+* Generate a fresh pair in PowerShell (this only prints values for you to copy; do not reuse an example):
+  ```powershell
+  $access = -join (1..20 | ForEach-Object { Get-Random -Maximum 10 })
+  $chip   = -join ((1..32) | ForEach-Object { '{0:X}' -f (Get-Random -Maximum 16) })
+  "AccessCode=$access"
+  "ChipId=$chip"
+  ```
+  The first card insert on a new pair registers a new player on that card server.
 
 ### B3. Point the cabinet at the server
 * **Card server = the matchmaker:** set your POC client's card-server address to the matchmaker host and port
@@ -206,6 +274,16 @@ queue: the log repeats `drop nodes=[…] reason=same cabinet entered again` and 
   that off). Start the patched server first (`3-Start-Server.bat`, wait until it listens), then SnowLauncher:
   the stock server can't get port 28080 and the game uses the patched one. Alternatively rename the game's
   `server` folder (e.g. `server.original`) and put the patched build in a new `server` folder.
+  In `SnowLauncher.ini`, set `PCB_IpAddress` and `LM_IpAddress` to **this PC's LAN IP** (the address other
+  machines on your home network use to reach it), not `127.0.0.1`. Close SnowLauncher before any ini edit: it
+  keeps the file in memory.
+
+### B3b. One Live Monitor per home network
+LM discovery is a **LAN broadcast** (UDP 49000). Two LMs on the same home network can claim each other's
+cabinets. That matters when two people in one house each run their own LM to simulate "internet players".
+Run only **one LM on that LAN**, or isolate them: put each LM + cabinet pair on a different adapter / IP /
+subnet, or add a firewall rule that blocks UDP 49000 between the two PCs. Never forward UDP 49000 to the
+internet.
 
 ### B4. Queue
 1. Start the game, insert your card, pick an online mode. **Everyone must pick the same mode** to meet
@@ -233,7 +311,7 @@ on 2026-11-15 at 5:57 AM Pacific Time (two cabinets, two card servers, one share
 **Different card servers** (each player keeps their own cards; both servers point `OnlineMatching.MatchUrl`
 and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28080/match`; use the port the
 matchmaker's `kestrel.json` listens on, 28080 by default — `2-Configure` "2 = PLAY" assumes 28080). Give each card server a
-distinct `OnlineTag.ServerId` (for example 1 and 2) and the matchmaker's `OnlineTag.TagSecret` (A7). Leave
+distinct `OnlineTag.ServerId` (for example 1 and 2) and the matchmaker's `OnlineTag.TagSecret` (A8). Leave
 `OnlineTag.InviteUrl` empty so it is derived as `/tag` on that matchmaker. Two cards on the **same** card server
 can also use a partner code (tested 2026-11-15 with four cabinets: one cross-server and one same-server pair).
 
@@ -245,6 +323,16 @@ can also use a partner code (tested 2026-11-15 with four cabinets: one cross-ser
 5. Saving the team name, BGM, effect, background, emblem or name color on either card server's Teams tab
    updates the copy on the matchmaker; reload the other side's Teams tab (or reinsert the card) to pick
    it up.
+
+Partner **display names** on the matchmaker are stored when the team is created or joined. A fix that syncs
+renames on card insert and lets either member delete a team is **not yet in a published package**. Until every
+card server and the matchmaker run that update, a renamed partner can stay stale and a deleted team can
+reappear after a card insert.
+
+**Friend requests** (results-screen OPTION → hold Start → フレンド申請) are **not supported yet** (planned).
+They are partner-only and both players must be on cards. Keep `CardServerConfig.PostMatchStubs` **true** so
+the game gets an empty reply; with it false the game shows an "Unhandled case" error. A friend request does
+not create an online-tag team today.
 
 **In the game (both setups):**
 
@@ -274,7 +362,10 @@ Partner recruit (パートナー急募, random partner) also pairs two players, 
 | Online tag: no team to pick / panel greyed out | team not created in the WebUI (B5), card read before the team was made (re-insert the card), or `OnlineTag.TagStatus` is still 0 (default is now 1). Log: `LoadCard online tag: … tag_teams=N tag_status=1` |
 | Online tag: `entry online-tag` for both but no `online-tag pair` | they searched a different mode (e.g. Mix Match world 23 instead of Online Tag world 5), or the two cabinets sent different pair keys / codes, or they didn't search at the same time (90 s each) |
 | Online tag: one cabinet searches alone, matchmaker log `TAG-WAIT … waiting for partner N: partner not searching` | the partner's cabinet never started an Online Tag search (still in menus, picked another mode, or started more than ~90 s later). `… partner is in the queue as node=… but cannot pair` = the partner searched another mode (e.g. Team mode with a CPU partner) — see [SECURITY.md](SECURITY.md#reading-tag-wait-why-an-online-tag-pair-didnt-form) |
-| Card server log: `The matchmaker refused this card server: OnlineTag.TagSecret …` / matchmaker `SEC-REFUSE 401 … /tag` | `OnlineTag.TagSecret` missing or different from the matchmaker's (A7) |
+| "Create a code" / "Join" fails; card server log `The matchmaker refused this card server: OnlineTag.TagSecret in server.json is missing or does not match the matchmaker's.`; matchmaker `SEC-REFUSE 401 … /tag … /tag without a valid shared secret` | `OnlineTag.TagSecret` missing or different from the matchmaker's (A8). Get the host's value privately, paste it, restart the card server. |
+| Online tag: partner name stays old, or a deleted team comes back after a card insert | names are stored at create/join; the rename/delete sync is not in a published package yet (B5) |
+| Results screen フレンド申請 (friend request) errors, or log `Unhandled case` for RegisterOption | not supported yet (planned). Keep `PostMatchStubs` true (B5) |
+| Two LMs on one home network steal each other's cabinets | LM discovery is a LAN broadcast (B3b): run one LM, or isolate the two PCs |
 | Card website or cabinet gets HTTP 403, log `SEC-REFUSE 403` | the source isn't allowed by `Security.AccessMode`: a VPN range missing from `ExtraAllowedCidrs`, or a cabinet on the internet using a `PublicMatchmaker` server as its card server (use your own card server, A6) |
 | `SEC-REFUSE 429` | rate limit (`/match` 1200/min, `/tag` 240/min per source IP) — normally only a misbehaving script |
 | Results screen hangs for minutes after a versus match | **known issue with two cabinets on one PC** (also happens in local LM mode without any matchmaker); the games recover by themselves. Not seen with a solo match; separate-machine test pending ([report](../analysis/real-game-test-2026-11-13.md#4-results-screen-hang-open)) |

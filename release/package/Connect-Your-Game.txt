@@ -42,8 +42,15 @@ Way 2: Keep your own card server on your PC, match on the host's server  (cards 
        server cannot get port 28080 and the game uses the patched one (close the stock server's window if
        it shows one). Or rename the game's server folder (e.g. server.original) and put the patched
        server build in a new server folder, so SnowLauncher starts the patched one itself.
+    4. In SnowLauncher.ini set PCB_IpAddress and LM_IpAddress to THIS PC's LAN IP (the address other machines
+       on your home network use to reach it), not 127.0.0.1.
+    5. Close SnowLauncher before you edit its ini: it keeps the file in memory, so a change made while it is
+       open is ignored or overwritten. Then reopen it.
   Results and cards are saved on YOUR card server; only the matching happens on the host's server.
   (Tested 2026-11-13 on one PC with two card servers.)
+  For online tag across card servers you also need the host's TagSecret: 2-Configure "2 = PLAY" asks for it,
+  or paste it as "TagSecret" under CardServerConfig -> OnlineTag in server\Configurations\server.json and
+  restart the card server. The host finds it as described in Public-Server.txt (Security). Share it privately.
 
   Keep a backup of your launcher / card settings: SnowLauncher once wiped the AccessCode in its ini during testing.
 
@@ -70,6 +77,10 @@ B. Switch the game to ONLINE matching  (battleMode 0)
   "NET entry ..." for your cabinet. If you only see "NET register-pcb", battleMode isn't 0.
   The SERVER needs no LM. On your side keep your usual setup: if your game normally runs with an LM, keep the
   LM running (in our tests each cabinet had its own LM running; playing online with the LM closed is untested).
+  LM discovery is a LAN broadcast (UDP 49000). Two LMs on the SAME home network can claim each other's cabinets.
+  If two people in one house each run their own LM (for example to simulate internet players), run only one LM
+  on that LAN, or isolate them: a different adapter / IP / subnet for each LM+cabinet pair, or a firewall rule
+  that blocks UDP 49000 between the two PCs. Never forward UDP 49000.
 
 
 
@@ -85,6 +96,24 @@ B2. Give your game its OWN serial  (everyone must be different)
           SnowLauncher.ini   [Game_Config]   Serial=k7Qm
           config.ini                         serial =k7Qm   (keep the line format your file already uses)
     - Restart SnowLauncher so it reads the new value.
+
+B3. Give every cabinet its OWN card  (do not copy another folder's card)
+------------------------------------------------------------------------
+  A serial is the cabinet; a card is the player. If you copy another game folder's card.ini (or the card
+  fields in its SnowLauncher.ini), both cabinets are the SAME player and teams / names / results get mixed up.
+    - Access code: 20 decimal digits. Chip id: 32 uppercase hex characters (0-9A-F).
+    - Put the SAME pair in the game folder's card.ini (accessCode / chipId, or AccessCode / ChipId if that
+      is how your file is already written) and in SnowLauncher.ini (typically [Game_Config], AccessCode=
+      and ChipId=).
+    - Close the game and SnowLauncher first, then paste, then reopen.
+    - Generate a fresh pair in PowerShell (this only prints values; make your own, do not reuse an example):
+
+          $access = -join (1..20 | ForEach-Object { Get-Random -Maximum 10 })
+          $chip   = -join ((1..32) | ForEach-Object { '{0:X}' -f (Get-Random -Maximum 16) })
+          "AccessCode=$access"
+          "ChipId=$chip"
+
+      The first card insert on a new pair registers a new player on that card server.
 
 C. Network for the battle itself
 --------------------------------
@@ -117,8 +146,10 @@ partners on different card servers that share one matchmaker:
   2. You open your own Customize -> Teams, enter them under Add Team, press ADD.
 
   Different card servers (each server has its own ServerId; MatchUrl / StunHost point at the same
-  matchmaker, e.g. http://<VPS_IP>:28080/match; every card server needs the matchmaker's online-tag
-  shared secret - 2-Configure "2 = PLAY" asks for it, the matchmaker's host gives it to you privately):
+  matchmaker, e.g. http://<VPS_IP>:28080/match — use port 28080; a host may still accept 28090 as a
+  legacy alias, but new configs should use 28080. Every card server needs the matchmaker's online-tag
+  shared secret - 2-Configure "2 = PLAY" asks for it, or set TagSecret under OnlineTag in server.json;
+  the matchmaker's host gives it to you privately, never in a public chat):
   1. Each of you opens YOUR own card website -> Customize -> Teams.
   2. One partner taps "Create a code" and sends the 8-character code to the other.
   3. The other types it under "Partner's code" and taps Join. The creator reopens the Teams tab.
@@ -132,3 +163,12 @@ partners on different card servers that share one matchmaker:
      cross-server and one same-server) form one 2v2 together - tested 2026-11-15 with 4 cabinets.
   3. If one of you searches alone, the matchmaker log says "TAG-WAIT ... waiting for partner N:
      partner not searching" - the partner's cabinet hasn't started an Online Tag search.
+  4. Partner display names on the matchmaker are stored when the team is created or joined. A fix that
+     syncs renames on card insert and lets either member delete a team is not yet in a published package.
+     Until every card server and the matchmaker run that update, a renamed partner can stay stale and a
+     deleted team can reappear after a card insert.
+
+Friend requests (results-screen OPTION, hold Start, pick フレンド申請) are not supported yet (planned).
+  They are partner-only and both players must be on cards. Keep PostMatchStubs true in the card server's
+  server.json (CardServerConfig) so the game gets an empty reply; with it false the game shows an
+  "Unhandled case" error. A friend request does not create an online-tag team today.

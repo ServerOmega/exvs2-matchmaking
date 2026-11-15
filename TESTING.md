@@ -154,8 +154,9 @@ sections 5–10. 150 matchmaker unit tests pass.
 * [x] v12 SoftWait: a complete 4-human room (e.g. a Teamplay duo + 2 solos with different Mix veteran
   flags) starts immediately instead of waiting ~15 s. Tested 2026-11-15 03:13 PT.
 * [x] Fill timers shipped at 3 s (`FillAfterSeconds` / `MaxFillWaitSeconds` / in-store overrides).
-* [x] VPS matchmaker (`<VPS_IP>:28090`, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
-  after local card servers pointed `MatchUrl` / `StunHost` at the VPS.
+* [x] VPS matchmaker (`<VPS_IP>:28090` at the time, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
+  after local card servers pointed `MatchUrl` / `StunHost` at the VPS. The VPS later moved to **TCP 28080**
+  (28090 kept as a legacy alias). Point new `MatchUrl` values at `http://<VPS_IP>:28080/match`.
 
 ## Cross-server online tag (2026-11-15)
 
@@ -197,3 +198,25 @@ masked card list, single-card login re-check, and "no access code / chip id in e
   **240p** and every Live Monitor to **144p** worked for the 7:33 test. `bngrw.dll`'s resolution list is
   144p / 240p / 480p / 720p / 1080p — **360p is not offered**. A Live Monitor at 720p uses more video memory than
   the game at 480p.
+
+## From-scratch build and same-house VPS test (2026-11-15)
+
+A second person, in the same house, built the pre-release package from scratch, pointed their card server at
+the shared VPS matchmaker, and played with the Test cabinets already on that matchmaker.
+
+* [x] **2026-11-15 9:52 AM Pacific Time:** they paired in Online Tag (cross-server partner code) and then
+  completed a **4-human Mix Match** through the VPS. This is two PCs on one home network, not a two-location
+  NAT test (still pending).
+* [x] Each cabinet needs its own random 4-character serial **and** its own card (20-digit access code, 32
+  uppercase-hex chip id) in `card.ini` and `SnowLauncher.ini`. Copying another folder's card makes them the
+  same player. Docs: [SETUP.md](docs/SETUP.md) B2b / B2c.
+* [x] SnowLauncher ignores `Server=` and always uses `127.0.0.1:28080`; it also starts the stock
+  `server\Server.exe`. Start the patched card server first so it holds the port. Set `PCB_IpAddress` and
+  `LM_IpAddress` to this PC's LAN IP. Close SnowLauncher before editing its ini (it keeps the file in memory).
+* [x] LM discovery is a LAN broadcast (UDP 49000): two LMs on the same home network can claim each other's
+  cabinets. When two people in one house simulate "internet players", run one LM or isolate the PCs.
+* [ ] Online-tag partner names are stored on the matchmaker at create/join. A fix that syncs renames on card
+  insert and lets either member delete a team is **not yet in a published package**. Until every server runs
+  it, stale names and reappearing deleted teams can happen.
+* [ ] Friend requests (results-screen OPTION → フレンド申請, partner only, both on cards) are **not supported
+  yet** (planned). Keep `PostMatchStubs` true so the game does not show an "Unhandled case" error.
