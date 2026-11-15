@@ -157,5 +157,5 @@ sections 5–10. 150 matchmaker unit tests pass.
 * [x] v12 SoftWait: a complete 4-human room (e.g. a Teamplay duo + 2 solos with different Mix veteran
   flags) starts immediately instead of waiting ~15 s. Tested 2026-11-15 03:13 PT.
 * [x] Fill timers shipped at 3 s (`FillAfterSeconds` / `MaxFillWaitSeconds` / in-store overrides).
-* [x] VPS matchmaker (`45.63.49.159:28090`, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
+* [x] VPS matchmaker (`<VPS_IP>:28090`, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
   after local card servers pointed `MatchUrl` / `StunHost` at the VPS.

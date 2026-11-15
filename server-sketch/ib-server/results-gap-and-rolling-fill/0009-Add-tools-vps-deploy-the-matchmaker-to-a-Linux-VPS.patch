@@ -46,7 +46,7 @@ index 0000000..4f24274
 +Runs Server-Infinite on a VPS as the internet matchmaker (`/match` on TCP 28090, built-in STUN on UDP 3478/3479).
 +Cabinets keep using their own local card server; only matching and STUN move to the VPS.
 +
-+Current host: Vultr Los Angeles, `45.63.49.159`, service `exvs2-mm`, install dir `/opt/exvs2-mm`, user `exvs2mm`.
++Current host: Vultr Los Angeles, `<VPS_IP>`, service `exvs2-mm`, install dir `/opt/exvs2-mm`, user `exvs2mm`.
 +
 +## Files
 +- `deploy.sh` - builds a **committed** ref for linux-x64 (self-contained, in a throwaway worktree, so uncommitted
@@ -62,19 +62,19 @@ index 0000000..4f24274
 +## Use
 +    tools/vps/deploy.sh --bootstrap          # first time
 +    tools/vps/deploy.sh --ref <commit>       # update
-+    ssh -i ~/.ssh/exvs2_vps root@45.63.49.159 journalctl -u exvs2-mm -f
++    ssh -i ~/.ssh/exvs2_vps root@<VPS_IP> journalctl -u exvs2-mm -f
 +
 +## Pointing a local card server at it
 +In that card server's `Configurations/server.json` -> `CardServerConfig.OnlineMatching`:
 +
 +    "Enabled": true,
-+    "MatchUrl": "http://45.63.49.159:28090/match",
-+    "StunHost": "45.63.49.159",
++    "MatchUrl": "http://<VPS_IP>:28090/match",
++    "StunHost": "<VPS_IP>",
 +    "StunPort": 3478,
 +    "BuiltinStun": false
 +
 +then restart that card server. The cabinet's `config.ini` `Server=` keeps pointing at its local card server.
-+(Pointing `Server=` straight at `45.63.49.159:28090` also matches, but then the cabinet's cards are created on the
++(Pointing `Server=` straight at `<VPS_IP>:28090` also matches, but then the cabinet's cards are created on the
 +VPS instead of the PC.)
 diff --git a/tools/vps/deploy.sh b/tools/vps/deploy.sh
 new file mode 100755
@@ -88,7 +88,7 @@ index 0000000..e453372
 +#
 +#   tools/vps/deploy.sh [--host IP] [--key FILE] [--ref GITREF] [--bootstrap] [--force-config] [--no-build DIR]
 +#
-+#   --host          VPS public IPv4 (default 45.63.49.159). Also written into server.json as MatchUrl/StunHost.
++#   --host          VPS public IPv4 (required; not stored in this repo). Also written into server.json as MatchUrl/StunHost.
 +#   --key           SSH private key (default ~/.ssh/exvs2_vps); logs in as root.
 +#   --ref           git ref to build (default HEAD). Built in a throwaway worktree, so uncommitted edits never ship.
 +#   --bootstrap     first-time host setup: apt upgrade, unattended-upgrades, user exvs2mm, ufw, key-only SSH.
@@ -98,7 +98,7 @@ index 0000000..e453372
 +# Never uploaded: ServerInfinite.db* (card data/secrets), mms_nodeids.json, Logs/ - they live only on the VPS.
 +set -euo pipefail
 +
-+HOST=45.63.49.159; KEY="$HOME/.ssh/exvs2_vps"; REF=HEAD; BOOTSTRAP=0; FORCE_CONFIG=0; PUBDIR=""
++HOST=""; KEY="$HOME/.ssh/exvs2_vps"; REF=HEAD; BOOTSTRAP=0; FORCE_CONFIG=0; PUBDIR=""
 +while [ $# -gt 0 ]; do
 +  case "$1" in
 +    --host) HOST=$2; shift 2;;  --key) KEY=$2; shift 2;;  --ref) REF=$2; shift 2;;
