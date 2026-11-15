@@ -1,0 +1,411 @@
+From 693f911920c2dddb364016c35dc7cb79e0166b60 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 02:22:56 -0800
+Subject: [PATCH] NoCpuPartner: 2v2 worlds only form full 4-human rooms (no
+ solo ever gets a CPU partner)
+
+3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
+is a CPU (the Teamplay duo cleared, the solo with a game-made CPU partner hung).
+OnlineMatching.NoCpuPartner (config default true): no short-handed rooms in 2v2-rule
+worlds; 2-3 solos, duo + solo and lone duos wait for 4 humans or their own timeout.
+Fes 1on1 / pair worlds unchanged; entries with an "N" partner are never placed.
+15 new tests (145 total).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  22 ++
+ Server-Infinite/Configurations/server.json    |   1 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  35 +++
+ .../Config/OnlineMatchingConfigurations.cs    |   6 +
+ Server-Infinite/Program.cs                    |   5 +
+ Tests/Matchmaking.Tests/NoCpuPartnerTests.cs  | 212 ++++++++++++++++++
+ 6 files changed, 281 insertions(+)
+ create mode 100644 Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 7cab576..9bc0961 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -51,6 +51,7 @@
+   "AllowPartialRooms": true,
+   "CpuStandInSeats": false,    // experimental: list a CPU client for each empty seat (did not fix the results hang)
+   "HumansTeamVsCpu": false,    // experimental: 2 humans -> teammates vs 2 CPU stand-ins (results-hang fix #1)
++  "NoCpuPartner": true,        // default: 2v2 worlds only form full 4-human rooms (no CPU partner -> no results hang)
+   "StaleAfterSeconds": 20,     // drop a waiting cabinet that stopped polling (min 3 x poll interval)
+   "ClassMatchScheduleMode": "Both",  // Both | Hours | UnixTime
+   "VerboseLog": false,         // true = also one line per CheckMatching poll (debugging only)
+@@ -173,6 +174,27 @@ directly. Built-in STUN on the main server.
+   shared LM); a solo route battle vs CPU does not hang. So it is **not caused by this server**; most likely two
+   game instances on one OS interfering. Pending: cab2 in Windows Sandbox (own network stack) and a real two-PC test.
+ 
++## NoCpuPartner (2026-11-15, default on)
++3-cab test 2026-11-15 02:18 PT: a Teamplay duo vs a solo cabinet. The duo cleared the results screen; the solo, whose
++partner was a game-made CPU, hung until TEST. Every hang so far had a cabinet with a CPU partner; Fes 1on1 (no partner),
++4-human rooms and Teamplay duos clear. The game seats CPUs itself (they never appear on the network) and gives a CPU
++partner to every solo without a human teammate, so the only server-side lever is which rooms are formed.
++
++With `OnlineMatching.NoCpuPartner` (true by default in the config; the `Matchmaker` class property defaults to false):
++* 2v2-rule worlds (everything except `OneOnOneWorlds` and the pair worlds 5/21/22) form **only full 4-human rooms**:
++  4 solos (2 + 2), a Teamplay duo + 2 solos (the solos are teammates), or duo vs duo.
++* The fill timer (`FillAfterSeconds` / `FillTimerMode` / `MaxFillWaitSeconds` / in-store overrides) no longer makes
++  short-handed rooms there. 2 or 3 solos, a duo + 1 solo, or a lone duo keep waiting (a 4th human can still join at any
++  time) until the cabinet's own matching timeout (150 s by default), which gets `MATCH_CANCELED`. One `NOCPU hold` log
++  line per waiting unit when the fill timer would have fired.
++* The server can't move a cabinet into Fes 1on1: the mode is the cabinet's choice (world id in its entry) and no reply
++  carries a mode. A 1v1 room in a 2v2 world is exactly the CPU-partner case. Fes 1on1 (`OneOnOneWorlds`, default "20")
++  keeps matching two solos at once, so for two players the answer is to pick Fes 1on1 on both cabinets.
++* `AllowPartialRooms`, `CpuStandInSeats`, `HumansTeamVsCpu` and `LoneTeamVsCpu` are ignored for those worlds.
++* A team entry whose partner is the game's CPU stand-in ("N") already has a CPU partner: it is never placed (one
++  `NOCPU-WARN` line) and waits for its own timeout.
++* `false` = pre-v11 behaviour. Tests: `Tests/Matchmaking.Tests/NoCpuPartnerTests.cs`.
++
+ ## Results-hang fixes (2026-11-14, exvs2-lobbies `analysis/results-hang-fixes.md` section 4) — fake cabinets only
+ All off by default except the log line. Tests: `Tests/Matchmaking.Tests/HangFixTests.cs`,
+ exvs2-lobbies `server-sketch/loadtest/hangfix_e2e.py`.
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 724ab7e..545589a 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -50,6 +50,7 @@
+       "OneOnOneWorlds": "20",
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
++      "NoCpuPartner": true,
+       "AllowPartialRooms": true,
+       "SoftAttributeWaitSeconds": 15,
+       "StaleAfterSeconds": 20,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 4b85e74..269ba42 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -98,6 +98,10 @@ public sealed class Matchmaker
+         public HashSet<string> Realms = new();
+         public uint LeaderNode => Clients[0].NodeId;
+         public Room? Room;
++        /// <summary>NoCpuPartner: the "held, no short-handed room" line was logged for this unit.</summary>
++        public bool NoCpuHoldLogged;
++        /// <summary>A 2-slot entry whose partner is the game's CPU stand-in ("N").</summary>
++        public bool HasCpuPartner => Clients.Any(c => !IsHuman(c));
+ 
+         public static Unit From(Request.EntryMatching e, double now)
+         {
+@@ -215,6 +219,18 @@ public sealed class Matchmaker
+     /// game fills the opposing side with CPUs. Off by default. Requires AllowPartial.
+     /// </summary>
+     public bool LoneTeamVsCpu { get; set; } = false;
++    /// <summary>
++    /// results-hang fix 2026-11-15 (NoCpuPartner): the results screen hangs on every cabinet whose partner is a CPU
++    /// (3-cab test 02:18: Teamplay duo cleared results, the solo with a game-made CPU partner hung; Fes 1on1 and
++    /// 4-human rooms clear). The game seats a CPU partner for any solo that has no human teammate, so in 2v2-rule
++    /// worlds (everything except the 1on1 and pair worlds) only full 4-human rooms are formed: 4 solos, a duo + 2 solos
++    /// or 2 duos. Short-handed rooms (1v1, 2v1, duo vs solo) are never made, whatever the fill timer says, and the
++    /// experimental HumansVsCpu / LoneTeamVsCpu / CpuStandIns room shapes are off. A team entry whose partner is the
++    /// game's CPU stand-in ("N") already has a CPU partner and is never placed. Waiting units keep waiting until 4
++    /// humans gather or the cabinet's own matching timeout (MATCH_CANCELED). 1on1 worlds (OneOnOneWorlds) and pair
++    /// worlds are unchanged. Off by default here; OnlineMatching.NoCpuPartner (config) defaults to true.
++    /// </summary>
++    public bool NoCpuPartner { get; set; } = false;
+     public Action<string>? Log { get; set; }
+     /// <summary>Warnings (address mismatch, missing STUN result). Falls back to <see cref="Log"/>.</summary>
+     public Action<string>? Warn { get; set; }
+@@ -357,6 +373,9 @@ public sealed class Matchmaker
+             foreach (var n in t.NodeIds) _byNode[n] = t;
+             _queue.Add(t);
+             NetEntry(e.Myclient, sourceIp, "entry");
++            if (NoCpuPartner && !t.OneOnOne && !t.Pair && t.HasCpuPartner)
++                (Warn ?? Log)?.Invoke($"NOCPU-WARN node={e.Myclient.NodeId} {t.WorldName} entry has a CPU partner (\"N\"): " +
++                                      "never placed while NoCpuPartner is on (its results screen would hang); it waits for its own timeout");
+             TryMatch(now);
+             Log?.Invoke($"entry {t.WorldName} nodes=[{string.Join(",", t.NodeIds)}] slots={t.Slots} key={t.Key} level={t.Level} queue={_queue.Count}");
+             if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.Room == null)
+@@ -522,6 +541,9 @@ public sealed class Matchmaker
+                     if (slots >= 2 * TeamSlots || units.Sum(u => u.Humans.Count()) < 2) continue;
+                 }
+                 else if (slots != 2 * TeamSlots) continue;
++                // NoCpuPartner: every seat must be a human (a full room's two sides are 2 slots each, so every solo
++                // gets a human partner); a team entry with a CPU partner is never placed
++                if (NoCpuPartner && units.Any(u => u.HasCpuPartner)) continue;
+ 
+                 var ok = true;
+                 for (var i = 0; i < units.Count && ok; i++)
+@@ -583,6 +605,19 @@ public sealed class Matchmaker
+                     var a = bucket[i];
+                     var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now)).Take(PoolMax).ToList();
+                     var sides = BestRoom(a, pool, idx, now, false);
++                    if (sides == null && NoCpuPartner)
++                    {
++                        // never a short-handed room: some solo would get a CPU partner (results hang). Keep waiting.
++                        if (!a.NoCpuHoldLogged && ReadyForPartial(a, pool, now))
++                        {
++                            a.NoCpuHoldLogged = true;
++                            var humans = a.Humans.Count() + pool.Sum(u => u.Humans.Count());
++                            Log?.Invoke($"NOCPU hold {a.WorldName} nodes=[{string.Join(",", a.NodeIds)}] slots={a.Slots} " +
++                                        $"compatible-humans={humans}/4: no short-handed room (a solo would get a CPU partner); " +
++                                        $"waiting for 4 humans or the cabinet's own timeout ({a.Timeout:0}s)");
++                        }
++                        continue;
++                    }
+                     if (sides == null && ReadyForPartial(a, pool, now))
+                     {
+                         sides = BestRoom(a, pool, idx, now, true);
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index a96017d..4d831fa 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -82,6 +82,12 @@ public class OnlineMatchingConfigurations
+     /// capped by MaxFillWaitSeconds) gets a room by itself (both clients group 0); the game adds CPU opponents.
+     /// Needs AllowPartialRooms. Off by default.</summary>
+     public bool LoneTeamVsCpu { get; set; } = false;
++    /// <summary>2026-11-15 results-hang fix, default ON: a cabinet whose partner is a CPU hangs on the results screen,
++    /// so 2v2-rule worlds only ever form full 4-human rooms (4 solos, duo + 2 solos, duo + duo). No 1v1 / 2v1 / duo-vs-solo
++    /// rooms after the fill timer; those players keep waiting until 4 humans gather or their own matching timeout.
++    /// Overrides AllowPartialRooms, CpuStandInSeats, HumansTeamVsCpu and LoneTeamVsCpu for those worlds. Fes 1on1
++    /// (OneOnOneWorlds) and pair worlds are unchanged. false = pre-v11 behaviour.</summary>
++    public bool NoCpuPartner { get; set; } = true;
+     /// <summary>Seconds during which a "soft" mode attribute (win-rate bucket, veteran flag) must match.</summary>
+     public double SoftAttributeWaitSeconds { get; set; } = 15;
+     /// <summary>Seconds without a CheckMatching poll before a waiting cabinet is dropped (no ghost matches).</summary>
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 0afd9b5..85bbbcd 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -95,6 +95,7 @@ try
+             CpuStandIns = mm.CpuStandInSeats,
+             HumansVsCpu = mm.HumansTeamVsCpu,
+             LoneTeamVsCpu = mm.LoneTeamVsCpu,
++            NoCpuPartner = mm.NoCpuPartner,
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+@@ -120,6 +121,10 @@ try
+     
+     var config = app.Services.GetRequiredService<IOptions<CardServerConfig>>().Value;
+     Log.Information("Card server config: {@Config}", config.ToString());
++    Log.Information("Matchmaker policy: NoCpuPartner={NoCpuPartner} AllowPartialRooms={AllowPartial} OneOnOneWorlds={OneOnOne} " +
++                    "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns}",
++        config.OnlineMatching.NoCpuPartner, config.OnlineMatching.AllowPartialRooms, config.OnlineMatching.OneOnOneWorlds,
++        config.OnlineMatching.LoneTeamVsCpu, config.OnlineMatching.HumansTeamVsCpu, config.OnlineMatching.CpuStandInSeats);
+     
+     app.UseSerilogRequestLogging(options =>
+     {
+diff --git a/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs b/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+new file mode 100644
+index 0000000..dc76a5d
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+@@ -0,0 +1,212 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// NoCpuPartner (2026-11-15, 3-cab test 02:18): a cabinet whose partner is a CPU hangs on the results screen. In
++// 2v2-rule worlds only full 4-human rooms may form; 1on1 (Fes) worlds keep their 2-client rooms. Fake entries only.
++public class NoCpuPartnerTests
++{
++    private uint _node = 8000;
++
++    private static Client Cl(uint node, bool human = true)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = human ? $"P{node}" : Matchmaker.NpcSerial, LocId = $"L{node}", PrefCode = 13,
++            GlobalIpaddress = "203.0.113.1", NatMappingType = NatMappingType.NmEndpointIndependent,
++            NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = human ? "Y" : "N" });
++        return c;
++    }
++
++    private Request.EntryMatching Entry(uint world = 23, bool team = false, bool cpuPartner = false)
++    {
++        var me = _node += 2;
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        if (team || cpuPartner)
++            e.Groups.Add(new Request.EntryMatching.Group
++            {
++                Client = Cl(me + 1, !cpuPartner), Player = new Player { BanapassportAmId = cpuPartner ? 0 : me + 1 }
++            });
++        return e;
++    }
++
++    private static Matchmaker New(bool on = true, List<string>? log = null) =>
++        new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, MaxFillWait = 90, InStoreFillAfter = 60, InStoreMaxFillWait = 120,
++            NoCpuPartner = on, Log = log == null ? null : log.Add,
++        };
++
++    private static Matchmaker.Room? RoomAt(Matchmaker mm, Request.EntryMatching e, double t) => mm.Check(e.Myclient.NodeId, t).Room;
++
++    /// <summary>Every client human, each side exactly 2 humans.</summary>
++    private static void AssertFourHumans(Matchmaker.Room r)
++    {
++        Assert.Equal(4, r.Clients.Count);
++        Assert.Equal(4, r.Humans);
++        Assert.All(r.Clients, c => Assert.True(Matchmaker.Unit.IsHuman(c.Client)));
++        Assert.Equal(2, r.Clients.Count(c => c.GroupId == 0));
++        Assert.Equal(2, r.Clients.Count(c => c.GroupId == 1));
++    }
++
++    [Theory]
++    [InlineData(23u)]   // mix
++    [InlineData(18u)]   // free solo
++    [InlineData(13u)]   // class solo
++    [InlineData(15u)]   // in-store solo
++    public void TwoSolosNeverGetAShortRoomAndTimeOut(uint world)
++    {
++        var mm = New();
++        var a = Entry(world); var b = Entry(world);
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        foreach (var t in new[] { 31.0, 60, 91, 121, 149 })
++        {
++            Assert.Null(RoomAt(mm, a, t));
++            Assert.Null(RoomAt(mm, b, t));
++        }
++        Assert.Equal(ErrorCode.MatchCanceled, mm.Check(a.Myclient.NodeId, 151).Code);   // the cabinet's own timeout
++    }
++
++    [Fact]
++    public void ThreeSolosWaitThenAFourthMakesA2v2()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 3).Select(_ => Entry()).ToList();
++        for (var i = 0; i < 3; i++) mm.Entry(es[i], i);
++        foreach (var t in new[] { 40.0, 95, 120 })
++            Assert.All(es, e => Assert.Null(RoomAt(mm, e, t)));
++        var d = Entry();
++        mm.Entry(d, 125);
++        var r = RoomAt(mm, d, 125)!;
++        AssertFourHumans(r);
++        Assert.All(es, e => Assert.Same(r, RoomAt(mm, e, 125)));
++    }
++
++    [Fact]
++    public void FourSolosMatchAtOnce()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 4).Select(_ => Entry()).ToList();
++        foreach (var e in es) mm.Entry(e, 0);
++        AssertFourHumans(RoomAt(mm, es[0], 0)!);
++    }
++
++    [Fact]
++    public void DuoAndOneSoloNeverMatch()
++    {
++        var mm = New();
++        var duo = Entry(team: true); var solo = Entry();
++        mm.Entry(duo, 0); mm.Entry(solo, 0);
++        foreach (var t in new[] { 31.0, 91, 149 })
++        {
++            Assert.Null(RoomAt(mm, duo, t));
++            Assert.Null(RoomAt(mm, solo, t));
++        }
++    }
++
++    [Fact]
++    public void DuoPlusTwoSolosPutsTheSolosTogether()
++    {
++        var mm = New();
++        var duo = Entry(team: true); var s1 = Entry(); var s2 = Entry();
++        mm.Entry(duo, 0); mm.Entry(s1, 0); mm.Entry(s2, 0);
++        var r = RoomAt(mm, duo, 0)!;
++        AssertFourHumans(r);
++        var duoGroup = r.Clients.Single(c => c.Client.NodeId == duo.Myclient.NodeId).GroupId;
++        Assert.All(r.Clients.Where(c => c.Client.NodeId == s1.Myclient.NodeId || c.Client.NodeId == s2.Myclient.NodeId),
++            c => Assert.NotEqual(duoGroup, c.GroupId));
++    }
++
++    [Fact]
++    public void DuoVsDuoMatches()
++    {
++        var mm = New();
++        var a = Entry(team: true); var b = Entry(team: true);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        AssertFourHumans(RoomAt(mm, a, 0)!);
++    }
++
++    [Fact]
++    public void LoneDuoKeepsWaitingEvenWithLoneTeamVsCpu()
++    {
++        var mm = New();
++        mm.LoneTeamVsCpu = true;
++        var duo = Entry(team: true);
++        mm.Entry(duo, 0);
++        foreach (var t in new[] { 31.0, 91, 149 }) Assert.Null(RoomAt(mm, duo, t));
++    }
++
++    [Fact]
++    public void HumansVsCpuAndStandInsAreOverridden()
++    {
++        var mm = New();
++        mm.HumansVsCpu = true; mm.CpuStandIns = true;
++        var a = Entry(); var b = Entry();
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        foreach (var t in new[] { 31.0, 91, 149 }) Assert.Null(RoomAt(mm, a, t));
++    }
++
++    [Fact]
++    public void EntryWithCpuPartnerIsNeverPlaced()
++    {
++        var log = new List<string>();
++        var mm = New(log: log);
++        mm.Warn = log.Add;
++        var cpu = Entry(cpuPartner: true); var s1 = Entry(); var s2 = Entry();
++        mm.Entry(cpu, 0); mm.Entry(s1, 0); mm.Entry(s2, 0);
++        Assert.Null(RoomAt(mm, cpu, 0));
++        Assert.Null(RoomAt(mm, s1, 100));
++        Assert.Contains(log, l => l.StartsWith("NOCPU-WARN"));
++        // the two humans still match once two more humans come
++        var s3 = Entry(); var s4 = Entry();
++        mm.Entry(s3, 101); mm.Entry(s4, 101);
++        var r = RoomAt(mm, s1, 101)!;
++        AssertFourHumans(r);
++        Assert.Null(RoomAt(mm, cpu, 101));
++    }
++
++    [Fact]
++    public void FesOneOnOneStillMatchesTwoSolosAtOnce()
++    {
++        var mm = New();
++        var a = Entry(20); var b = Entry(20);
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        var r = RoomAt(mm, a, 1)!;
++        Assert.Equal(2, r.Clients.Count);
++        Assert.Equal(new uint[] { 0, 1 }, r.Clients.Select(c => c.GroupId).ToArray());
++    }
++
++    [Fact]
++    public void HoldIsLoggedOnceWhenTheFillTimerWouldHaveFired()
++    {
++        var log = new List<string>();
++        var mm = New(log: log);
++        var a = Entry(); var b = Entry();
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        RoomAt(mm, a, 10);
++        Assert.DoesNotContain(log, l => l.StartsWith("NOCPU hold"));
++        RoomAt(mm, a, 31); RoomAt(mm, a, 60); RoomAt(mm, b, 60);
++        Assert.Equal(2, log.Count(l => l.StartsWith("NOCPU hold")));   // once per waiting unit
++    }
++
++    [Fact]
++    public void FlagOffKeepsTheOldShortRoom()
++    {
++        var mm = New(on: false);
++        var a = Entry(); var b = Entry();
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(RoomAt(mm, a, 10));
++        var r = RoomAt(mm, a, 31)!;
++        Assert.Equal(2, r.Humans);
++    }
++}
+-- 
+2.47.3
+

@@ -1,0 +1,66 @@
+From 89312727284e25d7aded05c668fefafd54ddf52f Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:31:50 -0800
+Subject: [PATCH] Ship 3-second fill timers as the default (NoCpuPartner stays
+ on)
+
+FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
+InStoreMaxFillWaitSeconds are now 3 in the shipped server.json, matching
+the tested search timer. NoCpuPartner was already the default (true).
+With NoCpuPartner on, the fill timer no longer forms short-handed 2v2
+rooms; 2v2 matches still wait for 4 human players.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                      | 6 +++---
+ Server-Infinite/Configurations/server.json | 8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 7bcd953..c828a77 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -45,9 +45,9 @@
+                                // instead of coturn; StunHost must be this host's IP as cabinets reach it
+   "BuiltinStunPort": 0, "BuiltinStunAltPort": 0, "BuiltinStunAltIp": "",   // 0 = StunPort / port+1; "" = single-IP
+   "PollingIntervalSeconds": 3,
+-  "FillAfterSeconds": 15,      // short-handed room (>= 2 humans) after this wait; Rolling restarts on each new joiner
++  "FillAfterSeconds": 3,       // short-handed room (>= 2 humans) after this wait; Rolling restarts on each new joiner
+   "FillTimerMode": "Rolling",  // Rolling (default) or FromFirst (pre-v8: timer from the oldest waiter)
+-  "MaxFillWaitSeconds": 90,    // hard cap from the first searcher; 0 = no cap
++  "MaxFillWaitSeconds": 3,     // hard cap from the first searcher; 0 = no cap
+   "AllowPartialRooms": true,
+   "CpuStandInSeats": false,    // experimental: list a CPU client for each empty seat (did not fix the results hang)
+   "HumansTeamVsCpu": false,    // experimental: 2 humans -> teammates vs 2 CPU stand-ins (results-hang fix #1)
+@@ -166,7 +166,7 @@ directly. Built-in STUN on the main server.
+ * **Fixed – STUN source address:** on a multi-homed PC the built-in STUN socket bound to 0.0.0.0 replied from the
+   N2N adapter's IP; the game dropped those replies. Now bound to `StunHost` when it is a local IP.
+ * **Fixed – badge exp:** a lost match took badge exp 0 → −20; now clamped at 0.
+-* **FillAfterSeconds:** 30 felt slow; 3 works on a LAN; default now 15 (10–15 recommended for a public server).
++* **FillAfterSeconds:** 30 felt slow; 3 works on a LAN and is the shipped default (FillAfterSeconds / MaxFillWaitSeconds / in-store overrides). With NoCpuPartner on, the fill timer no longer forms short-handed 2v2 rooms.
+ * **Open – results-screen hang** after every 2-cabinet **versus** match: both cabinets sit on the results screen
+   for minutes, then recover. Packet captures: every message answered, cabinets stay in sync, both card servers
+   answered 200. Holding Start does not clear it. CPU stand-in seats (`CpuStandInSeats`) reached both cabinets but
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 545589a..04d3865 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -42,11 +42,11 @@
+       "StunUser": "",
+       "StunPass": "",
+       "PollingIntervalSeconds": 3,
+-      "FillAfterSeconds": 15,
++      "FillAfterSeconds": 3,
+       "FillTimerMode": "Rolling",
+-      "MaxFillWaitSeconds": 90,
+-      "InStoreFillAfterSeconds": 60,
+-      "InStoreMaxFillWaitSeconds": 120,
++      "MaxFillWaitSeconds": 3,
++      "InStoreFillAfterSeconds": 3,
++      "InStoreMaxFillWaitSeconds": 3,
+       "OneOnOneWorlds": "20",
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+-- 
+2.47.3
+

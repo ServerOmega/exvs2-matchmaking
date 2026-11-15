@@ -41,7 +41,7 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 ## Casual / shuffle
 - [ ] 4 solo cabinets start a 2v2 using the server-assigned teams (`group_id`)
 - [x] 1v1 / 2v1 rooms: the game plays them; the CPU partner is added by each cabinet locally (2026-11-13). `CpuStandInSeats` (server lists CPU seats) also accepted but changes nothing visible; off by default
-- [x] `FillAfterSeconds`: 30 too slow for 2 players, 3 fine on a LAN; default now 15
+- [x] `FillAfterSeconds`: 30 too slow for 2 players, 3 fine on a LAN; shipped default now 3 (with `NoCpuPartner` on, the fill timer no longer forms short-handed 2v2 rooms)
 - [ ] Fixed pair: does the partner cabinet send its own entry, only poll, or neither?
 - [ ] Record the in-game menu names of play modes 4, 5, 6 and their sub-modes (static analysis: 4 = Fes, 5 = Custom; 6 unknown)
 - [ ] Team sortie with a CPU partner: is a result that omits the CPU entry accepted?
@@ -105,7 +105,7 @@ and built-in STUN. Details and the two-cabinets-on-one-PC recipe: [analysis/real
 * Built-in STUN on a multi-homed PC answered from the wrong source IP (the N2N adapter's) when bound to 0.0.0.0;
   the game dropped those replies → now bound to `StunHost`.
 * Badge exp went 0 → −20 after a loss → clamped at 0.
-* `FillAfterSeconds` 30 felt slow; 3 works on a LAN → default 15 (10–15 recommended for a public server).
+* `FillAfterSeconds` 30 felt slow; 3 works on a LAN → shipped default now 3 (with `NoCpuPartner` on, unused for short 2v2 rooms).
 
 **Open: results-screen hang after every 2-cabinet versus match**
 * Servers and network are fine: captures show every message answered and the cabinets staying in sync; both card
@@ -131,7 +131,7 @@ Fake cabinets + fake cards only, PC offline, no game / DLL run. Details: `analys
 ## Rolling fill, in-store wait, and Fes 1on1 (2026-11-14, patch commits 15–18)
 
 Docs: [`server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md`](server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md).
-The four commits are in `online-matchmaking.patch` (now 18 commits) and as a standalone series in
+Those commits, plus v10–v12, are in `online-matchmaking.patch` (now 24 commits) and as a standalone series in
 `server-sketch/ib-server/results-gap-and-rolling-fill/`.
 
 * [x] Rolling fill timer (`FillTimerMode=Rolling`, `FillAfterSeconds` 30, `MaxFillWaitSeconds` 90): four cabinets
@@ -140,8 +140,22 @@ The four commits are in `online-matchmaking.patch` (now 18 commits) and as a sta
   searched; those 2-human + 2-CPU rooms hung after results. Fix: `InStoreFillAfterSeconds` 60 /
   `InStoreMaxFillWaitSeconds` 120 (unit tests include that timeline). **Needs a 4-cab in-store retest** with
   everyone searching within a minute.
-* [ ] Fes 1on1 (`OneOnOneWorlds` default `"20"`): two cabinets pick フェス (banner says 1on1), play, and either
-  clear results or hang. Restart the cabinets after setting that day's `FesConfigurations.*Type` to a
-  `OneOnOne*` value (e.g. `OneOnOneAllCost`); the Fes rule loads at boot. The 2-client group 0 vs 1 room is
-  untested in the real game.
+* [x] Fes 1on1 (`OneOnOneWorlds` default `"20"`): a 1v1 Fes match through the VPS matchmaker completed
+  2026-11-15 04:24 PT (two cabinets). Restart cabinets after setting that day's `FesConfigurations.*Type`
+  to a `OneOnOne*` value (the Fes rule loads at boot).
 * Logging: `LogResultGap` (default on) times the hang (`RESULT-SAVE` / `RESULT-WAIT` / `RESULT-GAP`).
+
+## NoCpuPartner, v12 SoftWait, and the VPS matchmaker (2026-11-15)
+
+Docs: [`server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md`](server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md)
+sections 5–10. 150 matchmaker unit tests pass.
+
+* [x] `NoCpuPartner` (default on): 2v2 worlds only form full 4-human rooms. 3-cab test 2026-11-15 02:18 PT:
+  the Teamplay duo cleared results; the solo with a game-made CPU partner hung. With the flag on, 2–3
+  players wait for a 4th human or their own ~150 s matching timeout, then return to practice and can
+  search again. **Disclaimer: 2v2 matches only form when at least 4 human players are present.**
+* [x] v12 SoftWait: a complete 4-human room (e.g. a Teamplay duo + 2 solos with different Mix veteran
+  flags) starts immediately instead of waiting ~15 s. Tested 2026-11-15 03:13 PT.
+* [x] Fill timers shipped at 3 s (`FillAfterSeconds` / `MaxFillWaitSeconds` / in-store overrides).
+* [x] VPS matchmaker (`45.63.49.159:28090`, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
+  after local card servers pointed `MatchUrl` / `StunHost` at the VPS.

@@ -1,0 +1,142 @@
+From c4b215d7c66e8b483ec14dbff820408bf865ec66 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 01:51:07 -0800
+Subject: [PATCH] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its own
+ room after the fill timer
+
+After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
+opponent gets a room by itself: CheckMatching lists just its two clients in group 0,
+so the game fills the other side with CPUs. Config OnlineMatching.LoneTeamVsCpu
+(default false). Log line: MATCH room=N <world> lone-team-vs-cpu T[a,b] vs CPU.
+1 new test (130 total pass).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Matchmaking/Matchmaker.cs     | 29 +++++++++++++++++++
+ .../Config/OnlineMatchingConfigurations.cs    |  4 +++
+ Server-Infinite/Program.cs                    |  1 +
+ Tests/Matchmaking.Tests/HangFixTests.cs       | 27 +++++++++++++++++
+ 4 files changed, 61 insertions(+)
+
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index e26b012..4b85e74 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -209,6 +209,12 @@ public sealed class Matchmaker
+     /// Whether the game accepts a side with no human is untested.
+     /// </summary>
+     public bool HumansVsCpu { get; set; } = false;
++    /// <summary>
++    /// 2026-11-15: a 2-human team (Teamplay entry) that is still alone after the fill timer (FillAfter rolling,
++    /// capped by MaxFillWait) gets a room by itself: CheckMatching lists just its two clients, both group 0, and the
++    /// game fills the opposing side with CPUs. Off by default. Requires AllowPartial.
++    /// </summary>
++    public bool LoneTeamVsCpu { get; set; } = false;
+     public Action<string>? Log { get; set; }
+     /// <summary>Warnings (address mismatch, missing STUN result). Falls back to <see cref="Log"/>.</summary>
+     public Action<string>? Warn { get; set; }
+@@ -591,6 +597,13 @@ public sealed class Matchmaker
+                             }
+                         }
+                     }
++                    if (sides == null && LoneTeamVsCpu && a.IsTeam && a.Slots == TeamSlots
++                        && a.Clients.All(Unit.IsHuman) && ReadyForPartial(a, pool, now))
++                    {
++                        MakeLoneTeamRoom(a, now);
++                        made = true;
++                        continue;
++                    }
+                     if (sides != null)
+                     {
+                         MakeRoom(sides.Value, now);
+@@ -647,6 +660,22 @@ public sealed class Matchmaker
+         return true;
+     }
+ 
++    /// <summary>LoneTeamVsCpu: the team's two human clients, both group 0, no other clients (game adds CPU opponents).</summary>
++    private void MakeLoneTeamRoom(Unit team, double now)
++    {
++        var room = new Room
++        {
++            RoomId = _nextRoom++, At = now, World = team.World, Humans = team.Clients.Count,
++            Clients = team.Clients.Select(c => new RoomClient(0, c)).ToList(),
++        };
++        _queue.Remove(team);
++        team.Room = room;
++        RememberRoom(team, room);
++        Log?.Invoke($"MATCH room={room.RoomId} {team.WorldName} lone-team-vs-cpu T[{string.Join(",", team.NodeIds)}] " +
++                    $"vs CPU (humans={room.Humans}/4, LoneTeamVsCpu)");
++        Log?.Invoke(NetDiag.MatchLine(room.RoomId, room.Clients.Select(c => (c.GroupId, c.Client)), team.SourceByNode, Realms));
++    }
++
+     private void MakeRoom((List<Unit> S0, List<Unit> S1) sides, double now)
+     {
+         var clients = new List<RoomClient>();
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 207a63d..a96017d 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -78,6 +78,10 @@ public class OnlineMatchingConfigurations
+     /// of opponents with a CPU partner each. Uses FillAfterSeconds + AllowPartialRooms. Untested with the real game:
+     /// whether the game accepts a side with no human is unknown.</summary>
+     public bool HumansTeamVsCpu { get; set; } = false;
++    /// <summary>2026-11-15: a 2-human Teamplay entry still alone after the fill timer (FillAfterSeconds rolling,
++    /// capped by MaxFillWaitSeconds) gets a room by itself (both clients group 0); the game adds CPU opponents.
++    /// Needs AllowPartialRooms. Off by default.</summary>
++    public bool LoneTeamVsCpu { get; set; } = false;
+     /// <summary>Seconds during which a "soft" mode attribute (win-rate bucket, veteran flag) must match.</summary>
+     public double SoftAttributeWaitSeconds { get; set; } = 15;
+     /// <summary>Seconds without a CheckMatching poll before a waiting cabinet is dropped (no ghost matches).</summary>
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index dc550b3..0afd9b5 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -94,6 +94,7 @@ try
+             Verbose = mm.VerboseLog,
+             CpuStandIns = mm.CpuStandInSeats,
+             HumansVsCpu = mm.HumansTeamVsCpu,
++            LoneTeamVsCpu = mm.LoneTeamVsCpu,
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+diff --git a/Tests/Matchmaking.Tests/HangFixTests.cs b/Tests/Matchmaking.Tests/HangFixTests.cs
+index a4934f4..f4c137c 100644
+--- a/Tests/Matchmaking.Tests/HangFixTests.cs
++++ b/Tests/Matchmaking.Tests/HangFixTests.cs
+@@ -100,6 +100,33 @@ public class HangFixTests
+         Assert.Null(mm.Check(1200, 60).Room);
+     }
+ 
++    [Fact]
++    public void LoneTeamVsCpuGivesTheTeamItsOwnRoom()
++    {
++        Assert.False(new Matchmaker().LoneTeamVsCpu);
++        var log = new List<string>();
++        var mm = New(on: false, log: log);
++        mm.LoneTeamVsCpu = true;
++        mm.Entry(Solo(1500, partner: 1502), 0);
++        Assert.Null(mm.Check(1500, 10).Room);                     // still waits FillAfter for opponents
++        var room = mm.Check(1500, 31).Room!;
++        Assert.Equal(new uint[] { 1500, 1502 }, room.Clients.Select(c => c.Client.NodeId));
++        Assert.All(room.Clients, c => Assert.Equal(0u, c.GroupId));
++        Assert.All(room.Clients, c => Assert.True(Matchmaker.Unit.IsHuman(c.Client)));
++        Assert.Equal(2, room.Humans);
++        Assert.Same(room, mm.Check(1502, 31).Room);
++        Assert.Contains(log, l => l.Contains("lone-team-vs-cpu"));
++
++        // a team with a CPU partner entry, or a team that has a compatible opponent, is unchanged
++        var m2 = New(on: false); m2.LoneTeamVsCpu = true;
++        m2.Entry(Solo(1600, partner: 1601, cpuPartner: true), 0);
++        Assert.Null(m2.Check(1600, 60).Room);
++        var m3 = New(on: false); m3.LoneTeamVsCpu = true;
++        m3.Entry(Solo(1700, partner: 1702), 0); m3.Entry(Solo(1704), 0);
++        var r3 = m3.Check(1700, 31).Room!;
++        Assert.NotEqual(r3.Clients.Single(c => c.Client.NodeId == 1700).GroupId, r3.Clients.Single(c => c.Client.NodeId == 1704).GroupId);
++    }
++
+     [Fact]
+     public void FullRoomsAndThreeHumanRoomsAreUnchanged()
+     {
+-- 
+2.47.3
+

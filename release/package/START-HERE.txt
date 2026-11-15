@@ -1,4 +1,4 @@
-EXVS2 Infinite Boost - online matchmaking server  (v0.1.0-pre, EXPERIMENTAL TEST BUILD)
+EXVS2 Infinite Boost - online matchmaking server  (v0.2.0-pre, EXPERIMENTAL TEST BUILD)
 =====================================================================================
 
 What is this?
@@ -9,6 +9,13 @@ What is this?
   or a Linux PC/VPS.
 
   You must already have your own working copy of the game. Nothing in here contains game files.
+
+IMPORTANT - 2v2 matches:
+  In 2v2 modes (Mix, Class, In-store, Teamplay, ...) a match only forms when at least 4 human
+  players are searching. There are no CPU partners and no CPU fill. With fewer than 4 players,
+  each cabinet times out after about 150 seconds, returns to practice mode, and can search again.
+  Fes 1on1 (world 20) needs only 2 players.
+
 
 Why do I have to "build" it?
   The original card server has no license, so we are not allowed to hand out its program.

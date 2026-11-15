@@ -13,7 +13,7 @@ param(
     [string]$MatchServer = "",        # Player: the matchmaking server, "IP" or "IP:port" (port default 28080)
     [int]$HttpPort = 0,
     [int]$StunPort = 3478,
-    [double]$FillAfterSeconds = 15,
+    [double]$FillAfterSeconds = 3,
     [switch]$NoFirewall,
     [switch]$NoPrompt
 )
@@ -114,7 +114,7 @@ if ($Role -eq "Host") {
     if (-not (IsIPv4 $Ip)) { Fail "'$Ip' is not an IPv4 address." }
     if ($Ip -like "127.*") { Write-Host "WARNING: 127.x.x.x only works for a game on this same PC." -ForegroundColor Yellow }
     if ($HttpPort -le 0) { $HttpPort = [int](Ask "Port for the card server + matchmaker (keep 28080 unless you know why)" "28080") }
-    if (-not $NoPrompt) { $FillAfterSeconds = [double](Ask "Seconds to wait for 4 players before starting a 1v1/2v1" "$FillAfterSeconds") }
+    if (-not $NoPrompt) { $FillAfterSeconds = [double](Ask "Fill timer in seconds (2v2 matches still need 4 human players; Fes 1on1 needs 2)" "$FillAfterSeconds") }
 
     SetProp $om "Enabled" $true
     SetProp $om "MatchUrl" ""            # "" = cabinets get http://<address they used>/match = this server
@@ -122,7 +122,11 @@ if ($Role -eq "Host") {
     SetProp $om "StunPort" $StunPort
     SetProp $om "BuiltinStun" $true
     SetProp $om "FillAfterSeconds" $FillAfterSeconds
+    SetProp $om "MaxFillWaitSeconds" $FillAfterSeconds
+    SetProp $om "InStoreFillAfterSeconds" $FillAfterSeconds
+    SetProp $om "InStoreMaxFillWaitSeconds" $FillAfterSeconds
     SetProp $om "AllowPartialRooms" $true
+    SetProp $om "NoCpuPartner" $true
     SetProp $om "CpuStandInSeats" $false
 } else {
     if (-not $MatchServer) {

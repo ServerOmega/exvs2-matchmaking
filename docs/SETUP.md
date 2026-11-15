@@ -53,8 +53,12 @@ Minimum for a matchmaker with built-in STUN:
   "StunHost": "203.0.113.10",
   "StunPort": 3478,
   "BuiltinStun": true,
-  "FillAfterSeconds": 15,
+  "FillAfterSeconds": 3,
+  "MaxFillWaitSeconds": 3,
+  "InStoreFillAfterSeconds": 3,
+  "InStoreMaxFillWaitSeconds": 3,
   "AllowPartialRooms": true,
+  "NoCpuPartner": true,
   "CpuStandInSeats": false
 }
 ```
@@ -65,11 +69,12 @@ Minimum for a matchmaker with built-in STUN:
 | `StunHost` | **This host's IP as the players reach it** (IP literal): your public IP for internet play, the overlay IP (Radmin/Tailscale/ZeroTier) for VPN play, the LAN IP on a LAN. Not `127.0.0.1` for remote players. When it is one of this PC's own addresses, the built-in STUN binds to it (needed on PCs with several adapters). |
 | `StunPort` | `3478` (default). Built-in STUN also uses `StunPort + 1` (`BuiltinStunAltPort`, 0 = port+1). |
 | `BuiltinStun` | `true` = STUN runs inside this server (no coturn). `false` = use an external STUN server at `StunHost:StunPort` (e.g. [coturn](../server-sketch/coturn/turnserver.conf)). |
-| `FillAfterSeconds` | Seconds to wait for a full 2v2 before a short-handed room (1v1 / 2v1, at least 2 humans) forms. Default 15; 3 is fine for a LAN test; 10–15 for a public server. In the default `Rolling` mode this wait restarts when a new compatible cabinet joins. |
-| `FillTimerMode` / `MaxFillWaitSeconds` | `Rolling` (default) or `FromFirst`. `MaxFillWaitSeconds` (default 90, `0` = no cap) is a hard cap from the first searcher. |
-| `InStoreFillAfterSeconds` / `InStoreMaxFillWaitSeconds` | In-store worlds (15/16) only: default 60 / 120. Online Class/Mix keep the shared FillAfter / MaxFillWait. |
+| `FillAfterSeconds` | Seconds to wait for a full 2v2 before a short-handed room may form. Shipped default **3**. With `NoCpuPartner` on (the default), this no longer starts short-handed 2v2 rooms. In the default `Rolling` mode this wait restarts when a new compatible cabinet joins. |
+| `FillTimerMode` / `MaxFillWaitSeconds` | `Rolling` (default) or `FromFirst`. `MaxFillWaitSeconds` (shipped default 3, `0` = no cap) is a hard cap from the first searcher. |
+| `InStoreFillAfterSeconds` / `InStoreMaxFillWaitSeconds` | In-store worlds (15/16) only: shipped default 3 / 3. `0` = use the shared FillAfter / MaxFillWait. |
 | `OneOnOneWorlds` | Default `"20"` (Fes 1on1): two solos pair immediately into a 2-client 1v1 with no CPU seats. `""` = off. To offer Fes 1on1, also set that day's `FesConfigurations.*Type` to a `OneOnOne*` value and restart the cabinets. |
-| `AllowPartialRooms` | `true` = allow those short-handed rooms; `false` = only full 4-player rooms. |
+| `AllowPartialRooms` | `true` = allow short-handed rooms when `NoCpuPartner` is off; `false` = only full 4-player rooms. |
+| `NoCpuPartner` | **Default `true`.** 2v2 modes only form a match when at least 4 human players are searching (no CPU partners). Fes 1on1 (world 20) still needs only 2 players. |
 | `CpuStandInSeats` | **Experimental**, leave `false`. Lists a CPU client for each empty seat; it did not fix the results-screen hang. |
 | `PollingIntervalSeconds`, `StaleAfterSeconds`, `NetworkRealms`, `InStoreScope`, `ShopKeys`, `VerboseLog` | Optional; see the [config reference](../server-sketch/ib-server/README.md#configure). |
 
@@ -166,8 +171,9 @@ card-server instance, one directly on the matchmaker; they matched and played).
 ### B4. Queue
 1. Start the game, insert your card, pick an online mode. **Everyone must pick the same mode** to meet
    (each mode is its own queue; e.g. Mix Match and Class Match solo never mix).
-2. Wait. A full 2v2 forms as soon as 4 players are queued; with fewer, a 1v1 / 2v1 forms after
-   `FillAfterSeconds` (default 15 s). In a 1v1 the game adds your CPU partner itself.
+2. Wait. **2v2 matches only form when at least 4 human players are searching** (`NoCpuPartner`,
+   default on; no CPU partners). With fewer than 4, each cabinet times out after about 150 s,
+   returns to practice mode, and can search again. Fes 1on1 (world 20) needs only 2 players.
 3. Cancelling in the game's search screen works and leaves the queue.
 4. After the match, results (class-match rate, badge) are saved to **your own** card server.
 

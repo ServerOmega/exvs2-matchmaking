@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # EXVS2 matchmaking server - Linux configure (step 2). Writes Configurations/server.json + kestrel.json.
 # Usage: ./linux/configure.sh                     (asks questions)
-#        ./linux/configure.sh --ip 203.0.113.10 [--http-port 28080] [--stun-port 3478] [--fill 15] [--yes]
+#        ./linux/configure.sh --ip 203.0.113.10 [--http-port 28080] [--stun-port 3478] [--fill 3] [--yes]
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$HERE")"
 SERVER_DIR="${SERVER_DIR:-$ROOT/server-linux}"
 CFG="$SERVER_DIR/Configurations"
 
-IP=""; HTTP_PORT=28080; STUN_PORT=3478; FILL=15; YES=0
+IP=""; HTTP_PORT=28080; STUN_PORT=3478; FILL=3; YES=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --ip) IP="$2"; shift 2 ;;
@@ -62,8 +62,11 @@ def save(p, d):
 sp = os.path.join(cfg, "server.json"); s = load(sp)
 c = s.setdefault("CardServerConfig", {})
 om = c.setdefault("OnlineMatching", {})
+fill_v = int(fill) if fill.is_integer() else fill
 om.update({"Enabled": True, "MatchUrl": "", "StunHost": ip, "StunPort": stun_port, "BuiltinStun": True,
-           "FillAfterSeconds": int(fill) if fill.is_integer() else fill, "AllowPartialRooms": True, "CpuStandInSeats": False})
+           "FillAfterSeconds": fill_v, "MaxFillWaitSeconds": fill_v,
+           "InStoreFillAfterSeconds": fill_v, "InStoreMaxFillWaitSeconds": fill_v,
+           "AllowPartialRooms": True, "NoCpuPartner": True, "CpuStandInSeats": False})
 ot = c.setdefault("OnlineTag", {})
 for k, v in {"SendTagTeams": True, "TagStatus": 0, "MaxTeams": 20, "OneTimeInviteCode": True}.items(): ot.setdefault(k, v)
 save(sp, s)

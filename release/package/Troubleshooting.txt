@@ -54,10 +54,11 @@ Online tag
 
 Settings reference (server\Configurations\server.json -> CardServerConfig)
 --------------------------------------------------------------------------
-  OnlineMatching:  Enabled, MatchUrl, StunHost, StunPort, BuiltinStun, FillAfterSeconds (15),
-                   FillTimerMode (Rolling), MaxFillWaitSeconds (90),
-                   InStoreFillAfterSeconds (60), InStoreMaxFillWaitSeconds (120),
-                   OneOnOneWorlds ("20"), AllowPartialRooms, CpuStandInSeats (keep false),
+  OnlineMatching:  Enabled, MatchUrl, StunHost, StunPort, BuiltinStun, FillAfterSeconds (3),
+                   FillTimerMode (Rolling), MaxFillWaitSeconds (3),
+                   InStoreFillAfterSeconds (3), InStoreMaxFillWaitSeconds (3),
+                   OneOnOneWorlds ("20"), NoCpuPartner (true), AllowPartialRooms,
+                   CpuStandInSeats (keep false),
                    LogResultGap, LogPostMatchTraffic, PollingIntervalSeconds, StaleAfterSeconds,
                    NetworkRealms, VerboseLog ...
   OnlineTag:       SendTagTeams, TagStatus, MaxTeams, OneTimeInviteCode
@@ -71,6 +72,7 @@ KNOWN ISSUES (this is an early test build)
      2 game-added CPUs. Not seen in solo matches vs CPU. Matches between separate PCs are not tested yet.
      (Under investigation.)
      Test options and tools that help narrow it down: see Results-Hang-Testing.txt.
+     2v2 matches only form with 4 human players (NoCpuPartner, default on). Fes 1on1 needs 2.
   2. Only tested with two cabinets on one Windows PC (2026-11-13). Matching between different homes /
      over the internet / over a VPN is NOT tested yet - you are the testers. Please report what happens.
   3. Online tag and partner recruit are built but UNTESTED in the real game. Both partners must use the

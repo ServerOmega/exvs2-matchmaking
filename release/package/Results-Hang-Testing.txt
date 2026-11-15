@@ -28,9 +28,11 @@ Options in "CardServerConfig" -> "OnlineMatching"
                                  (times the hang without a stopwatch).
   FillTimerMode           Rolling  FillAfter restarts on each new compatible joiner
                                  so late cabinets can merge into one 2v2.
-  MaxFillWaitSeconds      90     Hard cap from the first searcher (0 = no cap).
-  InStoreFillAfterSeconds 60     In-store (worlds 15/16) only; online keeps 15.
-  InStoreMaxFillWaitSeconds 120  In-store cap; online keeps 90.
+  MaxFillWaitSeconds      3      Hard cap from the first searcher (0 = no cap).
+  InStoreFillAfterSeconds 3      In-store (worlds 15/16) only; shipped default 3.
+  InStoreMaxFillWaitSeconds 3    In-store cap; shipped default 3.
+  NoCpuPartner            true   2v2 rooms only form with 4 human players (no CPU
+                                 partners). Fes 1on1 still needs only 2 players.
   OneOnOneWorlds          "20"   Fes 1on1: 2-client 1v1, no CPU seats. Also set
                                  FesConfigurations for the day to a OneOnOne*
                                  value and restart the cabinets.

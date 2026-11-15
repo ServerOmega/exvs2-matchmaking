@@ -16,9 +16,9 @@ Our scripts and instructions in the package are GPL-3.0 (`package/LICENSE.txt`).
 | File | What it does |
 |---|---|
 | `1-Build-Server.bat` → `scripts/build-server.ps1` | portable git (MinGit, SHA-256 checked) and .NET 9 SDK (`dotnet-install.ps1`, local folder) if missing, download upstream @ 7f4b280, `git apply` the patch, `dotnet publish -r win-x64` (self-contained single exe), lay out `server/` keeping existing `Configurations/*.json` and `ServerInfinite.db`; optional copy of WebUI pictures / DB from an official v1.2.0 folder |
-| `2-Configure.bat` → `scripts/configure.ps1` | Host (StunHost = LAN / VPN / public IP, BuiltinStun, FillAfterSeconds 15) or Player (local card server, MatchUrl + StunHost → remote matchmaker); writes `server.json` + `kestrel.json`; optional firewall rules (`scripts/firewall.ps1`, elevated) |
+| `2-Configure.bat` → `scripts/configure.ps1` | Host (StunHost = LAN / VPN / public IP, BuiltinStun, FillAfterSeconds 3, NoCpuPartner) or Player (local card server, MatchUrl + StunHost → remote matchmaker); writes `server.json` + `kestrel.json`; optional firewall rules (`scripts/firewall.ps1`, elevated) |
 | `3-Start-Server.bat` | runs `server/Server-Infinite.exe` from its folder |
 | `linux/build-server.sh`, `configure.sh`, `start-server.sh`, `exvs2-matchmaking.service` | same for a Linux PC / VPS (self-contained linux-x64, `-p:LinuxHost=true`), systemd example |
 | `START-HERE.txt`, `Connect-Your-Game.txt`, `Public-Server.txt`, `Troubleshooting.txt` | plain-language instructions |
 
-Build the zip: `release/make-release.sh v0.1.0-pre` → `release/dist/` (not committed).
+Build the zip: `release/make-release.sh v0.2.0-pre` → `release/dist/` (not committed).

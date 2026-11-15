@@ -1,13 +1,13 @@
-# Results-gap trace and rolling fill timer (commits 15–18)
+# Results-gap trace, rolling fill, NoCpuPartner and v12 (commits 15–24)
 
-Four follow-on commits to [`online-matchmaking.patch`](online-matchmaking.patch), also kept as a
+Follow-on commits to [`online-matchmaking.patch`](online-matchmaking.patch), also kept as a
 `git format-patch` series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/).
 They apply to [Chiang-17/EXVS2-IB-Server](https://github.com/Chiang-17/EXVS2-IB-Server) at `7f4b280`
 after the first 14 commits of `online-matchmaking.patch` (tip `79b9fb4`). Upstream has no license;
 these patch files contain upstream context lines and are excluded from this repo's GPL grant the
 same way `online-matchmaking.patch` is — personal use against your own copy only.
 
-New users should apply the combined 18-commit `online-matchmaking.patch` (SETUP / the release
+New users should apply the combined 24-commit `online-matchmaking.patch` (SETUP / the release
 build already do that). If you already applied the earlier 14-commit patch:
 
 ```bash
@@ -74,3 +74,50 @@ in those worlds are refused.
 A full 4-human 2v2 cleared the results screen. Rooms that hung were 2 humans + 2 CPUs (the
 game-added partners in a 2v2-rule short room). Fes 1on1 is the path to test a 1v1 with no
 CPU seats. `LogResultGap` / `LogPostMatchTraffic` stay on by default for that test.
+
+
+## 5. LoneTeamVsCpu — `c4b215d` (v10, default off)
+
+A lone 2-human Teamplay entry still alone after the fill timer can get a room by itself
+(both clients group 0); the game fills the other side with CPUs. Config
+`OnlineMatching.LoneTeamVsCpu` (default `false`). Ignored when `NoCpuPartner` is on.
+
+## 6. NoCpuPartner — `693f911` (v11, default on)
+
+3-cab test 2026-11-15 02:18 PT: a Teamplay duo cleared results; the solo, whose partner was a
+game-made CPU, hung. With `OnlineMatching.NoCpuPartner` (true by default in the shipped config),
+2v2-rule worlds only form **full 4-human rooms** (4 solos, duo + 2 solos, or duo vs duo).
+2–3 players wait until each cabinet's own matching timeout (~150 s), then return to practice
+mode and can search again. Fes 1on1 (`OneOnOneWorlds`, default `"20"`) still needs only 2
+players. The fill timer no longer forms short-handed 2v2 rooms while this is on.
+
+## 7. SoftWait no longer delays a complete 4-human room — `6a14d73` (v12)
+
+`SoftAttributeWaitSeconds` (default 15) still prefers same-flag (veteran / win-rate) rooms and
+still keeps different flags apart for short-handed rooms. A complete 4-human room starts
+immediately if no same-flag 4 is already waiting. Tested 2026-11-15 03:13 PT: a Teamplay duo +
+2 solos with different Mix veteran flags used to wait ~14–16 s; they now match at once.
+5 new tests (**150 total**).
+
+## 8. Shipped fill-timer defaults — `8931272`
+
+`FillAfterSeconds`, `MaxFillWaitSeconds`, `InStoreFillAfterSeconds` and
+`InStoreMaxFillWaitSeconds` are now **3** in the shipped `server.json`, matching the tested
+search timer. With `NoCpuPartner` on, the fill timer does not form short-handed 2v2 rooms.
+
+## 9. VPS deploy tools — `905b051`
+
+`tools/vps/` (`deploy.sh`, `exvs2-mm.service`, sample configs) builds a committed ref for
+linux-x64 and installs it as systemd service `exvs2-mm`. Existing VPS `server.json` is kept
+unless `--force-config`. Local card servers point `MatchUrl` / `StunHost` at the VPS.
+
+## 10. 4-player disclaimer — `ecdccc9`
+
+README and `ONLINE_MATCHMAKING.md`: in 2v2 modes, matches only form when at least 4 human
+players are searching (no CPU partners). Fes 1on1 (world 20) needs only 2 players.
+
+## Hang note (2026-11-15)
+
+NoCpuPartner is on by default so solos no longer get a CPU partner in 2v2 modes. A Fes 1on1
+match through the VPS matchmaker on 2026-11-15 04:24 PT completed (two cabs). The 0x10E video
+memory crash on a 4-client one-PC setup is a separate graphics issue, not this matchmaker.

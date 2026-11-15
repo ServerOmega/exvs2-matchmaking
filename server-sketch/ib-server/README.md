@@ -4,6 +4,9 @@
 > played full matches through this server (built-in STUN); results saved. Not yet tried between separate machines.
 > See [the test report](../../analysis/real-game-test-2026-11-13.md). You must already have a copy of the game.
 
+> **2v2 matches only form with at least 4 human players.** With `NoCpuPartner` (default on), 2v2 modes never fill empty seats with CPU partners. Fewer than 4 searchers wait until each cabinet's own matching timeout (~150 s), then return to practice mode and can search again. Fes 1on1 (world 20) still needs only 2 players.
+
+
 This patches [Chiang-17/EXVS2-IB-Server](https://github.com/Chiang-17/EXVS2-IB-Server) (Infinite Boost card
 server, v1.2.0, commit `7f4b280`) so that it:
 
@@ -15,8 +18,8 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..rolling-fill-timer` of the local branch; 18 commits).
-The last four commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..rolling-fill-timer` of the local branch; 24 commits).
+The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
 Step-by-step hosting / player guide: [`docs/SETUP.md`](../../docs/SETUP.md).
@@ -26,13 +29,13 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 18 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 24 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
 # or Linux server:
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
-# matchmaker unit tests (includes 5 ResultGap + 16 FillTimer + 5 InStoreFill + 10 OneOnOne):
+# matchmaker unit tests (150 passing, including NoCpuPartner + v12 SoftWait full-room tests):
 dotnet test Tests/Matchmaking.Tests
 ```
 Copy your existing `ServerInfinite.db` next to the new build if you want to keep cards; the new migration
@@ -50,9 +53,9 @@ In `Configurations/server.json` under `CardServerConfig` → `OnlineMatching`:
 | `BuiltinStunPort` / `BuiltinStunAltPort` / `BuiltinStunAltIp` | `0` / `0` / `""` | `0` = `StunPort` / port+1; a second local IP enables full RFC 5780 change-IP tests |
 | `StunUser` / `StunPass` | `""` | only if coturn requires long-term credentials |
 | `PollingIntervalSeconds` | `3` | CheckMatching poll interval sent to the cabinet |
-| `FillAfterSeconds` / `AllowPartialRooms` | `15` / `true` | allow a short-handed room (1v1 / 2v1, at least 2 humans) after this wait (3 is fine on a LAN; 10–15 for a public server) |
-| `FillTimerMode` / `MaxFillWaitSeconds` | `Rolling` / `90` | `Rolling`: the FillAfter timer restarts on each new compatible joiner, so late cabinets can still merge into one 2v2; `FromFirst` = pre-v8 (from the first searcher). `MaxFillWaitSeconds` is a hard cap from the first searcher (`0` = no cap) |
-| `InStoreFillAfterSeconds` / `InStoreMaxFillWaitSeconds` | `60` / `120` | in-store worlds (15/16) only; online Class/Mix keep the shared FillAfter / MaxFillWait. `0` = use the shared values |
+| `FillAfterSeconds` / `AllowPartialRooms` | `3` / `true` | short-handed room wait; with `NoCpuPartner` on this no longer forms 2v2 short rooms. Shipped default 3 |
+| `FillTimerMode` / `MaxFillWaitSeconds` | `Rolling` / `3` | `Rolling`: the FillAfter timer restarts on each new compatible joiner; `FromFirst` = pre-v8. `MaxFillWaitSeconds` is a hard cap from the first searcher (`0` = no cap). Shipped default 3 |
+| `InStoreFillAfterSeconds` / `InStoreMaxFillWaitSeconds` | `3` / `3` | in-store worlds (15/16) only; `0` = use the shared FillAfter / MaxFillWait. Shipped default 3 |
 | `OneOnOneWorlds` | `"20"` | worlds that pair two solos immediately into a 2-client 1v1 (group 0 vs 1, no CPU seats). Default 20 = Fes 1on1. `""` = off |
 | `CpuStandInSeats` | `false` | experimental: list a CPU client (owned by a cabinet) for each empty seat; did not fix the results-screen hang |
 | `SoftAttributeWaitSeconds` | `15` | time win-rate bucket / veteran flag must match in free/mix modes |
@@ -124,7 +127,7 @@ Real game 2026-11-13: see [`../../analysis/real-game-test-2026-11-13.md`](../../
 
 ## Not done / risks
 * Only tested with two cabinets on one PC; hole-punch / P2P between separate machines still untested.
-* Results screen hangs after 2-cabinet versus matches on one PC (also without this server). A 4-human 2v2 on 2026-11-14 cleared results; hung rooms were 2 humans + 2 game-added CPUs. Fes 1on1 (`OneOnOneWorlds=20`) is the no-CPU 1v1 test path; see [RESULTS-GAP-AND-ROLLING-FILL.md](RESULTS-GAP-AND-ROLLING-FILL.md).
+* Results screen hangs when a cabinet's partner is a game-made CPU. `NoCpuPartner` (default on) prevents that in 2v2 modes by waiting for 4 humans. A Fes 1on1 through the VPS matchmaker completed on 2026-11-15 04:24 PT. See [RESULTS-GAP-AND-ROLLING-FILL.md](RESULTS-GAP-AND-ROLLING-FILL.md).
 * Mode→world ids, class ids 1–4, and the hour-based schedule are inferred from static analysis.
 * Matchmaker state is in memory (a restart drops waiting players); hidden MMR from the Python sketch is not ported
   (no reliable link between MMS am_id and card id yet) — ranked pairs by class + level only.

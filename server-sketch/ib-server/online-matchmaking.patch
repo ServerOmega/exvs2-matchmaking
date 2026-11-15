@@ -1,7 +1,7 @@
 From 46f2cf5f59c4858078e5c4d44e3d60923d7e15c1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/18] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/24] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2328,7 +2328,7 @@ index 0000000..3b81d9a
 From 59a8ceaba76b4a9c00743b17e00ecb7abdc89ed3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/18] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/24] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2366,7 +2366,7 @@ index da8f5ea..3029cb0 100644
 From c10e1826eccd88272306b1f2f71b16126626baba Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/18] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/24] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2598,7 +2598,7 @@ index bda49e2..a9c56ab 100644
 From 9295ed8babeb0d6e6651d2c6790f26f1b85b6061 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/18] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/24] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2657,7 +2657,7 @@ index 872d2b3..4ef4c22 100644
 From 060e241c15c6a6ede6d3c0a9e267f1122e06afdd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/18] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/24] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2685,7 +2685,7 @@ index 90e35a8..5fad533 100644
 From a6cdb59e736f93bbb922a85b637ee0b9888254fc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/18] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/24] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3036,7 +3036,7 @@ index 3b81d9a..b5b7cbb 100644
 From 679ae7d833acb2a84183f4844568c34134ac5adf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/18] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/24] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3110,7 +3110,7 @@ index 2a72884..65ee897 100644
 From 4ecdd01d345a51c3a5560a882691a6e492be2c03 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/18] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/24] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3601,7 +3601,7 @@ index 0000000..f7c4beb
 From e460603df7dd164e85b3ed5cd456994a819a2601 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/18] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/24] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4043,7 +4043,7 @@ index 27c6cb7..94b83aa 100644
 From dcf1e9cf9fddc8862ad034846ebf1a1fb167a3d5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/18] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/24] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4139,7 +4139,7 @@ index 3709ff7..f37e4f8 100644
 From 0e7ec86f35d24461efb049eb1ae6b3eae7015728 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/18] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/24] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4219,7 +4219,7 @@ index 65ee897..81e88cd 100644
 From bb1f1c02bf7ac969890bdb686027ca10f450e7c8 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/18] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/24] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4749,7 +4749,7 @@ index 0000000..a4934f4
 From 581a1ce4c65e127e280234709143633cc1c9b7ee Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/18] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/24] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5398,7 +5398,7 @@ index b5b7cbb..74e757b 100644
 From 79b9fb419883b19d6a806e5b0bd07ca083e36acc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/18] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/24] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5884,7 +5884,7 @@ index 0000000..310cbdf
 From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 10:09:10 -0800
-Subject: [PATCH 15/18] Results-hang timing (logging only, default on):
+Subject: [PATCH 15/24] Results-hang timing (logging only, default on):
  RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
  to its next request; LogResultGap config; 5 tests
 
@@ -6127,7 +6127,7 @@ index 0000000..e276bd6
 From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 22:31:13 -0800
-Subject: [PATCH 16/18] Rolling fill timer: FillAfter restarts on each new
+Subject: [PATCH 16/24] Rolling fill timer: FillAfter restarts on each new
  compatible joiner
 
 FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
@@ -6551,7 +6551,7 @@ index 9942148..f189356 100644
 From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:10:30 -0800
-Subject: [PATCH 17/18] In-store fill override: InStoreFillAfterSeconds (60) /
+Subject: [PATCH 17/24] In-store fill override: InStoreFillAfterSeconds (60) /
  InStoreMaxFillWaitSeconds (120) for worlds 15/16
 
 2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
@@ -6768,7 +6768,7 @@ index 0000000..1eb99cd
 From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:17:43 -0800
-Subject: [PATCH 18/18] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+Subject: [PATCH 18/24] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
  2-client rooms, group 0 vs 1, matched at once
 
 Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
@@ -7060,6 +7060,1306 @@ index 0000000..d09631a
 +    public void ParseWorlds(string? s, uint[] expected) =>
 +        Assert.Equal(expected.OrderBy(x => x), Matchmaker.ParseWorlds(s).OrderBy(x => x));
 +}
+-- 
+2.47.3
+
+
+From c4b215d7c66e8b483ec14dbff820408bf865ec66 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 01:51:07 -0800
+Subject: [PATCH 19/24] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
+ own room after the fill timer
+
+After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
+opponent gets a room by itself: CheckMatching lists just its two clients in group 0,
+so the game fills the other side with CPUs. Config OnlineMatching.LoneTeamVsCpu
+(default false). Log line: MATCH room=N <world> lone-team-vs-cpu T[a,b] vs CPU.
+1 new test (130 total pass).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Matchmaking/Matchmaker.cs     | 29 +++++++++++++++++++
+ .../Config/OnlineMatchingConfigurations.cs    |  4 +++
+ Server-Infinite/Program.cs                    |  1 +
+ Tests/Matchmaking.Tests/HangFixTests.cs       | 27 +++++++++++++++++
+ 4 files changed, 61 insertions(+)
+
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index e26b012..4b85e74 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -209,6 +209,12 @@ public sealed class Matchmaker
+     /// Whether the game accepts a side with no human is untested.
+     /// </summary>
+     public bool HumansVsCpu { get; set; } = false;
++    /// <summary>
++    /// 2026-11-15: a 2-human team (Teamplay entry) that is still alone after the fill timer (FillAfter rolling,
++    /// capped by MaxFillWait) gets a room by itself: CheckMatching lists just its two clients, both group 0, and the
++    /// game fills the opposing side with CPUs. Off by default. Requires AllowPartial.
++    /// </summary>
++    public bool LoneTeamVsCpu { get; set; } = false;
+     public Action<string>? Log { get; set; }
+     /// <summary>Warnings (address mismatch, missing STUN result). Falls back to <see cref="Log"/>.</summary>
+     public Action<string>? Warn { get; set; }
+@@ -591,6 +597,13 @@ public sealed class Matchmaker
+                             }
+                         }
+                     }
++                    if (sides == null && LoneTeamVsCpu && a.IsTeam && a.Slots == TeamSlots
++                        && a.Clients.All(Unit.IsHuman) && ReadyForPartial(a, pool, now))
++                    {
++                        MakeLoneTeamRoom(a, now);
++                        made = true;
++                        continue;
++                    }
+                     if (sides != null)
+                     {
+                         MakeRoom(sides.Value, now);
+@@ -647,6 +660,22 @@ public sealed class Matchmaker
+         return true;
+     }
+ 
++    /// <summary>LoneTeamVsCpu: the team's two human clients, both group 0, no other clients (game adds CPU opponents).</summary>
++    private void MakeLoneTeamRoom(Unit team, double now)
++    {
++        var room = new Room
++        {
++            RoomId = _nextRoom++, At = now, World = team.World, Humans = team.Clients.Count,
++            Clients = team.Clients.Select(c => new RoomClient(0, c)).ToList(),
++        };
++        _queue.Remove(team);
++        team.Room = room;
++        RememberRoom(team, room);
++        Log?.Invoke($"MATCH room={room.RoomId} {team.WorldName} lone-team-vs-cpu T[{string.Join(",", team.NodeIds)}] " +
++                    $"vs CPU (humans={room.Humans}/4, LoneTeamVsCpu)");
++        Log?.Invoke(NetDiag.MatchLine(room.RoomId, room.Clients.Select(c => (c.GroupId, c.Client)), team.SourceByNode, Realms));
++    }
++
+     private void MakeRoom((List<Unit> S0, List<Unit> S1) sides, double now)
+     {
+         var clients = new List<RoomClient>();
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 207a63d..a96017d 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -78,6 +78,10 @@ public class OnlineMatchingConfigurations
+     /// of opponents with a CPU partner each. Uses FillAfterSeconds + AllowPartialRooms. Untested with the real game:
+     /// whether the game accepts a side with no human is unknown.</summary>
+     public bool HumansTeamVsCpu { get; set; } = false;
++    /// <summary>2026-11-15: a 2-human Teamplay entry still alone after the fill timer (FillAfterSeconds rolling,
++    /// capped by MaxFillWaitSeconds) gets a room by itself (both clients group 0); the game adds CPU opponents.
++    /// Needs AllowPartialRooms. Off by default.</summary>
++    public bool LoneTeamVsCpu { get; set; } = false;
+     /// <summary>Seconds during which a "soft" mode attribute (win-rate bucket, veteran flag) must match.</summary>
+     public double SoftAttributeWaitSeconds { get; set; } = 15;
+     /// <summary>Seconds without a CheckMatching poll before a waiting cabinet is dropped (no ghost matches).</summary>
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index dc550b3..0afd9b5 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -94,6 +94,7 @@ try
+             Verbose = mm.VerboseLog,
+             CpuStandIns = mm.CpuStandInSeats,
+             HumansVsCpu = mm.HumansTeamVsCpu,
++            LoneTeamVsCpu = mm.LoneTeamVsCpu,
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+diff --git a/Tests/Matchmaking.Tests/HangFixTests.cs b/Tests/Matchmaking.Tests/HangFixTests.cs
+index a4934f4..f4c137c 100644
+--- a/Tests/Matchmaking.Tests/HangFixTests.cs
++++ b/Tests/Matchmaking.Tests/HangFixTests.cs
+@@ -100,6 +100,33 @@ public class HangFixTests
+         Assert.Null(mm.Check(1200, 60).Room);
+     }
+ 
++    [Fact]
++    public void LoneTeamVsCpuGivesTheTeamItsOwnRoom()
++    {
++        Assert.False(new Matchmaker().LoneTeamVsCpu);
++        var log = new List<string>();
++        var mm = New(on: false, log: log);
++        mm.LoneTeamVsCpu = true;
++        mm.Entry(Solo(1500, partner: 1502), 0);
++        Assert.Null(mm.Check(1500, 10).Room);                     // still waits FillAfter for opponents
++        var room = mm.Check(1500, 31).Room!;
++        Assert.Equal(new uint[] { 1500, 1502 }, room.Clients.Select(c => c.Client.NodeId));
++        Assert.All(room.Clients, c => Assert.Equal(0u, c.GroupId));
++        Assert.All(room.Clients, c => Assert.True(Matchmaker.Unit.IsHuman(c.Client)));
++        Assert.Equal(2, room.Humans);
++        Assert.Same(room, mm.Check(1502, 31).Room);
++        Assert.Contains(log, l => l.Contains("lone-team-vs-cpu"));
++
++        // a team with a CPU partner entry, or a team that has a compatible opponent, is unchanged
++        var m2 = New(on: false); m2.LoneTeamVsCpu = true;
++        m2.Entry(Solo(1600, partner: 1601, cpuPartner: true), 0);
++        Assert.Null(m2.Check(1600, 60).Room);
++        var m3 = New(on: false); m3.LoneTeamVsCpu = true;
++        m3.Entry(Solo(1700, partner: 1702), 0); m3.Entry(Solo(1704), 0);
++        var r3 = m3.Check(1700, 31).Room!;
++        Assert.NotEqual(r3.Clients.Single(c => c.Client.NodeId == 1700).GroupId, r3.Clients.Single(c => c.Client.NodeId == 1704).GroupId);
++    }
++
+     [Fact]
+     public void FullRoomsAndThreeHumanRoomsAreUnchanged()
+     {
+-- 
+2.47.3
+
+
+From 693f911920c2dddb364016c35dc7cb79e0166b60 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 02:22:56 -0800
+Subject: [PATCH 20/24] NoCpuPartner: 2v2 worlds only form full 4-human rooms
+ (no solo ever gets a CPU partner)
+
+3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
+is a CPU (the Teamplay duo cleared, the solo with a game-made CPU partner hung).
+OnlineMatching.NoCpuPartner (config default true): no short-handed rooms in 2v2-rule
+worlds; 2-3 solos, duo + solo and lone duos wait for 4 humans or their own timeout.
+Fes 1on1 / pair worlds unchanged; entries with an "N" partner are never placed.
+15 new tests (145 total).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  22 ++
+ Server-Infinite/Configurations/server.json    |   1 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  35 +++
+ .../Config/OnlineMatchingConfigurations.cs    |   6 +
+ Server-Infinite/Program.cs                    |   5 +
+ Tests/Matchmaking.Tests/NoCpuPartnerTests.cs  | 212 ++++++++++++++++++
+ 6 files changed, 281 insertions(+)
+ create mode 100644 Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 7cab576..9bc0961 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -51,6 +51,7 @@
+   "AllowPartialRooms": true,
+   "CpuStandInSeats": false,    // experimental: list a CPU client for each empty seat (did not fix the results hang)
+   "HumansTeamVsCpu": false,    // experimental: 2 humans -> teammates vs 2 CPU stand-ins (results-hang fix #1)
++  "NoCpuPartner": true,        // default: 2v2 worlds only form full 4-human rooms (no CPU partner -> no results hang)
+   "StaleAfterSeconds": 20,     // drop a waiting cabinet that stopped polling (min 3 x poll interval)
+   "ClassMatchScheduleMode": "Both",  // Both | Hours | UnixTime
+   "VerboseLog": false,         // true = also one line per CheckMatching poll (debugging only)
+@@ -173,6 +174,27 @@ directly. Built-in STUN on the main server.
+   shared LM); a solo route battle vs CPU does not hang. So it is **not caused by this server**; most likely two
+   game instances on one OS interfering. Pending: cab2 in Windows Sandbox (own network stack) and a real two-PC test.
+ 
++## NoCpuPartner (2026-11-15, default on)
++3-cab test 2026-11-15 02:18 PT: a Teamplay duo vs a solo cabinet. The duo cleared the results screen; the solo, whose
++partner was a game-made CPU, hung until TEST. Every hang so far had a cabinet with a CPU partner; Fes 1on1 (no partner),
++4-human rooms and Teamplay duos clear. The game seats CPUs itself (they never appear on the network) and gives a CPU
++partner to every solo without a human teammate, so the only server-side lever is which rooms are formed.
++
++With `OnlineMatching.NoCpuPartner` (true by default in the config; the `Matchmaker` class property defaults to false):
++* 2v2-rule worlds (everything except `OneOnOneWorlds` and the pair worlds 5/21/22) form **only full 4-human rooms**:
++  4 solos (2 + 2), a Teamplay duo + 2 solos (the solos are teammates), or duo vs duo.
++* The fill timer (`FillAfterSeconds` / `FillTimerMode` / `MaxFillWaitSeconds` / in-store overrides) no longer makes
++  short-handed rooms there. 2 or 3 solos, a duo + 1 solo, or a lone duo keep waiting (a 4th human can still join at any
++  time) until the cabinet's own matching timeout (150 s by default), which gets `MATCH_CANCELED`. One `NOCPU hold` log
++  line per waiting unit when the fill timer would have fired.
++* The server can't move a cabinet into Fes 1on1: the mode is the cabinet's choice (world id in its entry) and no reply
++  carries a mode. A 1v1 room in a 2v2 world is exactly the CPU-partner case. Fes 1on1 (`OneOnOneWorlds`, default "20")
++  keeps matching two solos at once, so for two players the answer is to pick Fes 1on1 on both cabinets.
++* `AllowPartialRooms`, `CpuStandInSeats`, `HumansTeamVsCpu` and `LoneTeamVsCpu` are ignored for those worlds.
++* A team entry whose partner is the game's CPU stand-in ("N") already has a CPU partner: it is never placed (one
++  `NOCPU-WARN` line) and waits for its own timeout.
++* `false` = pre-v11 behaviour. Tests: `Tests/Matchmaking.Tests/NoCpuPartnerTests.cs`.
++
+ ## Results-hang fixes (2026-11-14, exvs2-lobbies `analysis/results-hang-fixes.md` section 4) — fake cabinets only
+ All off by default except the log line. Tests: `Tests/Matchmaking.Tests/HangFixTests.cs`,
+ exvs2-lobbies `server-sketch/loadtest/hangfix_e2e.py`.
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 724ab7e..545589a 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -50,6 +50,7 @@
+       "OneOnOneWorlds": "20",
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
++      "NoCpuPartner": true,
+       "AllowPartialRooms": true,
+       "SoftAttributeWaitSeconds": 15,
+       "StaleAfterSeconds": 20,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 4b85e74..269ba42 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -98,6 +98,10 @@ public sealed class Matchmaker
+         public HashSet<string> Realms = new();
+         public uint LeaderNode => Clients[0].NodeId;
+         public Room? Room;
++        /// <summary>NoCpuPartner: the "held, no short-handed room" line was logged for this unit.</summary>
++        public bool NoCpuHoldLogged;
++        /// <summary>A 2-slot entry whose partner is the game's CPU stand-in ("N").</summary>
++        public bool HasCpuPartner => Clients.Any(c => !IsHuman(c));
+ 
+         public static Unit From(Request.EntryMatching e, double now)
+         {
+@@ -215,6 +219,18 @@ public sealed class Matchmaker
+     /// game fills the opposing side with CPUs. Off by default. Requires AllowPartial.
+     /// </summary>
+     public bool LoneTeamVsCpu { get; set; } = false;
++    /// <summary>
++    /// results-hang fix 2026-11-15 (NoCpuPartner): the results screen hangs on every cabinet whose partner is a CPU
++    /// (3-cab test 02:18: Teamplay duo cleared results, the solo with a game-made CPU partner hung; Fes 1on1 and
++    /// 4-human rooms clear). The game seats a CPU partner for any solo that has no human teammate, so in 2v2-rule
++    /// worlds (everything except the 1on1 and pair worlds) only full 4-human rooms are formed: 4 solos, a duo + 2 solos
++    /// or 2 duos. Short-handed rooms (1v1, 2v1, duo vs solo) are never made, whatever the fill timer says, and the
++    /// experimental HumansVsCpu / LoneTeamVsCpu / CpuStandIns room shapes are off. A team entry whose partner is the
++    /// game's CPU stand-in ("N") already has a CPU partner and is never placed. Waiting units keep waiting until 4
++    /// humans gather or the cabinet's own matching timeout (MATCH_CANCELED). 1on1 worlds (OneOnOneWorlds) and pair
++    /// worlds are unchanged. Off by default here; OnlineMatching.NoCpuPartner (config) defaults to true.
++    /// </summary>
++    public bool NoCpuPartner { get; set; } = false;
+     public Action<string>? Log { get; set; }
+     /// <summary>Warnings (address mismatch, missing STUN result). Falls back to <see cref="Log"/>.</summary>
+     public Action<string>? Warn { get; set; }
+@@ -357,6 +373,9 @@ public sealed class Matchmaker
+             foreach (var n in t.NodeIds) _byNode[n] = t;
+             _queue.Add(t);
+             NetEntry(e.Myclient, sourceIp, "entry");
++            if (NoCpuPartner && !t.OneOnOne && !t.Pair && t.HasCpuPartner)
++                (Warn ?? Log)?.Invoke($"NOCPU-WARN node={e.Myclient.NodeId} {t.WorldName} entry has a CPU partner (\"N\"): " +
++                                      "never placed while NoCpuPartner is on (its results screen would hang); it waits for its own timeout");
+             TryMatch(now);
+             Log?.Invoke($"entry {t.WorldName} nodes=[{string.Join(",", t.NodeIds)}] slots={t.Slots} key={t.Key} level={t.Level} queue={_queue.Count}");
+             if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.Room == null)
+@@ -522,6 +541,9 @@ public sealed class Matchmaker
+                     if (slots >= 2 * TeamSlots || units.Sum(u => u.Humans.Count()) < 2) continue;
+                 }
+                 else if (slots != 2 * TeamSlots) continue;
++                // NoCpuPartner: every seat must be a human (a full room's two sides are 2 slots each, so every solo
++                // gets a human partner); a team entry with a CPU partner is never placed
++                if (NoCpuPartner && units.Any(u => u.HasCpuPartner)) continue;
+ 
+                 var ok = true;
+                 for (var i = 0; i < units.Count && ok; i++)
+@@ -583,6 +605,19 @@ public sealed class Matchmaker
+                     var a = bucket[i];
+                     var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now)).Take(PoolMax).ToList();
+                     var sides = BestRoom(a, pool, idx, now, false);
++                    if (sides == null && NoCpuPartner)
++                    {
++                        // never a short-handed room: some solo would get a CPU partner (results hang). Keep waiting.
++                        if (!a.NoCpuHoldLogged && ReadyForPartial(a, pool, now))
++                        {
++                            a.NoCpuHoldLogged = true;
++                            var humans = a.Humans.Count() + pool.Sum(u => u.Humans.Count());
++                            Log?.Invoke($"NOCPU hold {a.WorldName} nodes=[{string.Join(",", a.NodeIds)}] slots={a.Slots} " +
++                                        $"compatible-humans={humans}/4: no short-handed room (a solo would get a CPU partner); " +
++                                        $"waiting for 4 humans or the cabinet's own timeout ({a.Timeout:0}s)");
++                        }
++                        continue;
++                    }
+                     if (sides == null && ReadyForPartial(a, pool, now))
+                     {
+                         sides = BestRoom(a, pool, idx, now, true);
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index a96017d..4d831fa 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -82,6 +82,12 @@ public class OnlineMatchingConfigurations
+     /// capped by MaxFillWaitSeconds) gets a room by itself (both clients group 0); the game adds CPU opponents.
+     /// Needs AllowPartialRooms. Off by default.</summary>
+     public bool LoneTeamVsCpu { get; set; } = false;
++    /// <summary>2026-11-15 results-hang fix, default ON: a cabinet whose partner is a CPU hangs on the results screen,
++    /// so 2v2-rule worlds only ever form full 4-human rooms (4 solos, duo + 2 solos, duo + duo). No 1v1 / 2v1 / duo-vs-solo
++    /// rooms after the fill timer; those players keep waiting until 4 humans gather or their own matching timeout.
++    /// Overrides AllowPartialRooms, CpuStandInSeats, HumansTeamVsCpu and LoneTeamVsCpu for those worlds. Fes 1on1
++    /// (OneOnOneWorlds) and pair worlds are unchanged. false = pre-v11 behaviour.</summary>
++    public bool NoCpuPartner { get; set; } = true;
+     /// <summary>Seconds during which a "soft" mode attribute (win-rate bucket, veteran flag) must match.</summary>
+     public double SoftAttributeWaitSeconds { get; set; } = 15;
+     /// <summary>Seconds without a CheckMatching poll before a waiting cabinet is dropped (no ghost matches).</summary>
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 0afd9b5..85bbbcd 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -95,6 +95,7 @@ try
+             CpuStandIns = mm.CpuStandInSeats,
+             HumansVsCpu = mm.HumansTeamVsCpu,
+             LoneTeamVsCpu = mm.LoneTeamVsCpu,
++            NoCpuPartner = mm.NoCpuPartner,
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+@@ -120,6 +121,10 @@ try
+     
+     var config = app.Services.GetRequiredService<IOptions<CardServerConfig>>().Value;
+     Log.Information("Card server config: {@Config}", config.ToString());
++    Log.Information("Matchmaker policy: NoCpuPartner={NoCpuPartner} AllowPartialRooms={AllowPartial} OneOnOneWorlds={OneOnOne} " +
++                    "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns}",
++        config.OnlineMatching.NoCpuPartner, config.OnlineMatching.AllowPartialRooms, config.OnlineMatching.OneOnOneWorlds,
++        config.OnlineMatching.LoneTeamVsCpu, config.OnlineMatching.HumansTeamVsCpu, config.OnlineMatching.CpuStandInSeats);
+     
+     app.UseSerilogRequestLogging(options =>
+     {
+diff --git a/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs b/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+new file mode 100644
+index 0000000..dc76a5d
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+@@ -0,0 +1,212 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// NoCpuPartner (2026-11-15, 3-cab test 02:18): a cabinet whose partner is a CPU hangs on the results screen. In
++// 2v2-rule worlds only full 4-human rooms may form; 1on1 (Fes) worlds keep their 2-client rooms. Fake entries only.
++public class NoCpuPartnerTests
++{
++    private uint _node = 8000;
++
++    private static Client Cl(uint node, bool human = true)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = human ? $"P{node}" : Matchmaker.NpcSerial, LocId = $"L{node}", PrefCode = 13,
++            GlobalIpaddress = "203.0.113.1", NatMappingType = NatMappingType.NmEndpointIndependent,
++            NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = human ? "Y" : "N" });
++        return c;
++    }
++
++    private Request.EntryMatching Entry(uint world = 23, bool team = false, bool cpuPartner = false)
++    {
++        var me = _node += 2;
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        if (team || cpuPartner)
++            e.Groups.Add(new Request.EntryMatching.Group
++            {
++                Client = Cl(me + 1, !cpuPartner), Player = new Player { BanapassportAmId = cpuPartner ? 0 : me + 1 }
++            });
++        return e;
++    }
++
++    private static Matchmaker New(bool on = true, List<string>? log = null) =>
++        new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, MaxFillWait = 90, InStoreFillAfter = 60, InStoreMaxFillWait = 120,
++            NoCpuPartner = on, Log = log == null ? null : log.Add,
++        };
++
++    private static Matchmaker.Room? RoomAt(Matchmaker mm, Request.EntryMatching e, double t) => mm.Check(e.Myclient.NodeId, t).Room;
++
++    /// <summary>Every client human, each side exactly 2 humans.</summary>
++    private static void AssertFourHumans(Matchmaker.Room r)
++    {
++        Assert.Equal(4, r.Clients.Count);
++        Assert.Equal(4, r.Humans);
++        Assert.All(r.Clients, c => Assert.True(Matchmaker.Unit.IsHuman(c.Client)));
++        Assert.Equal(2, r.Clients.Count(c => c.GroupId == 0));
++        Assert.Equal(2, r.Clients.Count(c => c.GroupId == 1));
++    }
++
++    [Theory]
++    [InlineData(23u)]   // mix
++    [InlineData(18u)]   // free solo
++    [InlineData(13u)]   // class solo
++    [InlineData(15u)]   // in-store solo
++    public void TwoSolosNeverGetAShortRoomAndTimeOut(uint world)
++    {
++        var mm = New();
++        var a = Entry(world); var b = Entry(world);
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        foreach (var t in new[] { 31.0, 60, 91, 121, 149 })
++        {
++            Assert.Null(RoomAt(mm, a, t));
++            Assert.Null(RoomAt(mm, b, t));
++        }
++        Assert.Equal(ErrorCode.MatchCanceled, mm.Check(a.Myclient.NodeId, 151).Code);   // the cabinet's own timeout
++    }
++
++    [Fact]
++    public void ThreeSolosWaitThenAFourthMakesA2v2()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 3).Select(_ => Entry()).ToList();
++        for (var i = 0; i < 3; i++) mm.Entry(es[i], i);
++        foreach (var t in new[] { 40.0, 95, 120 })
++            Assert.All(es, e => Assert.Null(RoomAt(mm, e, t)));
++        var d = Entry();
++        mm.Entry(d, 125);
++        var r = RoomAt(mm, d, 125)!;
++        AssertFourHumans(r);
++        Assert.All(es, e => Assert.Same(r, RoomAt(mm, e, 125)));
++    }
++
++    [Fact]
++    public void FourSolosMatchAtOnce()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 4).Select(_ => Entry()).ToList();
++        foreach (var e in es) mm.Entry(e, 0);
++        AssertFourHumans(RoomAt(mm, es[0], 0)!);
++    }
++
++    [Fact]
++    public void DuoAndOneSoloNeverMatch()
++    {
++        var mm = New();
++        var duo = Entry(team: true); var solo = Entry();
++        mm.Entry(duo, 0); mm.Entry(solo, 0);
++        foreach (var t in new[] { 31.0, 91, 149 })
++        {
++            Assert.Null(RoomAt(mm, duo, t));
++            Assert.Null(RoomAt(mm, solo, t));
++        }
++    }
++
++    [Fact]
++    public void DuoPlusTwoSolosPutsTheSolosTogether()
++    {
++        var mm = New();
++        var duo = Entry(team: true); var s1 = Entry(); var s2 = Entry();
++        mm.Entry(duo, 0); mm.Entry(s1, 0); mm.Entry(s2, 0);
++        var r = RoomAt(mm, duo, 0)!;
++        AssertFourHumans(r);
++        var duoGroup = r.Clients.Single(c => c.Client.NodeId == duo.Myclient.NodeId).GroupId;
++        Assert.All(r.Clients.Where(c => c.Client.NodeId == s1.Myclient.NodeId || c.Client.NodeId == s2.Myclient.NodeId),
++            c => Assert.NotEqual(duoGroup, c.GroupId));
++    }
++
++    [Fact]
++    public void DuoVsDuoMatches()
++    {
++        var mm = New();
++        var a = Entry(team: true); var b = Entry(team: true);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        AssertFourHumans(RoomAt(mm, a, 0)!);
++    }
++
++    [Fact]
++    public void LoneDuoKeepsWaitingEvenWithLoneTeamVsCpu()
++    {
++        var mm = New();
++        mm.LoneTeamVsCpu = true;
++        var duo = Entry(team: true);
++        mm.Entry(duo, 0);
++        foreach (var t in new[] { 31.0, 91, 149 }) Assert.Null(RoomAt(mm, duo, t));
++    }
++
++    [Fact]
++    public void HumansVsCpuAndStandInsAreOverridden()
++    {
++        var mm = New();
++        mm.HumansVsCpu = true; mm.CpuStandIns = true;
++        var a = Entry(); var b = Entry();
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        foreach (var t in new[] { 31.0, 91, 149 }) Assert.Null(RoomAt(mm, a, t));
++    }
++
++    [Fact]
++    public void EntryWithCpuPartnerIsNeverPlaced()
++    {
++        var log = new List<string>();
++        var mm = New(log: log);
++        mm.Warn = log.Add;
++        var cpu = Entry(cpuPartner: true); var s1 = Entry(); var s2 = Entry();
++        mm.Entry(cpu, 0); mm.Entry(s1, 0); mm.Entry(s2, 0);
++        Assert.Null(RoomAt(mm, cpu, 0));
++        Assert.Null(RoomAt(mm, s1, 100));
++        Assert.Contains(log, l => l.StartsWith("NOCPU-WARN"));
++        // the two humans still match once two more humans come
++        var s3 = Entry(); var s4 = Entry();
++        mm.Entry(s3, 101); mm.Entry(s4, 101);
++        var r = RoomAt(mm, s1, 101)!;
++        AssertFourHumans(r);
++        Assert.Null(RoomAt(mm, cpu, 101));
++    }
++
++    [Fact]
++    public void FesOneOnOneStillMatchesTwoSolosAtOnce()
++    {
++        var mm = New();
++        var a = Entry(20); var b = Entry(20);
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        var r = RoomAt(mm, a, 1)!;
++        Assert.Equal(2, r.Clients.Count);
++        Assert.Equal(new uint[] { 0, 1 }, r.Clients.Select(c => c.GroupId).ToArray());
++    }
++
++    [Fact]
++    public void HoldIsLoggedOnceWhenTheFillTimerWouldHaveFired()
++    {
++        var log = new List<string>();
++        var mm = New(log: log);
++        var a = Entry(); var b = Entry();
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        RoomAt(mm, a, 10);
++        Assert.DoesNotContain(log, l => l.StartsWith("NOCPU hold"));
++        RoomAt(mm, a, 31); RoomAt(mm, a, 60); RoomAt(mm, b, 60);
++        Assert.Equal(2, log.Count(l => l.StartsWith("NOCPU hold")));   // once per waiting unit
++    }
++
++    [Fact]
++    public void FlagOffKeepsTheOldShortRoom()
++    {
++        var mm = New(on: false);
++        var a = Entry(); var b = Entry();
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(RoomAt(mm, a, 10));
++        var r = RoomAt(mm, a, 31)!;
++        Assert.Equal(2, r.Humans);
++    }
++}
+-- 
+2.47.3
+
+
+From 6a14d730bbf0b85d5cfa78ca382a3c596ec48a3b Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:31:45 -0800
+Subject: [PATCH 21/24] SoftWait no longer delays a complete 4-human room
+ (v12-softfull)
+
+Same-flag (veteran / win-rate) 4-human rooms are still preferred. If none
+is possible, a mixed 4 starts immediately instead of waiting
+SoftAttributeWaitSeconds (default 15). SoftWait still keeps different
+flags apart for short-handed rooms.
+
+Tested 2026-11-15 03:13 PT: a Teamplay duo + 2 solos, same Mix key,
+different veteran flags, used to wait ~14-16 s after the 4th joined;
+they now match at once. 5 new tests (150 total).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                        |  3 +
+ Server-Infinite/Matchmaking/Matchmaker.cs    | 76 +++++++++++++++-----
+ Tests/Matchmaking.Tests/MatchmakerTests.cs   | 27 +++++++
+ Tests/Matchmaking.Tests/NoCpuPartnerTests.cs | 51 ++++++++++++-
+ 4 files changed, 139 insertions(+), 18 deletions(-)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 9bc0961..7bcd953 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -195,6 +195,9 @@ With `OnlineMatching.NoCpuPartner` (true by default in the config; the `Matchmak
+   `NOCPU-WARN` line) and waits for its own timeout.
+ * `false` = pre-v11 behaviour. Tests: `Tests/Matchmaking.Tests/NoCpuPartnerTests.cs`.
+ 
++## SoftWait and full 4-human rooms (v12, 2026-11-15)
++`SoftAttributeWaitSeconds` (default 15) still keeps different Mix veteran flags / free-battle win-rate buckets apart at first, so a same-flag 4-human room can still form if more players arrive. A complete 4-human room no longer waits for SoftWait: if a same-flag 4 is not already waiting, a mixed 4 (for example a Teamplay duo + 2 solos with different veteran flags) starts immediately. SoftWait still applies to short-handed rooms (when `NoCpuPartner` is off). Tested 2026-11-15 03:13 PT: a duo + 2 solos used to wait ~14–16 s; they now match at once. 5 new tests (150 total).
++
+ ## Results-hang fixes (2026-11-14, exvs2-lobbies `analysis/results-hang-fixes.md` section 4) — fake cabinets only
+ All off by default except the log line. Tests: `Tests/Matchmaking.Tests/HangFixTests.cs`,
+ exvs2-lobbies `server-sketch/loadtest/hangfix_e2e.py`.
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 269ba42..70753ec 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -10,7 +10,9 @@ namespace ServerInfinite.Matchmaking;
+ ///   team sortie (partner cabinet "Y" or CPU stand-in "N" in groups[0], 2 slots, never split).
+ /// * Buckets: (mucha_game_id, version, world_id, attr1 [, attr2 for "hard"/ranked worlds]).
+ /// * Rooms are 2 sides x 2 slots: 4 solos -> random shuffle (ranked: closest levels / even split),
+-///   team + 2 solos, team + team. After FillAfter seconds a short-handed room (>= 2 humans) may form
++///   team + 2 solos, team + team. Same-flag (veteran / win-rate) 4-human rooms are preferred; if none
++///   is possible, a mixed 4-human room starts at once (SoftWait does not delay a complete room).
++///   After FillAfter seconds a short-handed room (>= 2 humans) may form
+ ///   (FillTimerMode=Rolling, default: the wait restarts on each new compatible joiner; FromFirst: wait
+ ///   is measured from the oldest searcher). MaxFillWait (default 90s, 0 = no cap) is a hard cap from the
+ ///   first searcher after which a partial room may start even if joiners keep arriving.
+@@ -377,7 +379,8 @@ public sealed class Matchmaker
+                 (Warn ?? Log)?.Invoke($"NOCPU-WARN node={e.Myclient.NodeId} {t.WorldName} entry has a CPU partner (\"N\"): " +
+                                       "never placed while NoCpuPartner is on (its results screen would hang); it waits for its own timeout");
+             TryMatch(now);
+-            Log?.Invoke($"entry {t.WorldName} nodes=[{string.Join(",", t.NodeIds)}] slots={t.Slots} key={t.Key} level={t.Level} queue={_queue.Count}");
++            Log?.Invoke($"entry {t.WorldName} nodes=[{string.Join(",", t.NodeIds)}] slots={t.Slots} key={t.Key}" +
++                        (t.Soft != null ? $" soft={t.Soft}" : "") + $" level={t.Level} queue={_queue.Count}");
+             if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.Room == null)
+                 (Warn ?? Log)?.Invoke($"TAG-WARN node={e.Myclient.NodeId} online-tag entry with pair key 0 (no partner id from the card server?) - it will never pair");
+         }
+@@ -462,7 +465,12 @@ public sealed class Matchmaker
+ 
+     // ---- internals (lock held) ----
+ 
+-    private bool Compatible(Unit a, Unit b, double now)
++    /// <param name="ignoreSoft">
++    /// True: skip the SoftWait veteran / win-rate gate (used when filling a complete 4-human room).
++    /// SoftWait still keeps different flags apart for short-handed rooms, and same-flag full rooms are
++    /// tried first in <see cref="TryMatch"/>.
++    /// </param>
++    private bool Compatible(Unit a, Unit b, double now, bool ignoreSoft = false)
+     {
+         if (a.Key != b.Key) return false;
+         if (a.Pair != b.Pair) return false;
+@@ -475,7 +483,11 @@ public sealed class Matchmaker
+         if (a.BlLoc.Overlaps(b.Locs) || b.BlLoc.Overlaps(a.Locs)) return false;
+         if (a.Realms.Count > 0 && b.Realms.Count > 0 && !a.Realms.Overlaps(b.Realms)) return false;   // can't reach each other
+         var waited = now - Math.Min(a.Created, b.Created);              // the longer waiter widens the search
+-        if (a.Soft != null && b.Soft != null && a.Soft != b.Soft && waited < SoftWait) return false;
++        // SoftWait (default 15s): different mix veteran flags / free-battle win-rate buckets stay apart at first
++        // so a same-flag 4-human room can still form if more players arrive. A complete 4-human room may ignore
++        // this (2026-11-15 03:13: Teamplay duo + 2 solos, same mix-match key, waited 14s after the 4th joined
++        // because SoftWait treated different veteran flags as incompatible; the room was already complete).
++        if (!ignoreSoft && a.Soft != null && b.Soft != null && a.Soft != b.Soft && waited < SoftWait) return false;
+         if (a.Ranked)
+         {
+             var maxDiff = 0;
+@@ -525,7 +537,7 @@ public sealed class Matchmaker
+         return (Math.Max(0, softs - 1) * 100 + order, _rng.NextDouble(), 0);   // random split = shuffle
+     }
+ 
+-    private (List<Unit>, List<Unit>)? BestRoom(Unit anchor, List<Unit> pool, Dictionary<Unit, int> idx, double now, bool shortHanded)
++    private (List<Unit>, List<Unit>)? BestRoom(Unit anchor, List<Unit> pool, Dictionary<Unit, int> idx, double now, bool shortHanded, bool ignoreSoft = false)
+     {
+         (double, (double, double, double))? bestScore = null;
+         (List<Unit>, List<Unit>)? best = null;
+@@ -548,7 +560,7 @@ public sealed class Matchmaker
+                 var ok = true;
+                 for (var i = 0; i < units.Count && ok; i++)
+                     for (var j = i + 1; j < units.Count && ok; j++)
+-                        ok = Compatible(units[i], units[j], now);
++                        ok = Compatible(units[i], units[j], now, ignoreSoft);
+                 if (!ok) continue;
+ 
+                 foreach (var sides in SideSplits(units))
+@@ -600,27 +612,57 @@ public sealed class Matchmaker
+                     if (made) break;
+                     continue;
+                 }
++                // Pass 1: a complete 4-human room of the same soft flag (veteran / win-rate bucket).
+                 for (var i = 0; i < bucket.Count && !made; i++)
+                 {
+                     var a = bucket[i];
+                     var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now)).Take(PoolMax).ToList();
+                     var sides = BestRoom(a, pool, idx, now, false);
+-                    if (sides == null && NoCpuPartner)
++                    if (sides != null)
++                    {
++                        MakeRoom(sides.Value, now);
++                        made = true;
++                    }
++                }
++                // Pass 2: if no same-flag 4 exists, start a mixed 4-human room immediately (do not wait SoftWait).
++                // Same-flag rooms are still preferred: a leftover different-flag searcher must not steal a
++                // same-flag 4 that is already waiting later in the queue.
++                if (!made)
++                {
++                    for (var i = 0; i < bucket.Count && !made; i++)
++                    {
++                        var a = bucket[i];
++                        var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now, ignoreSoft: true)).Take(PoolMax).ToList();
++                        var sides = BestRoom(a, pool, idx, now, false, ignoreSoft: true);
++                        if (sides != null)
++                        {
++                            MakeRoom(sides.Value, now);
++                            made = true;
++                        }
++                    }
++                }
++                for (var i = 0; i < bucket.Count && !made; i++)
++                {
++                    var a = bucket[i];
++                    var pool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now)).Take(PoolMax).ToList();
++                    var fullPool = bucket.Skip(i + 1).Where(u => Compatible(a, u, now, ignoreSoft: true)).Take(PoolMax).ToList();
++                    if (NoCpuPartner)
+                     {
+                         // never a short-handed room: some solo would get a CPU partner (results hang). Keep waiting.
+                         if (!a.NoCpuHoldLogged && ReadyForPartial(a, pool, now))
+                         {
+                             a.NoCpuHoldLogged = true;
+-                            var humans = a.Humans.Count() + pool.Sum(u => u.Humans.Count());
++                            // count everyone who could join a full room, including different soft flags
++                            var humans = a.Humans.Count() + fullPool.Sum(u => u.Humans.Count());
+                             Log?.Invoke($"NOCPU hold {a.WorldName} nodes=[{string.Join(",", a.NodeIds)}] slots={a.Slots} " +
+                                         $"compatible-humans={humans}/4: no short-handed room (a solo would get a CPU partner); " +
+                                         $"waiting for 4 humans or the cabinet's own timeout ({a.Timeout:0}s)");
+                         }
+                         continue;
+                     }
+-                    if (sides == null && ReadyForPartial(a, pool, now))
++                    if (ReadyForPartial(a, pool, now))
+                     {
+-                        sides = BestRoom(a, pool, idx, now, true);
++                        var sides = BestRoom(a, pool, idx, now, true);
+                         // results-hang fix #1: two humans -> teammates vs two CPU stand-ins (3-human short rooms unchanged)
+                         if (HumansVsCpu && (sides == null || Humans(sides.Value) <= 2))
+                         {
+@@ -631,18 +673,18 @@ public sealed class Matchmaker
+                                 continue;
+                             }
+                         }
++                        if (sides != null)
++                        {
++                            MakeRoom(sides.Value, now);
++                            made = true;
++                            continue;
++                        }
+                     }
+-                    if (sides == null && LoneTeamVsCpu && a.IsTeam && a.Slots == TeamSlots
++                    if (LoneTeamVsCpu && a.IsTeam && a.Slots == TeamSlots
+                         && a.Clients.All(Unit.IsHuman) && ReadyForPartial(a, pool, now))
+                     {
+                         MakeLoneTeamRoom(a, now);
+                         made = true;
+-                        continue;
+-                    }
+-                    if (sides != null)
+-                    {
+-                        MakeRoom(sides.Value, now);
+-                        made = true;
+                     }
+                 }
+                 if (made) break;
+diff --git a/Tests/Matchmaking.Tests/MatchmakerTests.cs b/Tests/Matchmaking.Tests/MatchmakerTests.cs
+index 17428fd..c7d5988 100644
+--- a/Tests/Matchmaking.Tests/MatchmakerTests.cs
++++ b/Tests/Matchmaking.Tests/MatchmakerTests.cs
+@@ -120,6 +120,33 @@ public class MatchmakerTests
+         Assert.NotNull(mm.Check(es[0].Myclient.NodeId, 36).Room); // after 35 s the band is 2
+     }
+ 
++    [Fact]
++    public void FullMixedSoftRoomDoesNotWaitSoftWait()
++    {
++        // 4 solos, two veteran flags: a complete room starts at once; SoftWait only delayed this before.
++        var mm = New();
++        var es = new[] { Entry(23, attr2: 1), Entry(23, attr2: 0), Entry(23, attr2: 1), Entry(23, attr2: 0) };
++        foreach (var e in es) mm.Entry(e, 0);
++        var r = mm.Check(es[0].Myclient.NodeId, 0).Room;
++        Assert.NotNull(r);
++        Assert.Equal(4, r!.Humans);
++    }
++
++    [Fact]
++    public void SoftWaitStillKeepsDifferentFlagsApartInAShortRoom()
++    {
++        // two solos, different mix veteran flags: still not a short room until SoftWait AND FillAfter
++        var mm = New();
++        var a = Entry(23, attr2: 0);
++        var b = Entry(23, attr2: 1);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(mm.Check(a.Myclient.NodeId, 14).Room);   // SoftWait not elapsed
++        Assert.Null(mm.Check(a.Myclient.NodeId, 16).Room);   // SoftWait ok, FillAfter 30 not yet
++        var r = mm.Check(a.Myclient.NodeId, 31).Room;
++        Assert.NotNull(r);
++        Assert.Equal(2, r!.Humans);
++    }
++
+     [Fact]
+     public void ShortHandedRoomOnlyAfterFillTimer()
+     {
+diff --git a/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs b/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+index dc76a5d..43a422b 100644
+--- a/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
++++ b/Tests/Matchmaking.Tests/NoCpuPartnerTests.cs
+@@ -22,7 +22,7 @@ public class NoCpuPartnerTests
+         return c;
+     }
+ 
+-    private Request.EntryMatching Entry(uint world = 23, bool team = false, bool cpuPartner = false)
++    private Request.EntryMatching Entry(uint world = 23, bool team = false, bool cpuPartner = false, long attr2 = 0)
+     {
+         var me = _node += 2;
+         var e = new Request.EntryMatching
+@@ -32,6 +32,7 @@ public class NoCpuPartnerTests
+             World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
+         };
+         e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = attr2 });
+         if (team || cpuPartner)
+             e.Groups.Add(new Request.EntryMatching.Group
+             {
+@@ -199,6 +200,54 @@ public class NoCpuPartnerTests
+         Assert.Equal(2, log.Count(l => l.StartsWith("NOCPU hold")));   // once per waiting unit
+     }
+ 
++    [Fact]
++    // 2026-11-15 03:13: Teamplay duo + 2 solos, same mix-match key, different veteran flags (attr2).
++    // SoftWait used to keep them apart for 15s even though a complete 4-human room was already waiting.
++    public void DuoPlusTwoSolosWithDifferentVeteranFlagsMatchAtOnce()
++    {
++        var mm = New();
++        var duo = Entry(team: true, attr2: 1);
++        var s1 = Entry(attr2: 0);
++        var s2 = Entry(attr2: 0);
++        mm.Entry(duo, 0);
++        mm.Entry(s1, 1);
++        mm.Entry(s2, 2);
++        var r = RoomAt(mm, s2, 2)!;   // well before SoftWait=15
++        AssertFourHumans(r);
++        Assert.All(new[] { duo, s1, s2 }, e => Assert.Same(r, RoomAt(mm, e, 2)));
++        var duoGroup = r.Clients.Single(c => c.Client.NodeId == duo.Myclient.NodeId).GroupId;
++        Assert.All(r.Clients.Where(c => c.Client.NodeId == s1.Myclient.NodeId || c.Client.NodeId == s2.Myclient.NodeId),
++            c => Assert.NotEqual(duoGroup, c.GroupId));
++    }
++
++    [Fact]
++    public void FourSameVeteranFlagSolosLeaveALaterDifferentFlagWaiting()
++    {
++        var mm = New();
++        var same = Enumerable.Range(0, 4).Select(_ => Entry(attr2: 0)).ToList();
++        foreach (var e in same) mm.Entry(e, 0);
++        var r = RoomAt(mm, same[0], 0)!;
++        AssertFourHumans(r);
++        var leftover = Entry(attr2: 1);
++        mm.Entry(leftover, 1);
++        Assert.Equal(same.Select(e => e.Myclient.NodeId).ToHashSet(),
++            r.Clients.Select(c => c.Client.NodeId).ToHashSet());
++        Assert.Null(RoomAt(mm, leftover, 1));
++        Assert.Null(RoomAt(mm, leftover, 14));
++    }
++
++    [Fact]
++    public void ThreeSamePlusOneDifferentVeteranFormAMixedRoomAtOnce()
++    {
++        var mm = New();
++        var same = Enumerable.Range(0, 3).Select(_ => Entry(attr2: 0)).ToList();
++        var other = Entry(attr2: 1);
++        foreach (var e in same) mm.Entry(e, 0);
++        mm.Entry(other, 1);
++        var r = RoomAt(mm, other, 1)!;
++        AssertFourHumans(r);
++    }
++
+     [Fact]
+     public void FlagOffKeepsTheOldShortRoom()
+     {
+-- 
+2.47.3
+
+
+From 89312727284e25d7aded05c668fefafd54ddf52f Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:31:50 -0800
+Subject: [PATCH 22/24] Ship 3-second fill timers as the default (NoCpuPartner
+ stays on)
+
+FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
+InStoreMaxFillWaitSeconds are now 3 in the shipped server.json, matching
+the tested search timer. NoCpuPartner was already the default (true).
+With NoCpuPartner on, the fill timer no longer forms short-handed 2v2
+rooms; 2v2 matches still wait for 4 human players.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                      | 6 +++---
+ Server-Infinite/Configurations/server.json | 8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 7bcd953..c828a77 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -45,9 +45,9 @@
+                                // instead of coturn; StunHost must be this host's IP as cabinets reach it
+   "BuiltinStunPort": 0, "BuiltinStunAltPort": 0, "BuiltinStunAltIp": "",   // 0 = StunPort / port+1; "" = single-IP
+   "PollingIntervalSeconds": 3,
+-  "FillAfterSeconds": 15,      // short-handed room (>= 2 humans) after this wait; Rolling restarts on each new joiner
++  "FillAfterSeconds": 3,       // short-handed room (>= 2 humans) after this wait; Rolling restarts on each new joiner
+   "FillTimerMode": "Rolling",  // Rolling (default) or FromFirst (pre-v8: timer from the oldest waiter)
+-  "MaxFillWaitSeconds": 90,    // hard cap from the first searcher; 0 = no cap
++  "MaxFillWaitSeconds": 3,     // hard cap from the first searcher; 0 = no cap
+   "AllowPartialRooms": true,
+   "CpuStandInSeats": false,    // experimental: list a CPU client for each empty seat (did not fix the results hang)
+   "HumansTeamVsCpu": false,    // experimental: 2 humans -> teammates vs 2 CPU stand-ins (results-hang fix #1)
+@@ -166,7 +166,7 @@ directly. Built-in STUN on the main server.
+ * **Fixed – STUN source address:** on a multi-homed PC the built-in STUN socket bound to 0.0.0.0 replied from the
+   N2N adapter's IP; the game dropped those replies. Now bound to `StunHost` when it is a local IP.
+ * **Fixed – badge exp:** a lost match took badge exp 0 → −20; now clamped at 0.
+-* **FillAfterSeconds:** 30 felt slow; 3 works on a LAN; default now 15 (10–15 recommended for a public server).
++* **FillAfterSeconds:** 30 felt slow; 3 works on a LAN and is the shipped default (FillAfterSeconds / MaxFillWaitSeconds / in-store overrides). With NoCpuPartner on, the fill timer no longer forms short-handed 2v2 rooms.
+ * **Open – results-screen hang** after every 2-cabinet **versus** match: both cabinets sit on the results screen
+   for minutes, then recover. Packet captures: every message answered, cabinets stay in sync, both card servers
+   answered 200. Holding Start does not clear it. CPU stand-in seats (`CpuStandInSeats`) reached both cabinets but
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 545589a..04d3865 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -42,11 +42,11 @@
+       "StunUser": "",
+       "StunPass": "",
+       "PollingIntervalSeconds": 3,
+-      "FillAfterSeconds": 15,
++      "FillAfterSeconds": 3,
+       "FillTimerMode": "Rolling",
+-      "MaxFillWaitSeconds": 90,
+-      "InStoreFillAfterSeconds": 60,
+-      "InStoreMaxFillWaitSeconds": 120,
++      "MaxFillWaitSeconds": 3,
++      "InStoreFillAfterSeconds": 3,
++      "InStoreMaxFillWaitSeconds": 3,
+       "OneOnOneWorlds": "20",
+       "CpuStandInSeats": false,
+       "HumansTeamVsCpu": false,
+-- 
+2.47.3
+
+
+From 905b051e1058ad4967bedd178e8ede04df7d7889 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:31:55 -0800
+Subject: [PATCH 23/24] Add tools/vps: deploy the matchmaker to a Linux VPS
+
+deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
+worktree) and installs it as systemd service exvs2-mm. Existing VPS
+server.json is kept unless --force-config. Builtin STUN on UDP 3478/3479.
+Local card servers point MatchUrl/StunHost at the VPS.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md      |  4 ++
+ tools/vps/README.md        | 35 ++++++++++++++
+ tools/vps/deploy.sh        | 97 ++++++++++++++++++++++++++++++++++++++
+ tools/vps/exvs2-mm.service | 33 +++++++++++++
+ tools/vps/log.vps.json     | 22 +++++++++
+ tools/vps/server.vps.json  | 57 ++++++++++++++++++++++
+ 6 files changed, 248 insertions(+)
+ create mode 100644 tools/vps/README.md
+ create mode 100755 tools/vps/deploy.sh
+ create mode 100644 tools/vps/exvs2-mm.service
+ create mode 100644 tools/vps/log.vps.json
+ create mode 100644 tools/vps/server.vps.json
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index c828a77..e7ace9c 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -236,3 +236,7 @@ exvs2-lobbies `server-sketch/loadtest/hangfix_e2e.py`.
+ * Online tag / recruit: the CheckMatching shape the game expects for worlds 5/21/22 (2 clients, both group 0) is a
+   guess; `tag_status` meaning unknown; recruit leader rule unknown; tags only within one card server (ids collide
+   across servers). Untested in the real game.
++
++## Hosting the matchmaker on a VPS
++See [tools/vps/README.md](tools/vps/README.md): `tools/vps/deploy.sh` builds a committed ref for linux-x64 and runs it
++as the systemd service `exvs2-mm`; local card servers point `MatchUrl`/`StunHost` at the VPS.
+diff --git a/tools/vps/README.md b/tools/vps/README.md
+new file mode 100644
+index 0000000..4f24274
+--- /dev/null
++++ b/tools/vps/README.md
+@@ -0,0 +1,35 @@
++# Universal matchmaker on a Linux VPS
++
++Runs Server-Infinite on a VPS as the internet matchmaker (`/match` on TCP 28090, built-in STUN on UDP 3478/3479).
++Cabinets keep using their own local card server; only matching and STUN move to the VPS.
++
++Current host: Vultr Los Angeles, `45.63.49.159`, service `exvs2-mm`, install dir `/opt/exvs2-mm`, user `exvs2mm`.
++
++## Files
++- `deploy.sh` - builds a **committed** ref for linux-x64 (self-contained, in a throwaway worktree, so uncommitted
++  edits never ship) and installs/updates it. `--bootstrap` does first-time host setup (apt upgrade,
++  unattended-upgrades, user, ufw: OpenSSH + 28090/tcp + 3478-3479/udp, key-only SSH).
++- `exvs2-mm.service` - systemd unit (Restart=always, runs as `exvs2mm`, logs to journald).
++- `server.vps.json` / `log.vps.json` - VPS config (`__PUBLIC_IP__` is replaced with `--host`). Existing VPS configs
++  are kept unless `--force-config`.
++
++The VPS keeps its own `ServerInfinite.db` and `mms_nodeids.json`; deploy never uploads or deletes them.
++Never copy a PC database (card ChipId/AccessCode) or the game to the VPS.
++
++## Use
++    tools/vps/deploy.sh --bootstrap          # first time
++    tools/vps/deploy.sh --ref <commit>       # update
++    ssh -i ~/.ssh/exvs2_vps root@45.63.49.159 journalctl -u exvs2-mm -f
++
++## Pointing a local card server at it
++In that card server's `Configurations/server.json` -> `CardServerConfig.OnlineMatching`:
++
++    "Enabled": true,
++    "MatchUrl": "http://45.63.49.159:28090/match",
++    "StunHost": "45.63.49.159",
++    "StunPort": 3478,
++    "BuiltinStun": false
++
++then restart that card server. The cabinet's `config.ini` `Server=` keeps pointing at its local card server.
++(Pointing `Server=` straight at `45.63.49.159:28090` also matches, but then the cabinet's cards are created on the
++VPS instead of the PC.)
+diff --git a/tools/vps/deploy.sh b/tools/vps/deploy.sh
+new file mode 100755
+index 0000000..e453372
+--- /dev/null
++++ b/tools/vps/deploy.sh
+@@ -0,0 +1,97 @@
++#!/usr/bin/env bash
++# exvs2-lobbies: build Server-Infinite for linux-x64 from a COMMITTED git ref and install/update it on a VPS
++# as the systemd service exvs2-mm (universal matchmaker: OnlineMatching + built-in STUN).
++#
++#   tools/vps/deploy.sh [--host IP] [--key FILE] [--ref GITREF] [--bootstrap] [--force-config] [--no-build DIR]
++#
++#   --host          VPS public IPv4 (default 45.63.49.159). Also written into server.json as MatchUrl/StunHost.
++#   --key           SSH private key (default ~/.ssh/exvs2_vps); logs in as root.
++#   --ref           git ref to build (default HEAD). Built in a throwaway worktree, so uncommitted edits never ship.
++#   --bootstrap     first-time host setup: apt upgrade, unattended-upgrades, user exvs2mm, ufw, key-only SSH.
++#   --force-config  overwrite /opt/exvs2-mm/Configurations/{server,log,kestrel}.json (default: only if missing).
++#   --no-build DIR  skip the build and upload an existing publish folder.
++#
++# Never uploaded: ServerInfinite.db* (card data/secrets), mms_nodeids.json, Logs/ - they live only on the VPS.
++set -euo pipefail
++
++HOST=45.63.49.159; KEY="$HOME/.ssh/exvs2_vps"; REF=HEAD; BOOTSTRAP=0; FORCE_CONFIG=0; PUBDIR=""
++while [ $# -gt 0 ]; do
++  case "$1" in
++    --host) HOST=$2; shift 2;;  --key) KEY=$2; shift 2;;  --ref) REF=$2; shift 2;;
++    --bootstrap) BOOTSTRAP=1; shift;;  --force-config) FORCE_CONFIG=1; shift;;
++    --no-build) PUBDIR=$2; shift 2;;
++    -h|--help) sed -n 2,16p "$0"; exit 0;;
++    *) echo "unknown arg $1" >&2; exit 2;;
++  esac
++done
++
++HERE=$(cd "$(dirname "$0")" && pwd); REPO=$(git -C "$HERE" rev-parse --show-toplevel)
++SSH=(ssh -i "$KEY" -o StrictHostKeyChecking=accept-new -o BatchMode=yes "root@$HOST")
++export PATH="$HOME/.dotnet:$PATH" DOTNET_CLI_TELEMETRY_OPTOUT=1
++
++if [ -z "$PUBDIR" ]; then
++  SHA=$(git -C "$REPO" rev-parse --short "$REF")
++  WT=$(mktemp -d /tmp/exvs2-mm-build-XXXX); PUBDIR="$WT/publish"
++  trap 'git -C "$REPO" worktree remove --force "$WT/src" >/dev/null 2>&1 || true; rm -rf "$WT"' EXIT
++  git -C "$REPO" worktree add --detach "$WT/src" "$SHA" >/dev/null
++  echo "== building $SHA ($(git -C "$REPO" log -1 --format=%s "$SHA"))"
++  # Not single-file: a global PublishSingleFile also hits the Blazor WebUI client project and fails (NETSDK1098).
++  dotnet publish "$WT/src/Server-Infinite/Server-Infinite.csproj" -c Release -r linux-x64 \
++    -p:LinuxHost=true -p:SelfContained=true -o "$PUBDIR" -nologo -v:q
++  echo "$SHA" > "$PUBDIR/BUILD_COMMIT"
++fi
++rm -f "$PUBDIR"/ServerInfinite.db* "$PUBDIR"/mms_nodeids.json
++
++if [ "$BOOTSTRAP" = 1 ]; then
++  echo "== bootstrap $HOST"
++  "${SSH[@]}" bash -s <<'REMOTE'
++set -euo pipefail
++export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
++apt-get update -q
++apt-get -y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade
++apt-get -y -q install unattended-upgrades ufw libicu-dev- >/dev/null
++printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\n' > /etc/apt/apt.conf.d/20auto-upgrades
++systemctl enable --now unattended-upgrades
++id exvs2mm >/dev/null 2>&1 || useradd --system --home-dir /opt/exvs2-mm --no-create-home --shell /usr/sbin/nologin exvs2mm
++install -d -o exvs2mm -g exvs2mm -m 0755 /opt/exvs2-mm
++ufw allow OpenSSH; ufw allow 28090/tcp; ufw allow 3478/udp; ufw allow 3479/udp; ufw --force enable
++# key-only SSH (first match wins in sshd_config.d, so 00- beats cloud-init's 50-)
++cat > /etc/ssh/sshd_config.d/00-exvs2-keyonly.conf <<'C'
++PasswordAuthentication no
++KbdInteractiveAuthentication no
++PermitRootLogin prohibit-password
++C
++sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config.d/50-cloud-init.conf 2>/dev/null || true
++sshd -t && systemctl reload ssh
++REMOTE
++fi
++
++echo "== upload to $HOST:/opt/exvs2-mm"
++"${SSH[@]}" 'systemctl stop exvs2-mm 2>/dev/null || true
++  cd /opt/exvs2-mm && find . -mindepth 1 -maxdepth 1 ! -name "ServerInfinite.db*" ! -name mms_nodeids.json ! -name Logs ! -name Configurations -exec rm -rf {} +'
++tar -C "$PUBDIR" --exclude=./Configurations --exclude='./ServerInfinite.db*' --exclude=./mms_nodeids.json --exclude=./Logs \
++  -czf - . | "${SSH[@]}" 'tar -C /opt/exvs2-mm --no-same-owner -xzf -'
++"${SSH[@]}" "install -d -o root -g root -m 0755 /opt/exvs2-mm/Configurations"
++for f in kestrel server log; do
++  case $f in kestrel) src="$PUBDIR/Configurations/kestrel.json";; *) src="$HERE/$f.vps.json";; esac
++  tmp=$(mktemp); sed "s/__PUBLIC_IP__/$HOST/g" "$src" > "$tmp"
++  [ $f = kestrel ] && sed -i 's#"Url": *"http://[^"]*"#"Url": "http://0.0.0.0:28090"#' "$tmp"
++  if [ "$FORCE_CONFIG" = 1 ] || ! "${SSH[@]}" "test -f /opt/exvs2-mm/Configurations/$f.json"; then
++    scp -q -i "$KEY" -o BatchMode=yes "$tmp" "root@$HOST:/opt/exvs2-mm/Configurations/$f.json"; echo "   wrote $f.json"
++  else echo "   kept existing $f.json (use --force-config to replace)"; fi
++  rm -f "$tmp"
++done
++scp -q -i "$KEY" -o BatchMode=yes "$HERE/exvs2-mm.service" "root@$HOST:/etc/systemd/system/exvs2-mm.service"
++"${SSH[@]}" bash -s <<'REMOTE'
++set -e
++cd /opt/exvs2-mm
++chown -R root:root . ; chown exvs2mm:exvs2mm . ; chmod 0755 Server-Infinite
++for f in ServerInfinite.db ServerInfinite.db-shm ServerInfinite.db-wal mms_nodeids.json Logs; do [ -e "$f" ] && chown -R exvs2mm:exvs2mm "$f"; done
++chmod 0644 Configurations/*.json
++systemctl daemon-reload; systemctl enable --now exvs2-mm; systemctl restart exvs2-mm
++sleep 8
++systemctl --no-pager --lines=0 status exvs2-mm | head -5
++ss -tulpn | grep -E ':(28090|3478|3479)\b' || true
++journalctl -u exvs2-mm --no-pager -n 200 | grep -E 'Matchmaker policy|STUN built-in|Now listening|NET-WARN|rror' | tail -8
++REMOTE
++echo "== http check"; curl -s -o /dev/null -w 'HTTP %{http_code}\n' --max-time 5 "http://$HOST:28090/" || true
+diff --git a/tools/vps/exvs2-mm.service b/tools/vps/exvs2-mm.service
+new file mode 100644
+index 0000000..a517155
+--- /dev/null
++++ b/tools/vps/exvs2-mm.service
+@@ -0,0 +1,33 @@
++[Unit]
++Description=EXVS2 IB universal matchmaker (Server-Infinite, OnlineMatching + built-in STUN)
++Wants=network-online.target
++After=network-online.target
++
++[Service]
++Type=simple
++User=exvs2mm
++Group=exvs2mm
++WorkingDirectory=/opt/exvs2-mm
++ExecStart=/opt/exvs2-mm/Server-Infinite
++Restart=always
++RestartSec=3
++Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
++Environment=DOTNET_gcServer=0
++# stdout/stderr go to journald: journalctl -u exvs2-mm -f
++StandardOutput=journal
++StandardError=journal
++SyslogIdentifier=exvs2-mm
++# hardening
++NoNewPrivileges=true
++PrivateTmp=true
++ProtectSystem=strict
++ProtectHome=true
++ReadWritePaths=/opt/exvs2-mm
++ProtectKernelTunables=true
++ProtectKernelModules=true
++ProtectControlGroups=true
++RestrictSUIDSGID=true
++LockPersonality=true
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/tools/vps/log.vps.json b/tools/vps/log.vps.json
+new file mode 100644
+index 0000000..edc423d
+--- /dev/null
++++ b/tools/vps/log.vps.json
+@@ -0,0 +1,22 @@
++{
++  "Serilog": {
++    "Using":  [ "Serilog.Sinks.Console" ],
++    "MinimumLevel": {
++      "Default": "Information",
++      "Override": {
++        "Microsoft": "Warning",
++        "Microsoft.AspNetCore": "Warning",
++        "Microsoft.Hosting.Lifetime": "Information"
++      }
++    },
++    "Filter": [
++      {
++        "Name": "ByExcluding",
++        "Args": {
++          "expression": "@mt = 'An unhandled exception has occurred while executing the request.'"
++        }
++      }
++    ],
++    "WriteTo": []
++  }
++}
+diff --git a/tools/vps/server.vps.json b/tools/vps/server.vps.json
+new file mode 100644
+index 0000000..294f8aa
+--- /dev/null
++++ b/tools/vps/server.vps.json
+@@ -0,0 +1,57 @@
++{
++    "CardServerConfig":  {
++        "IgnoreUploadSaving":  false,
++        "NeedToDataPatchOfflineData":  true,
++        "MaxReplaySaveSlotPerPlayer":  10,
++        "GameConfigurations":  {
++            "TrainingMinutes":  60,
++            "FesConfigurations":  {
++                "MondayType":  "DualSelect",
++                "TuesdayType":  "ScoreBattle",
++                "WednesdayType":  "AttackScoreBattle",
++                "ThursdayType":  "AttackBoost",
++                "FridayType":  "OneOnOneAllCost",
++                "SaturdayType":  "OneOnOneAllCost",
++                "SundayType":  "OneOnOneAllCost"
++            },
++            "TriadConfigurations":  {
++                "TargetMsList":  [ 72 ],
++                "TimeAttackCourse":  212,
++                "HighScoreCourse":  212
++            },
++            "RouteBattleConfigurations":  {
++                "ResetBadgeExpOnChange":  false
++            },
++            "NewMobileSuits":  [ 330, 331, 332, 333, 334, 335 ]
++        },
++        "OnlineMatching":  {
++            "Enabled":  true,
++            "MatchUrl":  "http://__PUBLIC_IP__:28090/match",
++            "StunHost":  "__PUBLIC_IP__",
++            "StunPort":  3478,
++            "StunUser":  "",
++            "StunPass":  "",
++            "PollingIntervalSeconds":  3,
++            "FillAfterSeconds":  3,
++            "FillTimerMode":  "Rolling",
++            "MaxFillWaitSeconds":  3,
++            "AllowPartialRooms":  true,
++            "StaleAfterSeconds":  20,
++            "ClassMatchScheduleMode":  "Both",
++            "VerboseLog":  true,
++            "NetworkRealms":  "",
++            "InStoreScope":  "Site",
++            "ShopKeys":  "",
++            "BuiltinStun":  true,
++            "BuiltinStunPort":  0,
++            "BuiltinStunAltIp":  "",
++            "BuiltinStunAltPort":  0,
++            "InStoreFillAfterSeconds":  3,
++            "InStoreMaxFillWaitSeconds":  3,
++            "OneOnOneWorlds":  "20",
++            "HumansTeamVsCpu":  false,
++            "LoneTeamVsCpu":  false,
++            "NoCpuPartner":  true
++        }
++    }
++}
+-- 
+2.47.3
+
+
+From ecdccc9195516a7a604ef7a7e374512f23dc9d17 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:32:01 -0800
+Subject: [PATCH 24/24] Disclaimer: 2v2 matches only form with at least 4 human
+ players
+
+In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
+players, each cabinet times out after about 150 seconds, returns to
+practice mode and can search again. Fes 1on1 (world 20) needs only 2
+players. Noted at the top of README.md and ONLINE_MATCHMAKING.md.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md | 3 +++
+ README.md             | 5 +++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index e7ace9c..7c224c2 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -7,6 +7,9 @@
+ > hang is not caused by this server). Project: [exvs2-matchmaking](https://github.com/ServerOmega/exvs2-matchmaking).
+ > You must already have a copy of the game. Upstream: Chiang-17/EXVS2-IB-Server (v1.2.0, commit 7f4b280).
+ 
++> **2v2 matches only form with at least 4 human players.** With `NoCpuPartner` (default on), 2v2 modes never fill empty seats with CPU partners. Fewer than 4 searchers wait until each cabinet's own matching timeout (~150 s), then return to practice mode and can search again. Fes 1on1 (world 20) still needs only 2 players.
++
++
+ ## What this changes
+ | Area | Upstream | This patch |
+ |---|---|---|
+diff --git a/README.md b/README.md
+index 0b51d79..5aa47c4 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,10 @@
+ # Server-Infinite 1.2.0 for IBv13 (芽衣版本)
+ 
++> **Disclaimer — 2v2 matchmaking:** Matches in 2v2 modes only form when at least 4 human players are searching. The matchmaker does not add CPU partners or fill empty seats with CPUs. With fewer than 4 players, each cabinet times out after about 150 seconds, returns to practice mode, and can search again. Fes 1on1 (world 20) needs only 2 players.
++>
++> **声明（2v2 匹配）：** 2v2 模式仅在至少 4 名真人玩家同时搜索时才会组局，不会使用 CPU 搭档或补位。人数不足时，各机台约 150 秒后超时并回到练习模式，可再次搜索。Fes 1on1（world 20）只需 2 名玩家。
++
++
+ ## 写在最前
+ 基于 POC 的遗产进行改进，完善了主要的功能，但毕竟是带逆向性质的工作，与原生 Server 必然有差距，望理解
+ 
 -- 
 2.47.3
 

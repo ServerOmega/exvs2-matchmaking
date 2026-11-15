@@ -1,0 +1,49 @@
+From ecdccc9195516a7a604ef7a7e374512f23dc9d17 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:32:01 -0800
+Subject: [PATCH] Disclaimer: 2v2 matches only form with at least 4 human
+ players
+
+In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
+players, each cabinet times out after about 150 seconds, returns to
+practice mode and can search again. Fes 1on1 (world 20) needs only 2
+players. Noted at the top of README.md and ONLINE_MATCHMAKING.md.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md | 3 +++
+ README.md             | 5 +++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index e7ace9c..7c224c2 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -7,6 +7,9 @@
+ > hang is not caused by this server). Project: [exvs2-matchmaking](https://github.com/ServerOmega/exvs2-matchmaking).
+ > You must already have a copy of the game. Upstream: Chiang-17/EXVS2-IB-Server (v1.2.0, commit 7f4b280).
+ 
++> **2v2 matches only form with at least 4 human players.** With `NoCpuPartner` (default on), 2v2 modes never fill empty seats with CPU partners. Fewer than 4 searchers wait until each cabinet's own matching timeout (~150 s), then return to practice mode and can search again. Fes 1on1 (world 20) still needs only 2 players.
++
++
+ ## What this changes
+ | Area | Upstream | This patch |
+ |---|---|---|
+diff --git a/README.md b/README.md
+index 0b51d79..5aa47c4 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,10 @@
+ # Server-Infinite 1.2.0 for IBv13 (芽衣版本)
+ 
++> **Disclaimer — 2v2 matchmaking:** Matches in 2v2 modes only form when at least 4 human players are searching. The matchmaker does not add CPU partners or fill empty seats with CPUs. With fewer than 4 players, each cabinet times out after about 150 seconds, returns to practice mode, and can search again. Fes 1on1 (world 20) needs only 2 players.
++>
++> **声明（2v2 匹配）：** 2v2 模式仅在至少 4 名真人玩家同时搜索时才会组局，不会使用 CPU 搭档或补位。人数不足时，各机台约 150 秒后超时并回到练习模式，可再次搜索。Fes 1on1（world 20）只需 2 名玩家。
++
++
+ ## 写在最前
+ 基于 POC 的遗产进行改进，完善了主要的功能，但毕竟是带逆向性质的工作，与原生 Server 必然有差距，望理解
+ 
+-- 
+2.47.3
+

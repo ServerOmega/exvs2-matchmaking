@@ -1,0 +1,314 @@
+From 905b051e1058ad4967bedd178e8ede04df7d7889 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 04:31:55 -0800
+Subject: [PATCH] Add tools/vps: deploy the matchmaker to a Linux VPS
+
+deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
+worktree) and installs it as systemd service exvs2-mm. Existing VPS
+server.json is kept unless --force-config. Builtin STUN on UDP 3478/3479.
+Local card servers point MatchUrl/StunHost at the VPS.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md      |  4 ++
+ tools/vps/README.md        | 35 ++++++++++++++
+ tools/vps/deploy.sh        | 97 ++++++++++++++++++++++++++++++++++++++
+ tools/vps/exvs2-mm.service | 33 +++++++++++++
+ tools/vps/log.vps.json     | 22 +++++++++
+ tools/vps/server.vps.json  | 57 ++++++++++++++++++++++
+ 6 files changed, 248 insertions(+)
+ create mode 100644 tools/vps/README.md
+ create mode 100755 tools/vps/deploy.sh
+ create mode 100644 tools/vps/exvs2-mm.service
+ create mode 100644 tools/vps/log.vps.json
+ create mode 100644 tools/vps/server.vps.json
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index c828a77..e7ace9c 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -236,3 +236,7 @@ exvs2-lobbies `server-sketch/loadtest/hangfix_e2e.py`.
+ * Online tag / recruit: the CheckMatching shape the game expects for worlds 5/21/22 (2 clients, both group 0) is a
+   guess; `tag_status` meaning unknown; recruit leader rule unknown; tags only within one card server (ids collide
+   across servers). Untested in the real game.
++
++## Hosting the matchmaker on a VPS
++See [tools/vps/README.md](tools/vps/README.md): `tools/vps/deploy.sh` builds a committed ref for linux-x64 and runs it
++as the systemd service `exvs2-mm`; local card servers point `MatchUrl`/`StunHost` at the VPS.
+diff --git a/tools/vps/README.md b/tools/vps/README.md
+new file mode 100644
+index 0000000..4f24274
+--- /dev/null
++++ b/tools/vps/README.md
+@@ -0,0 +1,35 @@
++# Universal matchmaker on a Linux VPS
++
++Runs Server-Infinite on a VPS as the internet matchmaker (`/match` on TCP 28090, built-in STUN on UDP 3478/3479).
++Cabinets keep using their own local card server; only matching and STUN move to the VPS.
++
++Current host: Vultr Los Angeles, `45.63.49.159`, service `exvs2-mm`, install dir `/opt/exvs2-mm`, user `exvs2mm`.
++
++## Files
++- `deploy.sh` - builds a **committed** ref for linux-x64 (self-contained, in a throwaway worktree, so uncommitted
++  edits never ship) and installs/updates it. `--bootstrap` does first-time host setup (apt upgrade,
++  unattended-upgrades, user, ufw: OpenSSH + 28090/tcp + 3478-3479/udp, key-only SSH).
++- `exvs2-mm.service` - systemd unit (Restart=always, runs as `exvs2mm`, logs to journald).
++- `server.vps.json` / `log.vps.json` - VPS config (`__PUBLIC_IP__` is replaced with `--host`). Existing VPS configs
++  are kept unless `--force-config`.
++
++The VPS keeps its own `ServerInfinite.db` and `mms_nodeids.json`; deploy never uploads or deletes them.
++Never copy a PC database (card ChipId/AccessCode) or the game to the VPS.
++
++## Use
++    tools/vps/deploy.sh --bootstrap          # first time
++    tools/vps/deploy.sh --ref <commit>       # update
++    ssh -i ~/.ssh/exvs2_vps root@45.63.49.159 journalctl -u exvs2-mm -f
++
++## Pointing a local card server at it
++In that card server's `Configurations/server.json` -> `CardServerConfig.OnlineMatching`:
++
++    "Enabled": true,
++    "MatchUrl": "http://45.63.49.159:28090/match",
++    "StunHost": "45.63.49.159",
++    "StunPort": 3478,
++    "BuiltinStun": false
++
++then restart that card server. The cabinet's `config.ini` `Server=` keeps pointing at its local card server.
++(Pointing `Server=` straight at `45.63.49.159:28090` also matches, but then the cabinet's cards are created on the
++VPS instead of the PC.)
+diff --git a/tools/vps/deploy.sh b/tools/vps/deploy.sh
+new file mode 100755
+index 0000000..e453372
+--- /dev/null
++++ b/tools/vps/deploy.sh
+@@ -0,0 +1,97 @@
++#!/usr/bin/env bash
++# exvs2-lobbies: build Server-Infinite for linux-x64 from a COMMITTED git ref and install/update it on a VPS
++# as the systemd service exvs2-mm (universal matchmaker: OnlineMatching + built-in STUN).
++#
++#   tools/vps/deploy.sh [--host IP] [--key FILE] [--ref GITREF] [--bootstrap] [--force-config] [--no-build DIR]
++#
++#   --host          VPS public IPv4 (default 45.63.49.159). Also written into server.json as MatchUrl/StunHost.
++#   --key           SSH private key (default ~/.ssh/exvs2_vps); logs in as root.
++#   --ref           git ref to build (default HEAD). Built in a throwaway worktree, so uncommitted edits never ship.
++#   --bootstrap     first-time host setup: apt upgrade, unattended-upgrades, user exvs2mm, ufw, key-only SSH.
++#   --force-config  overwrite /opt/exvs2-mm/Configurations/{server,log,kestrel}.json (default: only if missing).
++#   --no-build DIR  skip the build and upload an existing publish folder.
++#
++# Never uploaded: ServerInfinite.db* (card data/secrets), mms_nodeids.json, Logs/ - they live only on the VPS.
++set -euo pipefail
++
++HOST=45.63.49.159; KEY="$HOME/.ssh/exvs2_vps"; REF=HEAD; BOOTSTRAP=0; FORCE_CONFIG=0; PUBDIR=""
++while [ $# -gt 0 ]; do
++  case "$1" in
++    --host) HOST=$2; shift 2;;  --key) KEY=$2; shift 2;;  --ref) REF=$2; shift 2;;
++    --bootstrap) BOOTSTRAP=1; shift;;  --force-config) FORCE_CONFIG=1; shift;;
++    --no-build) PUBDIR=$2; shift 2;;
++    -h|--help) sed -n 2,16p "$0"; exit 0;;
++    *) echo "unknown arg $1" >&2; exit 2;;
++  esac
++done
++
++HERE=$(cd "$(dirname "$0")" && pwd); REPO=$(git -C "$HERE" rev-parse --show-toplevel)
++SSH=(ssh -i "$KEY" -o StrictHostKeyChecking=accept-new -o BatchMode=yes "root@$HOST")
++export PATH="$HOME/.dotnet:$PATH" DOTNET_CLI_TELEMETRY_OPTOUT=1
++
++if [ -z "$PUBDIR" ]; then
++  SHA=$(git -C "$REPO" rev-parse --short "$REF")
++  WT=$(mktemp -d /tmp/exvs2-mm-build-XXXX); PUBDIR="$WT/publish"
++  trap 'git -C "$REPO" worktree remove --force "$WT/src" >/dev/null 2>&1 || true; rm -rf "$WT"' EXIT
++  git -C "$REPO" worktree add --detach "$WT/src" "$SHA" >/dev/null
++  echo "== building $SHA ($(git -C "$REPO" log -1 --format=%s "$SHA"))"
++  # Not single-file: a global PublishSingleFile also hits the Blazor WebUI client project and fails (NETSDK1098).
++  dotnet publish "$WT/src/Server-Infinite/Server-Infinite.csproj" -c Release -r linux-x64 \
++    -p:LinuxHost=true -p:SelfContained=true -o "$PUBDIR" -nologo -v:q
++  echo "$SHA" > "$PUBDIR/BUILD_COMMIT"
++fi
++rm -f "$PUBDIR"/ServerInfinite.db* "$PUBDIR"/mms_nodeids.json
++
++if [ "$BOOTSTRAP" = 1 ]; then
++  echo "== bootstrap $HOST"
++  "${SSH[@]}" bash -s <<'REMOTE'
++set -euo pipefail
++export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
++apt-get update -q
++apt-get -y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade
++apt-get -y -q install unattended-upgrades ufw libicu-dev- >/dev/null
++printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\n' > /etc/apt/apt.conf.d/20auto-upgrades
++systemctl enable --now unattended-upgrades
++id exvs2mm >/dev/null 2>&1 || useradd --system --home-dir /opt/exvs2-mm --no-create-home --shell /usr/sbin/nologin exvs2mm
++install -d -o exvs2mm -g exvs2mm -m 0755 /opt/exvs2-mm
++ufw allow OpenSSH; ufw allow 28090/tcp; ufw allow 3478/udp; ufw allow 3479/udp; ufw --force enable
++# key-only SSH (first match wins in sshd_config.d, so 00- beats cloud-init's 50-)
++cat > /etc/ssh/sshd_config.d/00-exvs2-keyonly.conf <<'C'
++PasswordAuthentication no
++KbdInteractiveAuthentication no
++PermitRootLogin prohibit-password
++C
++sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config.d/50-cloud-init.conf 2>/dev/null || true
++sshd -t && systemctl reload ssh
++REMOTE
++fi
++
++echo "== upload to $HOST:/opt/exvs2-mm"
++"${SSH[@]}" 'systemctl stop exvs2-mm 2>/dev/null || true
++  cd /opt/exvs2-mm && find . -mindepth 1 -maxdepth 1 ! -name "ServerInfinite.db*" ! -name mms_nodeids.json ! -name Logs ! -name Configurations -exec rm -rf {} +'
++tar -C "$PUBDIR" --exclude=./Configurations --exclude='./ServerInfinite.db*' --exclude=./mms_nodeids.json --exclude=./Logs \
++  -czf - . | "${SSH[@]}" 'tar -C /opt/exvs2-mm --no-same-owner -xzf -'
++"${SSH[@]}" "install -d -o root -g root -m 0755 /opt/exvs2-mm/Configurations"
++for f in kestrel server log; do
++  case $f in kestrel) src="$PUBDIR/Configurations/kestrel.json";; *) src="$HERE/$f.vps.json";; esac
++  tmp=$(mktemp); sed "s/__PUBLIC_IP__/$HOST/g" "$src" > "$tmp"
++  [ $f = kestrel ] && sed -i 's#"Url": *"http://[^"]*"#"Url": "http://0.0.0.0:28090"#' "$tmp"
++  if [ "$FORCE_CONFIG" = 1 ] || ! "${SSH[@]}" "test -f /opt/exvs2-mm/Configurations/$f.json"; then
++    scp -q -i "$KEY" -o BatchMode=yes "$tmp" "root@$HOST:/opt/exvs2-mm/Configurations/$f.json"; echo "   wrote $f.json"
++  else echo "   kept existing $f.json (use --force-config to replace)"; fi
++  rm -f "$tmp"
++done
++scp -q -i "$KEY" -o BatchMode=yes "$HERE/exvs2-mm.service" "root@$HOST:/etc/systemd/system/exvs2-mm.service"
++"${SSH[@]}" bash -s <<'REMOTE'
++set -e
++cd /opt/exvs2-mm
++chown -R root:root . ; chown exvs2mm:exvs2mm . ; chmod 0755 Server-Infinite
++for f in ServerInfinite.db ServerInfinite.db-shm ServerInfinite.db-wal mms_nodeids.json Logs; do [ -e "$f" ] && chown -R exvs2mm:exvs2mm "$f"; done
++chmod 0644 Configurations/*.json
++systemctl daemon-reload; systemctl enable --now exvs2-mm; systemctl restart exvs2-mm
++sleep 8
++systemctl --no-pager --lines=0 status exvs2-mm | head -5
++ss -tulpn | grep -E ':(28090|3478|3479)\b' || true
++journalctl -u exvs2-mm --no-pager -n 200 | grep -E 'Matchmaker policy|STUN built-in|Now listening|NET-WARN|rror' | tail -8
++REMOTE
++echo "== http check"; curl -s -o /dev/null -w 'HTTP %{http_code}\n' --max-time 5 "http://$HOST:28090/" || true
+diff --git a/tools/vps/exvs2-mm.service b/tools/vps/exvs2-mm.service
+new file mode 100644
+index 0000000..a517155
+--- /dev/null
++++ b/tools/vps/exvs2-mm.service
+@@ -0,0 +1,33 @@
++[Unit]
++Description=EXVS2 IB universal matchmaker (Server-Infinite, OnlineMatching + built-in STUN)
++Wants=network-online.target
++After=network-online.target
++
++[Service]
++Type=simple
++User=exvs2mm
++Group=exvs2mm
++WorkingDirectory=/opt/exvs2-mm
++ExecStart=/opt/exvs2-mm/Server-Infinite
++Restart=always
++RestartSec=3
++Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
++Environment=DOTNET_gcServer=0
++# stdout/stderr go to journald: journalctl -u exvs2-mm -f
++StandardOutput=journal
++StandardError=journal
++SyslogIdentifier=exvs2-mm
++# hardening
++NoNewPrivileges=true
++PrivateTmp=true
++ProtectSystem=strict
++ProtectHome=true
++ReadWritePaths=/opt/exvs2-mm
++ProtectKernelTunables=true
++ProtectKernelModules=true
++ProtectControlGroups=true
++RestrictSUIDSGID=true
++LockPersonality=true
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/tools/vps/log.vps.json b/tools/vps/log.vps.json
+new file mode 100644
+index 0000000..edc423d
+--- /dev/null
++++ b/tools/vps/log.vps.json
+@@ -0,0 +1,22 @@
++{
++  "Serilog": {
++    "Using":  [ "Serilog.Sinks.Console" ],
++    "MinimumLevel": {
++      "Default": "Information",
++      "Override": {
++        "Microsoft": "Warning",
++        "Microsoft.AspNetCore": "Warning",
++        "Microsoft.Hosting.Lifetime": "Information"
++      }
++    },
++    "Filter": [
++      {
++        "Name": "ByExcluding",
++        "Args": {
++          "expression": "@mt = 'An unhandled exception has occurred while executing the request.'"
++        }
++      }
++    ],
++    "WriteTo": []
++  }
++}
+diff --git a/tools/vps/server.vps.json b/tools/vps/server.vps.json
+new file mode 100644
+index 0000000..294f8aa
+--- /dev/null
++++ b/tools/vps/server.vps.json
+@@ -0,0 +1,57 @@
++{
++    "CardServerConfig":  {
++        "IgnoreUploadSaving":  false,
++        "NeedToDataPatchOfflineData":  true,
++        "MaxReplaySaveSlotPerPlayer":  10,
++        "GameConfigurations":  {
++            "TrainingMinutes":  60,
++            "FesConfigurations":  {
++                "MondayType":  "DualSelect",
++                "TuesdayType":  "ScoreBattle",
++                "WednesdayType":  "AttackScoreBattle",
++                "ThursdayType":  "AttackBoost",
++                "FridayType":  "OneOnOneAllCost",
++                "SaturdayType":  "OneOnOneAllCost",
++                "SundayType":  "OneOnOneAllCost"
++            },
++            "TriadConfigurations":  {
++                "TargetMsList":  [ 72 ],
++                "TimeAttackCourse":  212,
++                "HighScoreCourse":  212
++            },
++            "RouteBattleConfigurations":  {
++                "ResetBadgeExpOnChange":  false
++            },
++            "NewMobileSuits":  [ 330, 331, 332, 333, 334, 335 ]
++        },
++        "OnlineMatching":  {
++            "Enabled":  true,
++            "MatchUrl":  "http://__PUBLIC_IP__:28090/match",
++            "StunHost":  "__PUBLIC_IP__",
++            "StunPort":  3478,
++            "StunUser":  "",
++            "StunPass":  "",
++            "PollingIntervalSeconds":  3,
++            "FillAfterSeconds":  3,
++            "FillTimerMode":  "Rolling",
++            "MaxFillWaitSeconds":  3,
++            "AllowPartialRooms":  true,
++            "StaleAfterSeconds":  20,
++            "ClassMatchScheduleMode":  "Both",
++            "VerboseLog":  true,
++            "NetworkRealms":  "",
++            "InStoreScope":  "Site",
++            "ShopKeys":  "",
++            "BuiltinStun":  true,
++            "BuiltinStunPort":  0,
++            "BuiltinStunAltIp":  "",
++            "BuiltinStunAltPort":  0,
++            "InStoreFillAfterSeconds":  3,
++            "InStoreMaxFillWaitSeconds":  3,
++            "OneOnOneWorlds":  "20",
++            "HumansTeamVsCpu":  false,
++            "LoneTeamVsCpu":  false,
++            "NoCpuPartner":  true
++        }
++    }
++}
+-- 
+2.47.3
+
