@@ -29,7 +29,7 @@ Players can't match - read the server log (window or Logs\log-<date>.txt)
       -> their game isn't talking to this card server: wrong Server= address, port 28080 blocked/not forwarded,
          firewall, or (SnowLauncher) they need their own local card server ("2 = PLAY").
   "NET register-pcb" but no "MMS IssueNodeId" / "NET entry"
-      -> battleMode isn't 0 in the active entry of testmode_pcb.json, or "Enabled" is false on the card server
+      -> battleMode isn't 0 in the active entry of <game folder>\29\testmode_pcb.json, or "Enabled" is false on the card server
          that player uses.
   "NET-WARN register-pcb ... loopback"
       -> a remote player was given 127.0.0.1: set StunHost to your public/VPN IP (2-Configure.bat).
@@ -97,7 +97,8 @@ KNOWN ISSUES (this is an early test build)
   5. No relay: two players who both have strict/CGNAT internet may never connect - use a VPN.
   6. Ranked (class match) results are trusted from the game; ranked pairing is by class and level only.
   7. The Linux build was tested on a Linux PC with fake cabinets (no real game against it yet).
-  8. Switching the game to online (battleMode 0) needs a testmode editor that is not included.
+  8. Switching the game to online (battleMode 0) is a manual edit of <game folder>\29\testmode_pcb.json
+     (see Connect-Your-Game.txt, step B).
 
 Reporting a problem: https://github.com/ServerOmega/exvs2-matchmaking/issues - include the server log lines
 around the problem. Remove access codes / card numbers / BootToken before posting anything.

@@ -46,9 +46,19 @@ B. Switch the game to ONLINE matching  (battleMode 0)
   The game only uses the online matchmaker when the ACTIVE setting entry in  testmode_pcb.json  has
       battleMode: 0
   Any other value = in-store / LM matching only.
-    - Close the game first and BACK UP testmode_pcb.json.
-    - Change it with a testmode editor tool (the project used its own svd1.py tool; it is not in this package).
-    - Never use "EXIT & SAVE" in the in-game test menu, and don't edit the file while the game runs.
+  Where the file is: in the "29" folder inside your game folder (the folder that has the game exe), e.g.
+      <your game folder>\29\testmode_pcb.json
+  Every cabinet copy (each install folder) has its own 29\testmode_pcb.json; change each one.
+    - Close the game first and BACK UP testmode_pcb.json (copy it to e.g. testmode_pcb.json.bak).
+    - Open it in a text editor (Notepad works) and search for  battleMode . Each entry looks like:
+          ".TestModeParam.gameServerPcb.settingFile.[0].group.[0].battleMode": {
+            "value": 1,
+            "type": 1
+      Change only "value" to 0. Leave "type" alone (it says the field is a number; changing it breaks the file).
+    - The game picks one "group" entry by time slot, so set "value": 0 on EVERY group.[N].battleMode under
+      the active settingFile (settingFile.[0] unless you changed it). Keep the commas/braces intact and save.
+    - Never use "EXIT & SAVE" in the in-game test menu (it rewrites the file), and don't edit the file while the
+      game runs.
   How to check: start the game, pick an online mode; the server log shows "MMS IssueNodeId" and
   "NET entry ..." for your cabinet. If you only see "NET register-pcb", battleMode isn't 0.
   The SERVER needs no LM. On your side keep your usual setup: if your game normally runs with an LM, keep the

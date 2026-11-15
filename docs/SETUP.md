@@ -169,10 +169,20 @@ Full reference: [`docs/SECURITY.md`](SECURITY.md). In short, in `CardServerConfi
 * UDP reachability to the other players (public IP / forwarded UDP 48000, or the same overlay VPN as everyone).
 
 ### B2. Switch the cabinet to online matching (`battleMode: 0`)
-1. Close the game. **Back up `testmode_pcb.json`.**
-2. In the **active** setting entry of `testmode_pcb.json`, set `battleMode` to `0` using a testmode editor
-   (this project used its `svd1.py` tool on the test PC; it is not in this repo). Any other value keeps the
-   LM / in-store path.
+The file is `29\testmode_pcb.json` inside your game folder (the folder with the game exe), for example
+`<game folder>\29\testmode_pcb.json`. Each install / cabinet copy has its own; change every one you use.
+
+1. Close the game. **Back up `testmode_pcb.json`** (e.g. copy it to `testmode_pcb.json.bak`).
+2. Open it in a text editor (Notepad is fine) and search for `battleMode`. Each entry looks like:
+   ```json
+   ".TestModeParam.gameServerPcb.settingFile.[0].group.[0].battleMode": {
+     "value": 1,
+     "type": 1
+   ```
+   Change only `"value"` to `0`. Leave `"type"` as it is (it marks the field as a number).
+   The game picks one `group` entry by time slot, so set `"value": 0` on **every** `group.[N].battleMode` of the
+   active `settingFile` (`settingFile.[0]` unless you changed it). Any other value keeps the LM / in-store path.
+   (This project originally used its own `svd1.py` editor; a plain text edit does the same thing.)
 3. Never use **EXIT & SAVE** in the in-game test menu, and don't edit the file while the game runs (the game
    rewrites it).
 
