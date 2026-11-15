@@ -21,4 +21,4 @@ Our scripts and instructions in the package are GPL-3.0 (`package/LICENSE.txt`).
 | `linux/build-server.sh`, `configure.sh`, `start-server.sh`, `exvs2-matchmaking.service` | same for a Linux PC / VPS (self-contained linux-x64, `-p:LinuxHost=true`), systemd example |
 | `START-HERE.txt`, `Connect-Your-Game.txt`, `Public-Server.txt`, `Troubleshooting.txt` | plain-language instructions |
 
-Build the zip: `release/make-release.sh v0.2.0-pre` → `release/dist/` (not committed).
+Build the zip: `release/make-release.sh v0.3.0-pre` → `release/dist/` (not committed).

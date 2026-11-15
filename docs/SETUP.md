@@ -178,26 +178,48 @@ card-server instance, one directly on the matchmaker; they matched and played).
 4. After the match, results (class-match rate, badge) are saved to **your own** card server.
 
 ### B5. Invite a partner (online tag)
-> ⚠️ Built and tested with fake cabinets only (2026-11-13); **not yet tried in the real game**. Both of you must use
-> the **same card server** for now (player ids are per server; cross-server invites are a later step).
+Online tag (オンラインタッグ) lets two players in different shops / homes play as a fixed team. There is no
+code to type in the game: the team is made on the card server's web page first. Confirmed in the real game
+on 2026-11-15 at 5:57 AM Pacific Time (two cabinets, two card servers, one shared matchmaker).
 
-Online tag (オンラインタッグ) lets two players in different shops / homes play as a fixed team. There is no code to type
-in the game: the team is made on the card server's web page first.
+**Same card server:** use Friend's User ID + Invitation Code as before.
 
-1. **Your partner** opens the card server's web page (`http://<card server>:28080/`), logs in with their card's access code (keep that one private), opens
-   **Customize → Teams**, and sends you the two values under *Your Information*: **Your User ID** and
-   **Your Invitation Code**. (Share them privately; the code works once and then changes.)
-2. **You** open your own card's **Customize → Teams**, enter them under *Add Team* as **Friend's User ID** and
-   **Friend's Invitation Code**, and press **ADD**. The team (default name "EXTREME TEAM") appears for both of you;
-   you can rename it there and press save.
-3. Both of you insert your cards (re-insert if you were already playing, so the game reloads the team list), pick the
-   online mode, choose **team sortie → online tag**, and select the team. Do it at roughly the same time: each
-   cabinet waits up to 90 s for the other.
-4. The server pairs your two cabinets (log: `MATCH room=… online-tag pair …`), then your team is matched against
-   other teams / players like a normal team (log: a team `entry` from the leader, then a `MATCH` 2v2).
+1. **Your partner** opens the card server's web page (`http://<card server>:28080/` or the port that server
+   uses), logs in with their card's access code (keep that one private), opens **Customize → Teams**, and
+   sends you the two values under *Your Information*: **Your User ID** and **Your Invitation Code**.
+   (Share them privately; the code works once and then changes.)
+2. **You** open your own card's **Customize → Teams**, enter them under *Add Team* as **Friend's User ID**
+   and **Friend's Invitation Code**, and press **ADD**.
 
-If the online-tag list is empty in the game, tell the server host: they can try `OnlineTag.TagStatus: 1`.
-Partner recruit (パートナー急募, random partner) also pairs two players now, but is even less tested.
+**Different card servers** (each player keeps their own cards; both servers point `OnlineMatching.MatchUrl`
+and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28090/match`). Give each card server a
+distinct `OnlineTag.ServerId` (for example 1 and 2). Leave `OnlineTag.InviteUrl` empty so it is derived as
+`/tag` on that matchmaker.
+
+1. Each player opens **their own** card server's web page → Customize → **Teams**.
+2. One partner taps **Create a code** (under *Partner on another card server*) and sends the 8-character
+   code to the other (chat, voice, etc.).
+3. The other partner types that code under **Partner's code** and taps **Join**.
+4. The creator reopens the Teams tab so the team appears on their side too.
+5. Saving the team name, BGM, effect, background, emblem or name color on either card server's Teams tab
+   updates the copy on the matchmaker; reload the other side's Teams tab (or reinsert the card) to pick
+   it up.
+
+**In the game (both setups):**
+
+1. Insert both cards (re-insert if you were already playing, so the game reloads the team list).
+2. On **TEAM SELECT**, choose **オンラインタッグ (Online Tag)** — not Mix Match, Class Match, or Fes —
+   and pick the shared team. Do not pick 店内チーム (in-store team) unless you actually want a same-shop
+   LAN team.
+3. Start searching at about the same time (each cabinet waits up to 90 s for the other).
+4. The matchmaker pairs the two cabinets as a duo (world 5). **A 2v2 still needs two more human players**
+   (`NoCpuPartner`). The duo forming and waiting is expected when only two cabinets are present.
+
+`OnlineTag.TagStatus` defaults to 1 (required for the in-game list to show). If the Online Tag panel is
+empty or greyed out, confirm the card server log has `LoadCard online tag: … tag_teams=1 tag_status=1`
+and that you reinserted the card after creating the team.
+
+Partner recruit (パートナー急募, random partner) also pairs two players, but is less tested.
 
 ### B6. Troubleshooting
 | Symptom | Likely cause / fix |
@@ -207,8 +229,8 @@ Partner recruit (パートナー急募, random partner) also pairs two players n
 | Stuck searching; `NET entry ... class=stun-missing` or a `NET-WARN ... no STUN global address` | STUN not reachable: UDP 3478/3479 blocked or forwarded wrong, or `StunHost` isn't the host's reachable IP (on a multi-adapter host it must be one of its own IPs) |
 | `entry ...` lines but never `MATCH` | players are in different modes, or in different network realms (e.g. one on Radmin, one on the internet — they can never reach each other), or only one player queued |
 | `MATCH` but the battle never starts | P2P UDP between players is blocked: firewall on the game exe, strict/CGNAT NAT without UDP 48000 forwarded → use an overlay VPN |
-| Online tag: no team to pick in the game | team not created in the WebUI (B5), card read before the team was made (re-insert the card), or the game expects another `OnlineTag.TagStatus` (try 1). Log: `LoadCard online tag: … tag_teams=0` |
-| Online tag: `entry online-tag` for both but no `online-tag pair` | the two cabinets sent different pair keys (`key=` in the entry lines): different card servers, or a `TAG-WARN` explains it; or they didn't search at the same time (90 s each) |
+| Online tag: no team to pick / panel greyed out | team not created in the WebUI (B5), card read before the team was made (re-insert the card), or `OnlineTag.TagStatus` is still 0 (default is now 1). Log: `LoadCard online tag: … tag_teams=N tag_status=1` |
+| Online tag: `entry online-tag` for both but no `online-tag pair` | they searched a different mode (e.g. Mix Match world 23 instead of Online Tag world 5), or the two cabinets sent different pair keys / codes, or they didn't search at the same time (90 s each) |
 | Results screen hangs for minutes after a versus match | **known issue with two cabinets on one PC** (also happens in local LM mode without any matchmaker); the games recover by themselves. Not seen with a solo match; separate-machine test pending ([report](../analysis/real-game-test-2026-11-13.md#4-results-screen-hang-open)) |
 
 Running two cabinets on one PC for testing: see the recipe in

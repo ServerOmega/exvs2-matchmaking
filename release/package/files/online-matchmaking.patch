@@ -1,7 +1,7 @@
 From 46f2cf5f59c4858078e5c4d44e3d60923d7e15c1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/24] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/26] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2328,7 +2328,7 @@ index 0000000..3b81d9a
 From 59a8ceaba76b4a9c00743b17e00ecb7abdc89ed3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/24] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/26] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2366,7 +2366,7 @@ index da8f5ea..3029cb0 100644
 From c10e1826eccd88272306b1f2f71b16126626baba Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/24] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/26] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2598,7 +2598,7 @@ index bda49e2..a9c56ab 100644
 From 9295ed8babeb0d6e6651d2c6790f26f1b85b6061 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/24] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/26] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2657,7 +2657,7 @@ index 872d2b3..4ef4c22 100644
 From 060e241c15c6a6ede6d3c0a9e267f1122e06afdd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/24] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/26] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2685,7 +2685,7 @@ index 90e35a8..5fad533 100644
 From a6cdb59e736f93bbb922a85b637ee0b9888254fc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/24] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/26] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3036,7 +3036,7 @@ index 3b81d9a..b5b7cbb 100644
 From 679ae7d833acb2a84183f4844568c34134ac5adf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/24] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/26] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3110,7 +3110,7 @@ index 2a72884..65ee897 100644
 From 4ecdd01d345a51c3a5560a882691a6e492be2c03 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/24] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/26] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3601,7 +3601,7 @@ index 0000000..f7c4beb
 From e460603df7dd164e85b3ed5cd456994a819a2601 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/24] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/26] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4043,7 +4043,7 @@ index 27c6cb7..94b83aa 100644
 From dcf1e9cf9fddc8862ad034846ebf1a1fb167a3d5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/24] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/26] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4139,7 +4139,7 @@ index 3709ff7..f37e4f8 100644
 From 0e7ec86f35d24461efb049eb1ae6b3eae7015728 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/24] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/26] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4219,7 +4219,7 @@ index 65ee897..81e88cd 100644
 From bb1f1c02bf7ac969890bdb686027ca10f450e7c8 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/24] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/26] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4749,7 +4749,7 @@ index 0000000..a4934f4
 From 581a1ce4c65e127e280234709143633cc1c9b7ee Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/24] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/26] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5398,7 +5398,7 @@ index b5b7cbb..74e757b 100644
 From 79b9fb419883b19d6a806e5b0bd07ca083e36acc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/24] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/26] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5884,7 +5884,7 @@ index 0000000..310cbdf
 From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 10:09:10 -0800
-Subject: [PATCH 15/24] Results-hang timing (logging only, default on):
+Subject: [PATCH 15/26] Results-hang timing (logging only, default on):
  RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
  to its next request; LogResultGap config; 5 tests
 
@@ -6127,7 +6127,7 @@ index 0000000..e276bd6
 From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 22:31:13 -0800
-Subject: [PATCH 16/24] Rolling fill timer: FillAfter restarts on each new
+Subject: [PATCH 16/26] Rolling fill timer: FillAfter restarts on each new
  compatible joiner
 
 FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
@@ -6551,7 +6551,7 @@ index 9942148..f189356 100644
 From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:10:30 -0800
-Subject: [PATCH 17/24] In-store fill override: InStoreFillAfterSeconds (60) /
+Subject: [PATCH 17/26] In-store fill override: InStoreFillAfterSeconds (60) /
  InStoreMaxFillWaitSeconds (120) for worlds 15/16
 
 2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
@@ -6768,7 +6768,7 @@ index 0000000..1eb99cd
 From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:17:43 -0800
-Subject: [PATCH 18/24] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+Subject: [PATCH 18/26] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
  2-client rooms, group 0 vs 1, matched at once
 
 Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
@@ -7067,7 +7067,7 @@ index 0000000..d09631a
 From c4b215d7c66e8b483ec14dbff820408bf865ec66 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 01:51:07 -0800
-Subject: [PATCH 19/24] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
+Subject: [PATCH 19/26] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
  own room after the fill timer
 
 After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
@@ -7210,7 +7210,7 @@ index a4934f4..f4c137c 100644
 From 693f911920c2dddb364016c35dc7cb79e0166b60 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 02:22:56 -0800
-Subject: [PATCH 20/24] NoCpuPartner: 2v2 worlds only form full 4-human rooms
+Subject: [PATCH 20/26] NoCpuPartner: 2v2 worlds only form full 4-human rooms
  (no solo ever gets a CPU partner)
 
 3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
@@ -7622,7 +7622,7 @@ index 0000000..dc76a5d
 From 6a14d730bbf0b85d5cfa78ca382a3c596ec48a3b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:45 -0800
-Subject: [PATCH 21/24] SoftWait no longer delays a complete 4-human room
+Subject: [PATCH 21/26] SoftWait no longer delays a complete 4-human room
  (v12-softfull)
 
 Same-flag (veteran / win-rate) 4-human rooms are still preferred. If none
@@ -7935,7 +7935,7 @@ index dc76a5d..43a422b 100644
 From 89312727284e25d7aded05c668fefafd54ddf52f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:50 -0800
-Subject: [PATCH 22/24] Ship 3-second fill timers as the default (NoCpuPartner
+Subject: [PATCH 22/26] Ship 3-second fill timers as the default (NoCpuPartner
  stays on)
 
 FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
@@ -8002,7 +8002,7 @@ index 545589a..04d3865 100644
 From 905b051e1058ad4967bedd178e8ede04df7d7889 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:55 -0800
-Subject: [PATCH 23/24] Add tools/vps: deploy the matchmaker to a Linux VPS
+Subject: [PATCH 23/26] Add tools/vps: deploy the matchmaker to a Linux VPS
 
 deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
 worktree) and installs it as systemd service exvs2-mm. Existing VPS
@@ -8317,7 +8317,7 @@ index 0000000..294f8aa
 From ecdccc9195516a7a604ef7a7e374512f23dc9d17 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:32:01 -0800
-Subject: [PATCH 24/24] Disclaimer: 2v2 matches only form with at least 4 human
+Subject: [PATCH 24/26] Disclaimer: 2v2 matches only form with at least 4 human
  players
 
 In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
@@ -8360,6 +8360,3159 @@ index 0b51d79..5aa47c4 100644
  ## 写在最前
  基于 POC 的遗产进行改进，完善了主要的功能，但毕竟是带逆向性质的工作，与原生 Server 必然有差距，望理解
  
+-- 
+2.47.3
+
+From e64c1ed0f1424c4b322cbd4e7023e0f77b399049 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 06:00:52 -0800
+Subject: [PATCH 25/26] Add cross-server online tag with shared partner codes
+ and settings sync
+
+Players on different card servers can form an online-tag team by exchanging
+an 8-character partner code on the WebUI Teams tab. Each card keeps a
+globally unique wire pilot / am id (ServerId * 1_000_000 + local id). The
+shared matchmaker /tag store holds the invite, and world 5 pairs searchers
+who share that code. Team name, BGM, effect, background, emblem and name
+color are pushed to /tag on save and pulled on LoadCard and the Teams tab
+(last write wins). Same-server User ID + Invitation Code is unchanged.
+Realms, NoCpuPartner, 1on1 and rolling fill are unchanged. No game-exe
+patch. 169 unit tests; two-card-server e2e covers colliding local ids,
+settings sync and world-5 pairing.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  38 ++-
+ .../MobileUser/OnlineTagTeamsCommand.cs       |  42 ++-
+ .../PreLoadPlayerBasicInformationCommand.cs   |   2 +-
+ ...reLoadMobileUserBasicInformationCommand.cs |   2 +-
+ .../PvP/SaveBattleHistoryCommand.cs           |   4 +-
+ .../Common/TagInvite/HttpTagInviteClient.cs   | 109 +++++++
+ .../Common/TagInvite/ITagInviteClient.cs      |  18 ++
+ .../TagInvite/InProcessTagInviteClient.cs     |  38 +++
+ Server-Infinite/Configurations/server.json    |   6 +-
+ .../Controllers/TagInviteController.cs        | 130 ++++++++
+ .../Controllers/UI/TeamController.cs          |  16 +-
+ .../Handlers/Game/LoadCardQueryHandler.cs     |   9 +-
+ .../Online/SaveVsmOnResultCommandHandler.cs   |   2 +-
+ .../Handlers/Game/PreLoadCardQueryHandler.cs  |   2 +-
+ .../Game/PreSaveReplayCommandHandler.cs       |   4 +-
+ .../Game/SaveBattleLogCommandHandler.cs       |   2 +-
+ .../Game/SavePracticeResultCommandHandler.cs  |   2 +-
+ .../Game/SaveResultCaptureCommandHandler.cs   |   2 +-
+ .../Game/SaveStageResultCommandHandler.cs     |   2 +-
+ .../SaveUserPlayResearchDataCommandHandler.cs |   2 +-
+ .../Game/SaveVscResultCommandHandler.cs       |   2 +-
+ .../Game/SaveVsmResultCommandHandler.cs       |   2 +-
+ .../Game/SaveVstResultCommandHandler.cs       |   2 +-
+ .../LoadMeetingCardCommandHandler.cs          |   2 +-
+ .../CreateCrossServerInviteCommandHandler.cs  |  41 +++
+ .../UI/Team/CrossServerTeamSupport.cs         |  75 +++++
+ .../UI/Team/GetCustomizeTeamCommandHandler.cs | 114 ++++---
+ .../JoinCrossServerInviteCommandHandler.cs    |  53 ++++
+ .../Team/UpsertCustomizeTeamCommandHandler.cs |  69 +++--
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  84 ++++-
+ Server-Infinite/Matchmaking/PilotId.cs        | 101 ++++++
+ Server-Infinite/Matchmaking/TagInviteStore.cs | 289 ++++++++++++++++++
+ Server-Infinite/Matchmaking/TagInviteUrl.cs   |  17 ++
+ ...20261115050000_AddCrossServerTagColumns.cs |  46 +++
+ ...1115060000_AddTagTeamSettingsUpdatedUtc.cs |  28 ++
+ .../ServerDbContextModelSnapshot.cs           |  14 +
+ .../Models/Cards/Team/TagTeamData.cs          |  16 +
+ .../Models/Config/OnlineTagConfigurations.cs  |  29 +-
+ Server-Infinite/Program.cs                    |  28 ++
+ .../Strategy/Team/OnlineTagTeamList.cs        |  60 ++--
+ .../Strategy/Team/TagTeamGroupBuilder.cs      |  10 +-
+ Tests/Matchmaking.Tests/OnlineTagTests.cs     |  90 ++++++
+ Tests/Matchmaking.Tests/PilotIdTests.cs       |  85 ++++++
+ .../Matchmaking.Tests/TagInviteStoreTests.cs  | 138 +++++++++
+ .../Customize/CustomizeTeamTagsTab.razor      |  81 +++++
+ WebUIInfinite/Shared/Dto/Common/Team.cs       |  11 +-
+ .../Dto/Request/JoinCrossServerTeamRequest.cs |   8 +
+ .../Dto/Response/CrossServerInviteResponse.cs |   8 +
+ .../Shared/Dto/Response/TeamResponse.cs       |   5 +-
+ .../Shared/Resources/Resource.en-US.resx      |  36 +++
+ .../Shared/Resources/Resource.ja.resx         |  36 +++
+ WebUIInfinite/Shared/Resources/Resource.resx  |  38 ++-
+ .../Shared/Resources/Resource.zh-Hans.resx    |  36 +++
+ .../Shared/Resources/Resource.zh-Hant-TW.resx |  36 +++
+ .../Shared/Resources/Resource.zh-Hant.resx    |  36 +++
+ 55 files changed, 2031 insertions(+), 127 deletions(-)
+ create mode 100644 Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs
+ create mode 100644 Server-Infinite/Common/TagInvite/ITagInviteClient.cs
+ create mode 100644 Server-Infinite/Common/TagInvite/InProcessTagInviteClient.cs
+ create mode 100644 Server-Infinite/Controllers/TagInviteController.cs
+ create mode 100644 Server-Infinite/Handlers/UI/Team/CreateCrossServerInviteCommandHandler.cs
+ create mode 100644 Server-Infinite/Handlers/UI/Team/CrossServerTeamSupport.cs
+ create mode 100644 Server-Infinite/Handlers/UI/Team/JoinCrossServerInviteCommandHandler.cs
+ create mode 100644 Server-Infinite/Matchmaking/PilotId.cs
+ create mode 100644 Server-Infinite/Matchmaking/TagInviteStore.cs
+ create mode 100644 Server-Infinite/Matchmaking/TagInviteUrl.cs
+ create mode 100644 Server-Infinite/Migrations/20261115050000_AddCrossServerTagColumns.cs
+ create mode 100644 Server-Infinite/Migrations/20261115060000_AddTagTeamSettingsUpdatedUtc.cs
+ create mode 100644 Tests/Matchmaking.Tests/PilotIdTests.cs
+ create mode 100644 Tests/Matchmaking.Tests/TagInviteStoreTests.cs
+ create mode 100644 WebUIInfinite/Shared/Dto/Request/JoinCrossServerTeamRequest.cs
+ create mode 100644 WebUIInfinite/Shared/Dto/Response/CrossServerInviteResponse.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 7c224c2..20678b7 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -150,12 +150,42 @@ Config (`CardServerConfig.OnlineTag`):
+   "SendTagTeams": true,       // fill LoadCard tag_teams (36)
+   "TagStatus": 0,             // TagTeamGroup.tag_status (meaning unknown): try 0, then 1 if the online-tag list stays empty
+   "MaxTeams": 20,
+-  "OneTimeInviteCode": true   // the partner's invitation code changes after a team is created with it
++  "OneTimeInviteCode": true,  // the partner's same-server invitation code changes after a team is created with it
++  "ServerId": 0,              // 1..4000; 0 = load or generate a persisted id (ServerIdFile)
++  "ServerIdFile": "tag_server_id.txt",
++  "InviteUrl": "",            // empty: rewrite MatchUrl /match → /tag, or use this process's in-memory store
++  "InviteStateFile": "tag_invites.json"
+ }
+ ```
+-Tests: `Tests/Matchmaking.Tests/OnlineTagTests.cs` (15) and `server-sketch/loadtest/online_tag_e2e.py` (card + WebUI
+-API + MMS end to end, 28 checks). **Cross-card-server tags are not supported yet:** pilot ids are each server's DB row
+-ids, so two servers' ids collide (partner-invites.md §6 Step C). Both partners must use the **same card server**.
++Tests: `Tests/Matchmaking.Tests/OnlineTagTests.cs`, `PilotIdTests.cs`, `TagInviteStoreTests.cs`, plus
++`server-sketch/loadtest/online_tag_e2e.py` (same-server) and `cross_server_tag_e2e.py` (two card servers, colliding
++local ids, one matchmaker).
++
++### Cross-server online tag (Step C)
++Each card server numbers its cards from 1, so a raw card id cannot be the pair key across servers. This patch gives
++every card a **wire pilot / am id** of `ServerId * 1_000_000 + local card id`, and the two partners share a short
++**partner code** on the matchmaker. World 5 still uses `attr2 = min(own wire id, partner wire id)` when both sides
++are updated; the matchmaker also keys on the shared code so a mismatched attr2 does not join the wrong people, and
++two players with different codes never pair even if their attr2 values collide. Same-server User ID + Invitation Code
++still works. Cabinets and un-updated card servers keep working on the attr2 path (un-updated servers still send local
++ids; they cannot form a reliable cross-server tag). Realms, NoCpuPartner, 1on1 worlds, and rolling fill are unchanged.
++No game-exe patch is required. **Both card servers and the shared matchmaker (VPS) must be updated.**
++
++How each partner sets it up:
++1. Point both card servers at the same matchmaker (`OnlineMatching.MatchUrl` = `http://<matchmaker-host>:<port>/match`).
++   Leave `OnlineTag.InviteUrl` empty (it is derived as `/tag` on that host) or set it explicitly to that `/tag` URL.
++   Give each card server a distinct `OnlineTag.ServerId` (or let each one generate and keep its own `tag_server_id.txt`).
++2. Each player opens their **own** card server's WebUI → Customize → **Teams**.
++3. One partner taps **Create a code** and sends the 8-character code to the other (chat, voice, etc.).
++4. The other partner types that code under **Partner's code** and taps **Join**.
++5. The creator reopens the Teams tab (or reloads) so the team appears on their side too.
++6. Both insert their cards, pick the team under online tag, and search at about the same time. After the duo forms,
++   a 2v2 still needs two more human players (NoCpuPartner).
++7. Team name, BGM, effect, background, emblem, and name color are shared through the matchmaker `/tag` store.
++   Saving on either card server's Teams tab pushes the latest values (last write wins). Reload the other side's
++   Teams tab, or reinsert the card, to pick them up.
++
++Same-server friends should keep using **Friend's User ID** and **Invitation Code** on the same page.
+ 
+ ## Real-game results (2026-11-13, times PT)
+ Setup: two IB cabinets (POC) on one Windows 11 PC, each with its own IP and its own card server; cab1's card
+diff --git a/Server-Infinite/Commands/LoadCard/MobileUser/OnlineTagTeamsCommand.cs b/Server-Infinite/Commands/LoadCard/MobileUser/OnlineTagTeamsCommand.cs
+index e295931..ebbf583 100644
+--- a/Server-Infinite/Commands/LoadCard/MobileUser/OnlineTagTeamsCommand.cs
++++ b/Server-Infinite/Commands/LoadCard/MobileUser/OnlineTagTeamsCommand.cs
+@@ -1,7 +1,10 @@
+ using nue.protocol.exvs;
++using ServerInfinite.Common.TagInvites;
++using ServerInfinite.Matchmaking;
+ using ServerInfinite.Models.Cards;
+ using ServerInfinite.Models.Config;
+ using ServerInfinite.Persistence;
++using ServerInfinite.Handlers.UI.Team;
+ using ServerInfinite.Strategy.Team;
+ 
+ namespace ServerInfinite.Commands.LoadCard.MobileUser;
+@@ -9,27 +12,58 @@ namespace ServerInfinite.Commands.LoadCard.MobileUser;
+ /// <summary>
+ /// [exvs2-lobbies / EXPERIMENTAL] LoadCard.MobileUserGroup.tag_teams (36): the list the online-tag (オンラインタッグ)
+ /// menu most likely shows (partner-invites.md 4). Upstream never filled it, so online tag had nobody to pick.
++/// Also registers this card's shared tag codes with the matchmaker so world-5 pairing can key on the code.
+ /// </summary>
+ public class OnlineTagTeamsCommand : ILoadCardMobileUserCommand
+ {
+     private readonly ServerDbContext _context;
+     private readonly OnlineTagConfigurations _cfg;
+     private readonly ILogger? _logger;
++    private readonly ITagInviteClient? _invites;
+ 
+-    public OnlineTagTeamsCommand(ServerDbContext context, OnlineTagConfigurations cfg, ILogger? logger = null)
++    public OnlineTagTeamsCommand(ServerDbContext context, OnlineTagConfigurations cfg, ILogger? logger = null,
++        ITagInviteClient? invites = null)
+     {
+         _context = context;
+         _cfg = cfg;
+         _logger = logger;
++        _invites = invites;
+     }
+ 
+     public void Fill(CardProfile cardProfile, Response.LoadCard.MobileUserGroup mobileUserGroup)
+     {
+         if (!_cfg.SendTagTeams) return;
++        var own = OnlineTagTeamList.WirePilotId(cardProfile.Id);
++        if (_invites != null)
++        {
++            try
++            {
++                var list = _invites.ForPilotAsync(own).GetAwaiter().GetResult();
++                foreach (var inv in list.Where(i => i.Joined))
++                    CrossServerTeamSupport.Upsert(_context, cardProfile, inv, _cfg.MaxTeams);
++                _context.SaveChanges();
++            }
++            catch (Exception ex)
++            {
++                _logger?.LogWarning(ex, "LoadCard online tag: could not pull cross-server team settings for wire {Wire}", own);
++            }
++        }
+         var teams = OnlineTagTeamList.Build(_context, cardProfile, _cfg);
+         mobileUserGroup.TagTeams.AddRange(teams);
+-        _logger?.LogInformation("LoadCard online tag: CardId={CardId} tag_teams={Count} tag_status={Status} [{Teams}]",
+-            cardProfile.Id, teams.Count, _cfg.TagStatus,
+-            string.Join(", ", teams.Select(t => $"team {t.Id} partner {t.PartnerId} key {Math.Min(OnlineTagTeamList.WirePilotId(cardProfile.Id), t.PartnerId)}")));
++        _logger?.LogInformation("LoadCard online tag: CardId={CardId} wire={Wire} tag_teams={Count} tag_status={Status} [{Teams}]",
++            cardProfile.Id, own, teams.Count, _cfg.TagStatus,
++            string.Join(", ", teams.Select(t => $"team {t.Id} partner {t.PartnerId} key {Math.Min(own, t.PartnerId)}")));
++
++        if (_invites is null) return;
++        try
++        {
++            var codes = OnlineTagTeamList.SharedCodes(_context, cardProfile);
++            if (codes.Length > 0)
++                _invites.RegisterSearchAsync(own, codes).GetAwaiter().GetResult();
++        }
++        catch (Exception ex)
++        {
++            _logger?.LogWarning(ex, "LoadCard online tag: failed to register shared tag codes for wire {Wire}", own);
++        }
+     }
+ }
+diff --git a/Server-Infinite/Commands/PreLoadCard/LoadPlayer/PreLoadPlayerBasicInformationCommand.cs b/Server-Infinite/Commands/PreLoadCard/LoadPlayer/PreLoadPlayerBasicInformationCommand.cs
+index d249999..317de91 100644
+--- a/Server-Infinite/Commands/PreLoadCard/LoadPlayer/PreLoadPlayerBasicInformationCommand.cs
++++ b/Server-Infinite/Commands/PreLoadCard/LoadPlayer/PreLoadPlayerBasicInformationCommand.cs
+@@ -18,7 +18,7 @@ public class PreLoadPlayerBasicInformationCommand : IPreLoadPlayerCommand
+         var playerProfile = _context.PlayerProfileDbSet
+             .First(x => x.CardProfile == cardProfile);
+         
+-        loadPlayer.PilotId = (uint)cardProfile.Id;
++        loadPlayer.PilotId = ServerInfinite.Matchmaking.PilotId.Wire(cardProfile.Id);
+         loadPlayer.LastPlayedAt = cardProfile.LastPlayedAt;
+ 
+         // Stub: client PreLoadCard.LoadPlayer tags 13–14 (vsm_after_class_change_*). Not computed yet.
+diff --git a/Server-Infinite/Commands/PreLoadCard/MobileUserGroup/PreLoadMobileUserBasicInformationCommand.cs b/Server-Infinite/Commands/PreLoadCard/MobileUserGroup/PreLoadMobileUserBasicInformationCommand.cs
+index 517c667..41c5bba 100644
+--- a/Server-Infinite/Commands/PreLoadCard/MobileUserGroup/PreLoadMobileUserBasicInformationCommand.cs
++++ b/Server-Infinite/Commands/PreLoadCard/MobileUserGroup/PreLoadMobileUserBasicInformationCommand.cs
+@@ -15,7 +15,7 @@ public class PreLoadMobileUserBasicInformationCommand : IPreLoadMobileUserGroupC
+ 
+     public void Fill(CardProfile cardProfile, Response.PreLoadCard.MobileUserGroup mobileUserGroup)
+     {
+-        mobileUserGroup.UserId = (uint)cardProfile.Id;
++        mobileUserGroup.UserId = ServerInfinite.Matchmaking.PilotId.Wire(cardProfile.Id);
+         mobileUserGroup.PlayerName = cardProfile.UserName;
+         mobileUserGroup.KeyconfigNumber = 1;
+         mobileUserGroup.Gp = cardProfile.Gp;
+diff --git a/Server-Infinite/Commands/SaveBattle/PvP/SaveBattleHistoryCommand.cs b/Server-Infinite/Commands/SaveBattle/PvP/SaveBattleHistoryCommand.cs
+index f00ca90..4a2d78d 100644
+--- a/Server-Infinite/Commands/SaveBattle/PvP/SaveBattleHistoryCommand.cs
++++ b/Server-Infinite/Commands/SaveBattle/PvP/SaveBattleHistoryCommand.cs
+@@ -134,7 +134,7 @@ public class SaveBattleHistoryCommand : ISaveBattleDataCommand
+     BattleAlly ConstructAllyWithActionLogAppend(BattleHistory battleHistory, AdversaryManGroup adversaryMan, uint playerCount)
+     {
+         var player = _context.CardProfiles
+-            .FirstOrDefault(x => x.Id == adversaryMan.PilotId);
++            .FirstOrDefault(x => x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(adversaryMan.PilotId));
+         
+         var playerName = player is not null ? player.UserName : ("Player " + playerCount);
+         
+@@ -160,7 +160,7 @@ public class SaveBattleHistoryCommand : ISaveBattleDataCommand
+     BattleTarget ConstructTargetWithActionLogAppend(BattleHistory battleHistory, AdversaryManGroup adversaryMan, uint playerCount)
+     {
+         var player = _context.CardProfiles
+-            .FirstOrDefault(x => x.Id == adversaryMan.PilotId);
++            .FirstOrDefault(x => x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(adversaryMan.PilotId));
+         
+         var playerName = player is not null ? player.UserName : ("Player " + playerCount);
+         
+diff --git a/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs b/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs
+new file mode 100644
+index 0000000..c68605c
+--- /dev/null
++++ b/Server-Infinite/Common/TagInvite/HttpTagInviteClient.cs
+@@ -0,0 +1,109 @@
++using System.Net.Http.Json;
++using System.Text.Json;
++using ServerInfinite.Matchmaking;
++
++namespace ServerInfinite.Common.TagInvites;
++
++public sealed class HttpTagInviteClient : ITagInviteClient
++{
++    private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
++    private readonly HttpClient _http;
++    private readonly string _base;
++
++    public HttpTagInviteClient(HttpClient http, string inviteBaseUrl)
++    {
++        _http = http;
++        _base = inviteBaseUrl.TrimEnd('/');
++        _http.Timeout = TimeSpan.FromSeconds(8);
++    }
++
++    public async Task<string> CreateAsync(uint creatorPilotId, string creatorName, CancellationToken ct = default)
++    {
++        var r = await _http.PostAsJsonAsync($"{_base}/invites", new { pilotId = creatorPilotId, name = creatorName }, ct);
++        r.EnsureSuccessStatusCode();
++        var body = await r.Content.ReadFromJsonAsync<CreateBody>(Json, ct)
++                   ?? throw new InvalidOperationException("Empty create-invite response.");
++        if (string.IsNullOrWhiteSpace(body.Code))
++            throw new InvalidOperationException(body.Error ?? "The matchmaker did not return a partner code.");
++        return body.Code;
++    }
++
++    public async Task<TagInvite> JoinAsync(string code, uint partnerPilotId, string partnerName, CancellationToken ct = default)
++    {
++        var r = await _http.PostAsJsonAsync($"{_base}/invites/join",
++            new { code, pilotId = partnerPilotId, name = partnerName }, ct);
++        if (!r.IsSuccessStatusCode)
++        {
++            var err = await ReadError(r, ct);
++            throw new InvalidOperationException(err ?? $"Join failed ({(int)r.StatusCode}).");
++        }
++        var inv = await r.Content.ReadFromJsonAsync<TagInvite>(Json, ct)
++                  ?? throw new InvalidOperationException("Empty join-invite response.");
++        return inv;
++    }
++
++    public async Task<TagInvite?> GetAsync(string code, CancellationToken ct = default)
++    {
++        var r = await _http.GetAsync($"{_base}/invites/{Uri.EscapeDataString(TagInviteStore.Normalize(code))}", ct);
++        if (r.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
++        r.EnsureSuccessStatusCode();
++        return await r.Content.ReadFromJsonAsync<TagInvite>(Json, ct);
++    }
++
++    public async Task<IReadOnlyList<TagInvite>> ForPilotAsync(uint wirePilotId, CancellationToken ct = default)
++    {
++        var r = await _http.GetAsync($"{_base}/invites/for/{wirePilotId}", ct);
++        r.EnsureSuccessStatusCode();
++        var list = await r.Content.ReadFromJsonAsync<List<TagInvite>>(Json, ct);
++        return list ?? (IReadOnlyList<TagInvite>)Array.Empty<TagInvite>();
++    }
++
++    public async Task RegisterSearchAsync(uint amId, IEnumerable<string> codes, CancellationToken ct = default)
++    {
++        var r = await _http.PostAsJsonAsync($"{_base}/register", new { amId, codes = codes.ToArray() }, ct);
++        r.EnsureSuccessStatusCode();
++    }
++
++    public async Task<TagInvite> UpdateSettingsAsync(string code, uint byPilotId, TagTeamSettings settings, CancellationToken ct = default)
++    {
++        var r = await _http.PostAsJsonAsync(
++            $"{_base}/invites/{Uri.EscapeDataString(TagInviteStore.Normalize(code))}/settings",
++            new
++            {
++                pilotId = byPilotId,
++                teamName = settings.TeamName,
++                backgroundPartsId = settings.BackgroundPartsId,
++                effectId = settings.EffectId,
++                emblemId = settings.EmblemId,
++                bgmId = settings.BgmId,
++                nameColorId = settings.NameColorId,
++            }, ct);
++        if (!r.IsSuccessStatusCode)
++        {
++            var err = await ReadError(r, ct);
++            throw new InvalidOperationException(err ?? $"Update settings failed ({(int)r.StatusCode}).");
++        }
++        return await r.Content.ReadFromJsonAsync<TagInvite>(Json, ct)
++               ?? throw new InvalidOperationException("Empty settings response.");
++    }
++
++    private static async Task<string?> ReadError(HttpResponseMessage r, CancellationToken ct)
++    {
++        try
++        {
++            var body = await r.Content.ReadFromJsonAsync<CreateBody>(Json, ct);
++            return body?.Error ?? body?.Message;
++        }
++        catch
++        {
++            return null;
++        }
++    }
++
++    private sealed class CreateBody
++    {
++        public string? Code { get; set; }
++        public string? Error { get; set; }
++        public string? Message { get; set; }
++    }
++}
+diff --git a/Server-Infinite/Common/TagInvite/ITagInviteClient.cs b/Server-Infinite/Common/TagInvite/ITagInviteClient.cs
+new file mode 100644
+index 0000000..18e4b1d
+--- /dev/null
++++ b/Server-Infinite/Common/TagInvite/ITagInviteClient.cs
+@@ -0,0 +1,18 @@
++using ServerInfinite.Matchmaking;
++
++namespace ServerInfinite.Common.TagInvites;
++
++/// <summary>
++/// Card-server view of the shared matchmaker invite store. In-process on the VPS / all-in-one;
++/// HTTP to InviteUrl (or MatchUrl rewritten to /tag) on a split card server.
++/// Never sends card access codes, chip ids, or passwords.
++/// </summary>
++public interface ITagInviteClient
++{
++    Task<string> CreateAsync(uint creatorPilotId, string creatorName, CancellationToken ct = default);
++    Task<TagInvite> JoinAsync(string code, uint partnerPilotId, string partnerName, CancellationToken ct = default);
++    Task<TagInvite?> GetAsync(string code, CancellationToken ct = default);
++    Task<IReadOnlyList<TagInvite>> ForPilotAsync(uint wirePilotId, CancellationToken ct = default);
++    Task RegisterSearchAsync(uint amId, IEnumerable<string> codes, CancellationToken ct = default);
++    Task<TagInvite> UpdateSettingsAsync(string code, uint byPilotId, TagTeamSettings settings, CancellationToken ct = default);
++}
+diff --git a/Server-Infinite/Common/TagInvite/InProcessTagInviteClient.cs b/Server-Infinite/Common/TagInvite/InProcessTagInviteClient.cs
+new file mode 100644
+index 0000000..fd872a9
+--- /dev/null
++++ b/Server-Infinite/Common/TagInvite/InProcessTagInviteClient.cs
+@@ -0,0 +1,38 @@
++using ServerInfinite.Matchmaking;
++
++namespace ServerInfinite.Common.TagInvites;
++
++public sealed class InProcessTagInviteClient : ITagInviteClient
++{
++    private readonly TagInviteStore _store;
++    private readonly Matchmaker? _mm;
++
++    public InProcessTagInviteClient(TagInviteStore store, Matchmaker? mm = null)
++    {
++        _store = store;
++        _mm = mm;
++    }
++
++    public Task<string> CreateAsync(uint creatorPilotId, string creatorName, CancellationToken ct = default) =>
++        Task.FromResult(_store.Create(creatorPilotId, creatorName));
++
++    public Task<TagInvite> JoinAsync(string code, uint partnerPilotId, string partnerName, CancellationToken ct = default) =>
++        Task.FromResult(_store.Join(code, partnerPilotId, partnerName));
++
++    public Task<TagInvite?> GetAsync(string code, CancellationToken ct = default) =>
++        Task.FromResult(_store.Get(code));
++
++    public Task<IReadOnlyList<TagInvite>> ForPilotAsync(uint wirePilotId, CancellationToken ct = default) =>
++        Task.FromResult(_store.ForPilot(wirePilotId));
++
++    public Task RegisterSearchAsync(uint amId, IEnumerable<string> codes, CancellationToken ct = default)
++    {
++        var list = codes as string[] ?? codes.ToArray();
++        if (_mm != null) _mm.RegisterTagSearch(amId, list);
++        else _store.RegisterSearch(amId, list);
++        return Task.CompletedTask;
++    }
++
++    public Task<TagInvite> UpdateSettingsAsync(string code, uint byPilotId, TagTeamSettings settings, CancellationToken ct = default) =>
++        Task.FromResult(_store.UpdateSettings(code, byPilotId, settings));
++}
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 04d3865..c6f3d96 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -63,7 +63,11 @@
+       "SendTagTeams": true,
+       "TagStatus": 0,
+       "MaxTeams": 20,
+-      "OneTimeInviteCode": true
++      "OneTimeInviteCode": true,
++      "ServerId": 0,
++      "ServerIdFile": "tag_server_id.txt",
++      "InviteUrl": "",
++      "InviteStateFile": "tag_invites.json"
+     }
+   }
+ }
+diff --git a/Server-Infinite/Controllers/TagInviteController.cs b/Server-Infinite/Controllers/TagInviteController.cs
+new file mode 100644
+index 0000000..ffe55a8
+--- /dev/null
++++ b/Server-Infinite/Controllers/TagInviteController.cs
+@@ -0,0 +1,130 @@
++using Microsoft.AspNetCore.Mvc;
++using ServerInfinite.Matchmaking;
++
++namespace ServerInfinite.Controllers;
++
++/// <summary>
++/// Shared matchmaker API for cross-server online-tag invites. No card secrets are accepted or logged.
++/// Card servers (and the WebUI through them) call these endpoints; cabinets do not.
++/// </summary>
++[ApiController]
++[Route("tag")]
++public class TagInviteController : ControllerBase
++{
++    private readonly TagInviteStore _store;
++    private readonly Matchmaker _mm;
++    private readonly ILogger<TagInviteController> _log;
++
++    public TagInviteController(TagInviteStore store, Matchmaker mm, ILogger<TagInviteController> log)
++    {
++        _store = store;
++        _mm = mm;
++        _log = log;
++    }
++
++    public sealed class CreateRequest
++    {
++        public uint PilotId { get; set; }
++        public string Name { get; set; } = "";
++    }
++
++    public sealed class JoinRequest
++    {
++        public string Code { get; set; } = "";
++        public uint PilotId { get; set; }
++        public string Name { get; set; } = "";
++    }
++
++    public sealed class RegisterRequest
++    {
++        public uint AmId { get; set; }
++        public string[] Codes { get; set; } = Array.Empty<string>();
++    }
++
++    public sealed class SettingsRequest
++    {
++        public uint PilotId { get; set; }
++        public string TeamName { get; set; } = "";
++        public uint BackgroundPartsId { get; set; }
++        public uint EffectId { get; set; }
++        public uint EmblemId { get; set; }
++        public uint BgmId { get; set; }
++        public uint NameColorId { get; set; }
++    }
++
++    [HttpPost("invites")]
++    public IActionResult Create([FromBody] CreateRequest body)
++    {
++        if (body.PilotId == 0) return BadRequest(new { error = "pilotId is required." });
++        try
++        {
++            var code = _store.Create(body.PilotId, body.Name ?? "");
++            _log.LogInformation("tag invite created for pilot {PilotId}", body.PilotId);
++            return Ok(new { code });
++        }
++        catch (Exception ex)
++        {
++            return BadRequest(new { error = ex.Message });
++        }
++    }
++
++    [HttpPost("invites/join")]
++    public IActionResult Join([FromBody] JoinRequest body)
++    {
++        if (body.PilotId == 0 || string.IsNullOrWhiteSpace(body.Code))
++            return BadRequest(new { error = "code and pilotId are required." });
++        try
++        {
++            var inv = _store.Join(body.Code, body.PilotId, body.Name ?? "");
++            _log.LogInformation("tag invite {Code} joined by pilot {PilotId}", inv.Code, body.PilotId);
++            return Ok(inv);
++        }
++        catch (Exception ex)
++        {
++            return BadRequest(new { error = ex.Message });
++        }
++    }
++
++    [HttpGet("invites/{code}")]
++    public IActionResult Get(string code)
++    {
++        var inv = _store.Get(code);
++        return inv is null ? NotFound() : Ok(inv);
++    }
++
++    [HttpGet("invites/for/{pilotId}")]
++    public IActionResult ForPilot(uint pilotId) => Ok(_store.ForPilot(pilotId));
++
++    [HttpPost("invites/{code}/settings")]
++    public IActionResult Settings(string code, [FromBody] SettingsRequest body)
++    {
++        if (body.PilotId == 0 || string.IsNullOrWhiteSpace(code))
++            return BadRequest(new { error = "code and pilotId are required." });
++        try
++        {
++            var inv = _store.UpdateSettings(code, body.PilotId, new TagTeamSettings
++            {
++                TeamName = body.TeamName ?? "",
++                BackgroundPartsId = body.BackgroundPartsId,
++                EffectId = body.EffectId,
++                EmblemId = body.EmblemId,
++                BgmId = body.BgmId,
++                NameColorId = body.NameColorId,
++            });
++            _log.LogInformation("tag invite {Code} settings updated by pilot {PilotId}", inv.Code, body.PilotId);
++            return Ok(inv);
++        }
++        catch (Exception ex)
++        {
++            return BadRequest(new { error = ex.Message });
++        }
++    }
++
++    [HttpPost("register")]
++    public IActionResult Register([FromBody] RegisterRequest body)
++    {
++        if (body.AmId == 0) return BadRequest(new { error = "amId is required." });
++        _mm.RegisterTagSearch(body.AmId, body.Codes ?? Array.Empty<string>());
++        return Ok(new { ok = true });
++    }
++}
+diff --git a/Server-Infinite/Controllers/UI/TeamController.cs b/Server-Infinite/Controllers/UI/TeamController.cs
+index 5eb4c21..95597a8 100644
+--- a/Server-Infinite/Controllers/UI/TeamController.cs
++++ b/Server-Infinite/Controllers/UI/TeamController.cs
+@@ -48,4 +48,18 @@ public class TeamController : BaseController<TeamController>
+         var response = await _mediator.Send(new UpsertCustomizeTeamCommand(request));
+         return response;
+     }
+-}
+\ No newline at end of file
++
++    [HttpPost("crossServerInvite")]
++    [Produces("application/json")]
++    public async Task<ActionResult<CrossServerInviteResponse>> CreateCrossServerInvite([FromBody] BasicCardRequest request)
++    {
++        return await _mediator.Send(new CreateCrossServerInviteCommand(request.AccessCode, request.ChipId));
++    }
++
++    [HttpPost("joinCrossServer")]
++    [Produces("application/json")]
++    public async Task<ActionResult<CrossServerInviteResponse>> JoinCrossServer([FromBody] JoinCrossServerTeamRequest request)
++    {
++        return await _mediator.Send(new JoinCrossServerInviteCommand(request));
++    }
++}
+diff --git a/Server-Infinite/Handlers/Game/LoadCardQueryHandler.cs b/Server-Infinite/Handlers/Game/LoadCardQueryHandler.cs
+index 77a45f3..b5e64eb 100644
+--- a/Server-Infinite/Handlers/Game/LoadCardQueryHandler.cs
++++ b/Server-Infinite/Handlers/Game/LoadCardQueryHandler.cs
+@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
+ using ServerInfinite.Strategy.Team;
+ using Microsoft.Extensions.Options;
+ using ServerInfinite.Models.Config;
++using ServerInfinite.Common.TagInvites;
+ 
+ namespace ServerInfinite.Handlers.Game;
+ 
+@@ -22,14 +23,16 @@ public class LoadCardQueryHandler : IRequestHandler<LoadCardQuery, Response>
+     private readonly ServerDbContext _context;
+     private readonly ITrackerCatalog _trackerCatalog;
+     private readonly OnlineTagConfigurations _onlineTag;
++    private readonly ITagInviteClient? _invites;
+ 
+     public LoadCardQueryHandler(ILogger<LoadCardQueryHandler> logger, ServerDbContext context, ITrackerCatalog? trackerCatalog = null,
+-        IOptions<CardServerConfig>? options = null)
++        IOptions<CardServerConfig>? options = null, ITagInviteClient? invites = null)
+     {
+         _logger = logger;
+         _context = context;
+         _trackerCatalog = trackerCatalog ?? TrackerCatalog.FromOutput();
+         _onlineTag = options?.Value.OnlineTag ?? new OnlineTagConfigurations();
++        _invites = invites;
+     }
+ 
+     public Task<Response> Handle(LoadCardQuery query, CancellationToken cancellationToken)
+@@ -88,7 +91,7 @@ public class LoadCardQueryHandler : IRequestHandler<LoadCardQuery, Response>
+ 
+         var mobileUserGroup = new Response.LoadCard.MobileUserGroup()
+         {
+-            MobileUserId = (uint) cardProfile.Id,
++            MobileUserId = ServerInfinite.Matchmaking.PilotId.Wire(cardProfile.Id),
+             PaidFlag = LoadCardMobileUserConstants.PaidFlag,
+             PlayingStampFlag = LoadCardMobileUserConstants.PlayingStampFlag,
+             SupportTicketRemains = LoadCardMobileUserConstants.SupportTicketRemains,
+@@ -121,7 +124,7 @@ public class LoadCardQueryHandler : IRequestHandler<LoadCardQuery, Response>
+             new DefaultStickerCommand(_context, trackers),
+             new MobileSuitStickerCommand(_context, trackers),
+             new QuickTagCommand(_context),
+-            new OnlineTagTeamsCommand(_context, _onlineTag, _logger),   // exvs2-lobbies: online tag list (36)
++            new OnlineTagTeamsCommand(_context, _onlineTag, _logger, _invites),   // exvs2-lobbies: online tag list (36)
+             new LoadQuickStartInfoCommand(_context),
+             new LoadStageSaveDataCommand(_context)
+         };
+diff --git a/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs b/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs
+index 58693d6..0dd6699 100644
+--- a/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs
+@@ -39,7 +39,7 @@ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultComm
+         {
+             string sessionId = save.SessionId;
+             long pilotId = save.PilotId;
+-            var cardProfile = _context.CardProfiles.FirstOrDefault(x => x.SessionId == sessionId && (long)x.Id == pilotId);
++            var cardProfile = _context.CardProfiles.FirstOrDefault(x => x.SessionId == sessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(pilotId));
+             if (cardProfile != null)
+             {
+                 _logger.LogInformation("SaveVsmOnResult CardId={CardId} badge_id={BadgeId} badge_point={Point}", cardProfile.Id, save.Result.BadgeId, save.Result.ObtainedBadgePoint);
+diff --git a/Server-Infinite/Handlers/Game/PreLoadCardQueryHandler.cs b/Server-Infinite/Handlers/Game/PreLoadCardQueryHandler.cs
+index f374229..964fcba 100644
+--- a/Server-Infinite/Handlers/Game/PreLoadCardQueryHandler.cs
++++ b/Server-Infinite/Handlers/Game/PreLoadCardQueryHandler.cs
+@@ -166,7 +166,7 @@ public class PreLoadCardQueryHandler : IRequestHandler<PreLoadCardQuery, Respons
+             SessionId = sessionId,
+             AcidResponse = null,
+             AcidError = AcidError.AcidSuccess,
+-            AmId = (uint) cardProfile.Id,
++            AmId = ServerInfinite.Matchmaking.PilotId.Wire(cardProfile.Id),
+             IsNewCard = false,
+             User = mobileUserGroup,
+             load_player = loadPlayer
+diff --git a/Server-Infinite/Handlers/Game/PreSaveReplayCommandHandler.cs b/Server-Infinite/Handlers/Game/PreSaveReplayCommandHandler.cs
+index b188499..3b9eb01 100644
+--- a/Server-Infinite/Handlers/Game/PreSaveReplayCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/PreSaveReplayCommandHandler.cs
+@@ -45,7 +45,7 @@ public class PreSaveReplayCommandHandler : IRequestHandler<PreSaveReplayCommand,
+         {
+             var cardProfile = _context.CardProfiles
+                 .Include(x => x.SharedUploadReplays)
+-                .FirstOrDefault(x => x.Id == pilot.PilotId && x.UserName.ToLower().Contains(pilot.PlayerName.ToLower()));
++                .FirstOrDefault(x => x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(pilot.PilotId) && x.UserName.ToLower().Contains(pilot.PlayerName.ToLower()));
+ 
+             if (cardProfile is null)
+             {
+@@ -91,7 +91,7 @@ public class PreSaveReplayCommandHandler : IRequestHandler<PreSaveReplayCommand,
+     {
+         var cardProfile = _context.CardProfiles
+             .Include(x => x.UploadReplays)
+-            .FirstOrDefault(x => x.Id == preSaveRequest.MobileUserId);
++            .FirstOrDefault(x => x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(preSaveRequest.MobileUserId));
+ 
+         if (cardProfile is null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SaveBattleLogCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveBattleLogCommandHandler.cs
+index 3c1d36e..ae8b0db 100644
+--- a/Server-Infinite/Handlers/Game/SaveBattleLogCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveBattleLogCommandHandler.cs
+@@ -54,7 +54,7 @@ public class SaveBattleLogCommandHandler : IRequestHandler<SaveBattleLogCommand,
+         }
+ 
+         var ownPlayer = saveBattleLogRequest.BattleLog.Pilots
+-            .FirstOrDefault(x => x.IsHuman && x.PilotId == cardProfile.Id);
++            .FirstOrDefault(x => x.IsHuman && ServerInfinite.Matchmaking.PilotId.IsThisCard(cardProfile.Id, x.PilotId));
+ 
+         if (ownPlayer is null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SavePracticeResultCommandHandler.cs b/Server-Infinite/Handlers/Game/SavePracticeResultCommandHandler.cs
+index 42808ef..29780a3 100644
+--- a/Server-Infinite/Handlers/Game/SavePracticeResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SavePracticeResultCommandHandler.cs
+@@ -23,7 +23,7 @@ public class SavePracticeResultCommandHandler : IRequestHandler<SavePracticeResu
+     {
+         var saveRequest = request.Request.save_practice_result;
+         var cardProfile = _context.CardProfiles
+-            .FirstOrDefault(x => x.SessionId == saveRequest.SessionId && x.Id == saveRequest.PilotId);
++            .FirstOrDefault(x => x.SessionId == saveRequest.SessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(saveRequest.PilotId));
+ 
+         if (cardProfile == null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SaveResultCaptureCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveResultCaptureCommandHandler.cs
+index 1914fc9..a6b87f0 100644
+--- a/Server-Infinite/Handlers/Game/SaveResultCaptureCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveResultCaptureCommandHandler.cs
+@@ -21,7 +21,7 @@ public class SaveResultCaptureCommandHandler : IRequestHandler<SaveResultCapture
+         var userId = saveRequest.PilotId;
+         
+         var cardProfile = _context.CardProfiles
+-            .FirstOrDefault(x => x.SessionId == saveRequest.SessionId && x.Id == userId);
++            .FirstOrDefault(x => x.SessionId == saveRequest.SessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(userId));
+         
+         if (cardProfile == null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SaveStageResultCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveStageResultCommandHandler.cs
+index 63268e8..e85011a 100644
+--- a/Server-Infinite/Handlers/Game/SaveStageResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveStageResultCommandHandler.cs
+@@ -43,7 +43,7 @@ public class SaveStageResultCommandHandler : IRequestHandler<SaveStageResultComm
+         }
+         string sessionId = saveRequest.SessionId;
+         long pilotId = saveRequest.PilotId;
+-        var cardProfile = _context.CardProfiles.FirstOrDefault(x => x.SessionId == sessionId && (long)x.Id == pilotId);
++        var cardProfile = _context.CardProfiles.FirstOrDefault(x => x.SessionId == sessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(pilotId));
+         Request.SaveStageResult.PlayResultGroup result = saveRequest.Result;
+         if (cardProfile == null || result == null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SaveUserPlayResearchDataCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveUserPlayResearchDataCommandHandler.cs
+index e257630..1911655 100644
+--- a/Server-Infinite/Handlers/Game/SaveUserPlayResearchDataCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveUserPlayResearchDataCommandHandler.cs
+@@ -37,7 +37,7 @@ public class SaveUserPlayResearchDataCommandHandler : IRequestHandler<SaveUserPl
+         {
+             string sessionId = data.SessionId;
+             long pilotId = data.PilotId;
+-                var cardProfile = _context.CardProfiles.FirstOrDefault(x => x.SessionId == sessionId && (long)x.Id == pilotId);
++                var cardProfile = _context.CardProfiles.FirstOrDefault(x => x.SessionId == sessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(pilotId));
+             if (cardProfile != null)
+             {
+                 _logger.LogInformation("SaveUserPlayResearchData CardId={CardId} mode={Mode} player_level={Level} badge_id={BadgeId}", cardProfile.Id, data.Mode, data.PlayerLevelId, data.BadgeId);
+diff --git a/Server-Infinite/Handlers/Game/SaveVscResultCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveVscResultCommandHandler.cs
+index 6cc8c56..ce0c3cf 100644
+--- a/Server-Infinite/Handlers/Game/SaveVscResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveVscResultCommandHandler.cs
+@@ -34,7 +34,7 @@ public class SaveVscResultCommandHandler : IRequestHandler<SaveVscResultCommand,
+         var cardId = request.Request.save_vsc_result.PilotId;
+ 
+         var cardProfile = _context.CardProfiles
+-            .FirstOrDefault(x => x.SessionId == sessionId && x.Id == cardId);
++            .FirstOrDefault(x => x.SessionId == sessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(cardId));
+ 
+         if (cardProfile == null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SaveVsmResultCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveVsmResultCommandHandler.cs
+index 2746a9a..48de132 100644
+--- a/Server-Infinite/Handlers/Game/SaveVsmResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveVsmResultCommandHandler.cs
+@@ -29,7 +29,7 @@ public class SaveVsmResultCommandHandler : IRequestHandler<SaveVsmResultCommand,
+         var cardId = request.Request.save_vsm_result.PilotId;
+ 
+         var cardProfile = _context.CardProfiles
+-            .FirstOrDefault(x => x.SessionId == sessionId && x.Id == cardId);
++            .FirstOrDefault(x => x.SessionId == sessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(cardId));
+ 
+         if (cardProfile == null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/SaveVstResultCommandHandler.cs b/Server-Infinite/Handlers/Game/SaveVstResultCommandHandler.cs
+index 1b6bd89..b40ee08 100644
+--- a/Server-Infinite/Handlers/Game/SaveVstResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/SaveVstResultCommandHandler.cs
+@@ -24,7 +24,7 @@ public class SaveVstResultCommandHandler : IRequestHandler<SaveVstResultCommand,
+         var cardId = request.Request.save_vst_result.PilotId;
+ 
+         var cardProfile = _context.CardProfiles
+-            .FirstOrDefault(x => x.SessionId == sessionId && x.Id == cardId);
++            .FirstOrDefault(x => x.SessionId == sessionId && x.Id == ServerInfinite.Matchmaking.PilotId.ToLocalOrUnmatched(cardId));
+ 
+         if (cardProfile == null)
+         {
+diff --git a/Server-Infinite/Handlers/Game/Tournament/LoadMeetingCardCommandHandler.cs b/Server-Infinite/Handlers/Game/Tournament/LoadMeetingCardCommandHandler.cs
+index e0afe7f..8c57194 100644
+--- a/Server-Infinite/Handlers/Game/Tournament/LoadMeetingCardCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/Tournament/LoadMeetingCardCommandHandler.cs
+@@ -64,7 +64,7 @@ public class LoadMeetingCardCommandHandler : IRequestHandler<LoadMeetingCardComm
+             load_player = new Response.LoadMeetingCard.LoadPlayer()
+             {
+                 LastPlayedAt = cardProfile.LastPlayedAt,
+-                PilotId = (uint)cardProfile.Id,
++                PilotId = ServerInfinite.Matchmaking.PilotId.Wire(cardProfile.Id),
+                 PlayerLevelId = playerLevel.PlayerLevelId,
+                 TotalWin = winLossRecord.TotalWin,
+                 TotalLose = winLossRecord.TotalLose,
+diff --git a/Server-Infinite/Handlers/UI/Team/CreateCrossServerInviteCommandHandler.cs b/Server-Infinite/Handlers/UI/Team/CreateCrossServerInviteCommandHandler.cs
+new file mode 100644
+index 0000000..a73bc26
+--- /dev/null
++++ b/Server-Infinite/Handlers/UI/Team/CreateCrossServerInviteCommandHandler.cs
+@@ -0,0 +1,41 @@
++using MediatR;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Options;
++using ServerInfinite.Common.TagInvites;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++using ServerInfinite.Persistence;
++using WebUIInfinite.Shared.Dto.Response;
++using WebUIInfinite.Shared.Exception;
++
++namespace ServerInfinite.Handlers.UI.Team;
++
++public record CreateCrossServerInviteCommand(string AccessCode, string ChipId) : IRequest<CrossServerInviteResponse>;
++
++public class CreateCrossServerInviteCommandHandler : IRequestHandler<CreateCrossServerInviteCommand, CrossServerInviteResponse>
++{
++    private readonly ServerDbContext _context;
++    private readonly ITagInviteClient _invites;
++
++    public CreateCrossServerInviteCommandHandler(ServerDbContext context, ITagInviteClient invites)
++    {
++        _context = context;
++        _invites = invites;
++    }
++
++    public async Task<CrossServerInviteResponse> Handle(CreateCrossServerInviteCommand request, CancellationToken cancellationToken)
++    {
++        var card = _context.CardProfiles
++            .FirstOrDefault(x => x.AccessCode == request.AccessCode && x.ChipId == request.ChipId);
++        if (card is null) throw new InvalidCardDataException("Card Profile is invalid");
++        try
++        {
++            var code = await _invites.CreateAsync(PilotId.Wire(card.Id), card.UserName ?? "", cancellationToken);
++            return new CrossServerInviteResponse { Success = true, Code = code };
++        }
++        catch (Exception ex)
++        {
++            return new CrossServerInviteResponse { Success = false, Message = ex.Message };
++        }
++    }
++}
+diff --git a/Server-Infinite/Handlers/UI/Team/CrossServerTeamSupport.cs b/Server-Infinite/Handlers/UI/Team/CrossServerTeamSupport.cs
+new file mode 100644
+index 0000000..64bb687
+--- /dev/null
++++ b/Server-Infinite/Handlers/UI/Team/CrossServerTeamSupport.cs
+@@ -0,0 +1,75 @@
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Cards;
++using ServerInfinite.Models.Cards.Team;
++using ServerInfinite.Persistence;
++
++namespace ServerInfinite.Handlers.UI.Team;
++
++/// <summary>Creates or refreshes a local TagTeamData row for a joined cross-server invite.</summary>
++internal static class CrossServerTeamSupport
++{
++    public const string DefaultTeamName = "EXTREME TEAM";
++
++    public static uint PartnerWire(TagInvite inv, uint selfWire) =>
++        inv.CreatorPilotId == selfWire ? inv.PartnerPilotId : inv.CreatorPilotId;
++
++    public static string PartnerName(TagInvite inv, uint selfWire) =>
++        inv.CreatorPilotId == selfWire ? inv.PartnerName : inv.CreatorName;
++
++    public static TagTeamData? Upsert(ServerDbContext context, CardProfile card, TagInvite inv, int maxTeams)
++    {
++        if (!inv.Joined) return null;
++        var self = PilotId.Wire(card.Id);
++        var partner = PartnerWire(inv, self);
++        if (partner == 0 || partner == self) return null;
++        var code = TagInviteStore.Normalize(inv.Code);
++
++        var existing = context.TagTeamDataDbSet.FirstOrDefault(t =>
++            t.CardId == card.Id && t.SharedTagCode == code);
++        if (existing != null)
++        {
++            existing.RemotePartnerPilotId = partner;
++            var name = PartnerName(inv, self);
++            if (!string.IsNullOrEmpty(name)) existing.RemotePartnerName = name;
++            ApplySettingsIfNewer(existing, inv.Settings);
++            return existing;
++        }
++
++        var count = context.TagTeamDataDbSet.Count(t => t.CardId == card.Id || t.TeammateCardId == (uint)card.Id);
++        if (count >= Math.Max(0, maxTeams)) return null;
++
++        var team = new TagTeamData
++        {
++            CardId = card.Id,
++            TeamName = DefaultTeamName,
++            TeammateCardId = 0,
++            RemotePartnerPilotId = partner,
++            RemotePartnerName = PartnerName(inv, self) ?? "",
++            SharedTagCode = code,
++        };
++        ApplySettingsIfNewer(team, inv.Settings);
++        context.TagTeamDataDbSet.Add(team);
++        return team;
++    }
++
++    /// <summary>
++    /// Apply shared cosmetics from /tag when the store's timestamp is newer than the last
++    /// payload this card server applied (or when none has been applied yet).
++    /// </summary>
++    public static bool ApplySettingsIfNewer(TagTeamData team, TagTeamSettings? settings)
++    {
++        if (settings is null) return false;
++        if (!settings.IsNewerThan(team.SettingsUpdatedUtc)) return false;
++        var name = (settings.TeamName ?? "").Trim();
++        if (name.Length == 0) name = DefaultTeamName;
++        team.TeamName = name;
++        team.BackgroundPartsId = settings.BackgroundPartsId;
++        team.EffectId = settings.EffectId;
++        team.EmblemId = settings.EmblemId;
++        team.BgmId = settings.BgmId;
++        team.NameColorId = settings.NameColorId;
++        team.SettingsUpdatedUtc = settings.UpdatedUtc;
++        team.UpdateTime = DateTime.Now;
++        return true;
++    }
++}
+diff --git a/Server-Infinite/Handlers/UI/Team/GetCustomizeTeamCommandHandler.cs b/Server-Infinite/Handlers/UI/Team/GetCustomizeTeamCommandHandler.cs
+index 52aef63..ef82f69 100644
+--- a/Server-Infinite/Handlers/UI/Team/GetCustomizeTeamCommandHandler.cs
++++ b/Server-Infinite/Handlers/UI/Team/GetCustomizeTeamCommandHandler.cs
+@@ -1,6 +1,10 @@
+ using MediatR;
+ using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Options;
++using ServerInfinite.Common.TagInvites;
+ using ServerInfinite.Mapper.Card.Team;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
+ using ServerInfinite.Persistence;
+ using WebUIInfinite.Shared.Dto.Response;
+ using WebUIInfinite.Shared.Exception;
+@@ -12,86 +16,106 @@ public record GetCustomizeTeamCommand(string AccessCode, string ChipId) : IReque
+ public class GetCustomizeTeamCommandHandler : IRequestHandler<GetCustomizeTeamCommand, TeamResponse>
+ {
+     private readonly ServerDbContext _context;
+-    
+-    public GetCustomizeTeamCommandHandler(ServerDbContext context)
++    private readonly ITagInviteClient? _invites;
++    private readonly ILogger<GetCustomizeTeamCommandHandler> _log;
++    private readonly OnlineTagConfigurations _cfg;
++
++    public GetCustomizeTeamCommandHandler(ServerDbContext context, ILogger<GetCustomizeTeamCommandHandler> log,
++        ITagInviteClient? invites = null, IOptions<CardServerConfig>? options = null)
+     {
+         _context = context;
++        _log = log;
++        _invites = invites;
++        _cfg = options?.Value.OnlineTag ?? new OnlineTagConfigurations();
+     }
+ 
+-    public Task<TeamResponse> Handle(GetCustomizeTeamCommand request, CancellationToken cancellationToken)
++    public async Task<TeamResponse> Handle(GetCustomizeTeamCommand request, CancellationToken cancellationToken)
+     {
+         var cardProfile = _context.CardProfiles
+             .Include(x => x.TagTeamDatas)
+             .Include(x => x.OnlinePairs)
+             .FirstOrDefault(x => x.AccessCode == request.AccessCode && x.ChipId == request.ChipId);
+-        
++
+         if (cardProfile == null)
+         {
+             throw new InvalidCardDataException("Card Profile is invalid");
+         }
+ 
++        if (_invites != null)
++        {
++            try
++            {
++                var list = await _invites.ForPilotAsync(PilotId.Wire(cardProfile.Id), cancellationToken);
++                foreach (var inv in list.Where(i => i.Joined))
++                    CrossServerTeamSupport.Upsert(_context, cardProfile, inv, _cfg.MaxTeams);
++                _context.SaveChanges();
++            }
++            catch (Exception ex)
++            {
++                _log.LogWarning(ex, "GetTeams: could not sync cross-server invites for card {CardId}", cardProfile.Id);
++            }
++        }
++
+         var finalTeamList = new List<WebUIInfinite.Shared.Dto.Common.Team>();
+ 
+-        cardProfile.TagTeamDatas
+-            .ToList()
+-            .ForEach(team =>
++        foreach (var team in cardProfile.TagTeamDatas.ToList())
++        {
++            if (team.RemotePartnerPilotId != 0)
+             {
+-                var partner = _context.CardProfiles
+-                    .FirstOrDefault(x => x.Id == (int)team.TeammateCardId);
+-
+-                if (partner is null)
+-                {
+-                    return;
+-                }
+-                
+                 var teamDto = team.ToTeam();
+-                teamDto.PartnerId = team.TeammateCardId;
+-                teamDto.PartnerName = partner.UserName;
++                teamDto.PartnerId = 0;
++                teamDto.PartnerPilotId = team.RemotePartnerPilotId;
++                teamDto.PartnerName = team.RemotePartnerName ?? "";
++                teamDto.IsRemote = true;
++                teamDto.SharedTagCode = team.SharedTagCode ?? "";
++                teamDto.OnlineTag = true;
++                finalTeamList.Add(teamDto);
++                continue;
++            }
++
++            var partner = _context.CardProfiles
++                .FirstOrDefault(x => x.Id == (int)team.TeammateCardId);
+ 
+-                var onlineTag = cardProfile.OnlinePairs
+-                    .FirstOrDefault(dbOnlinePair => dbOnlinePair.TeamId == team.Id);
++            if (partner is null)
++            {
++                continue;
++            }
+ 
+-                if (onlineTag is not null)
+-                {
+-                    teamDto.OnlineTag = true;
+-                }
+-                
+-                finalTeamList.Add(teamDto);
+-            });
++            var dto = team.ToTeam();
++            dto.PartnerId = team.TeammateCardId;
++            dto.PartnerPilotId = PilotId.Wire(partner.Id);
++            dto.PartnerName = partner.UserName;
++            dto.OnlineTag = cardProfile.OnlinePairs.Any(p => p.TeamId == team.Id);
++            finalTeamList.Add(dto);
++        }
+ 
+         var oppositeTeams = _context.TagTeamDataDbSet
+             .Where(team => team.TeammateCardId == cardProfile.Id)
+             .ToList();
+-        
+-        oppositeTeams.ForEach(team =>
++
++        foreach (var team in oppositeTeams)
+         {
+             var partner = _context.CardProfiles
+                 .FirstOrDefault(x => x.Id == team.CardId);
+ 
+             if (partner is null)
+             {
+-                return;
++                continue;
+             }
+-            
++
+             var teamDto = team.ToTeam();
+-            teamDto.PartnerId = (uint) team.CardId;
++            teamDto.PartnerId = (uint)team.CardId;
++            teamDto.PartnerPilotId = PilotId.Wire(partner.Id);
+             teamDto.PartnerName = partner.UserName;
+-            
+-            var onlineTag = cardProfile.OnlinePairs
+-                .FirstOrDefault(dbOnlinePair => dbOnlinePair.TeamId == team.Id);
+-
+-            if (onlineTag is not null)
+-            {
+-                teamDto.OnlineTag = true;
+-            }
+-            
++            teamDto.OnlineTag = cardProfile.OnlinePairs.Any(p => p.TeamId == team.Id);
+             finalTeamList.Add(teamDto);
+-        });
+-        
+-        return Task.FromResult(new TeamResponse()
++        }
++
++        return new TeamResponse
+         {
+             DistinctTeamFormationToken = cardProfile.DistinctTeamFormationToken,
++            YourPilotId = PilotId.Wire(cardProfile.Id),
+             Teams = finalTeamList
+-        });
++        };
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/Server-Infinite/Handlers/UI/Team/JoinCrossServerInviteCommandHandler.cs b/Server-Infinite/Handlers/UI/Team/JoinCrossServerInviteCommandHandler.cs
+new file mode 100644
+index 0000000..277d678
+--- /dev/null
++++ b/Server-Infinite/Handlers/UI/Team/JoinCrossServerInviteCommandHandler.cs
+@@ -0,0 +1,53 @@
++using MediatR;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Options;
++using ServerInfinite.Common.TagInvites;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++using ServerInfinite.Persistence;
++using WebUIInfinite.Shared.Dto.Request;
++using WebUIInfinite.Shared.Dto.Response;
++using WebUIInfinite.Shared.Exception;
++
++namespace ServerInfinite.Handlers.UI.Team;
++
++public record JoinCrossServerInviteCommand(JoinCrossServerTeamRequest Request) : IRequest<CrossServerInviteResponse>;
++
++public class JoinCrossServerInviteCommandHandler : IRequestHandler<JoinCrossServerInviteCommand, CrossServerInviteResponse>
++{
++    private readonly ServerDbContext _context;
++    private readonly ITagInviteClient _invites;
++    private readonly ILogger<JoinCrossServerInviteCommandHandler> _log;
++    private readonly OnlineTagConfigurations _cfg;
++
++    public JoinCrossServerInviteCommandHandler(ServerDbContext context, ITagInviteClient invites,
++        ILogger<JoinCrossServerInviteCommandHandler> log, IOptions<CardServerConfig>? options = null)
++    {
++        _context = context;
++        _invites = invites;
++        _log = log;
++        _cfg = options?.Value.OnlineTag ?? new OnlineTagConfigurations();
++    }
++
++    public async Task<CrossServerInviteResponse> Handle(JoinCrossServerInviteCommand request, CancellationToken cancellationToken)
++    {
++        var req = request.Request;
++        var card = _context.CardProfiles
++            .Include(x => x.TagTeamDatas)
++            .FirstOrDefault(x => x.AccessCode == req.AccessCode && x.ChipId == req.ChipId);
++        if (card is null) throw new InvalidCardDataException("Card Profile is invalid");
++        try
++        {
++            var inv = await _invites.JoinAsync(req.Code, PilotId.Wire(card.Id), card.UserName ?? "", cancellationToken);
++            var team = CrossServerTeamSupport.Upsert(_context, card, inv, _cfg.MaxTeams);
++            _context.SaveChanges();
++            _log.LogInformation("Cross-server tag joined: wire={Wire} partner={Partner} team={TeamId}",
++                PilotId.Wire(card.Id), inv.CreatorPilotId, team?.Id);
++            return new CrossServerInviteResponse { Success = true, Code = inv.Code };
++        }
++        catch (Exception ex)
++        {
++            return new CrossServerInviteResponse { Success = false, Message = ex.Message };
++        }
++    }
++}
+diff --git a/Server-Infinite/Handlers/UI/Team/UpsertCustomizeTeamCommandHandler.cs b/Server-Infinite/Handlers/UI/Team/UpsertCustomizeTeamCommandHandler.cs
+index 17a63e6..49a1667 100644
+--- a/Server-Infinite/Handlers/UI/Team/UpsertCustomizeTeamCommandHandler.cs
++++ b/Server-Infinite/Handlers/UI/Team/UpsertCustomizeTeamCommandHandler.cs
+@@ -1,5 +1,7 @@
+ using MediatR;
+ using Microsoft.EntityFrameworkCore;
++using ServerInfinite.Common.TagInvites;
++using ServerInfinite.Matchmaking;
+ using ServerInfinite.Models.Cards.Team;
+ using ServerInfinite.Persistence;
+ using WebUIInfinite.Shared.Dto.Request;
+@@ -13,31 +15,37 @@ public record UpsertCustomizeTeamCommand(UpsertTeamsRequest Request) : IRequest<
+ public class UpsertCustomizeTeamCommandHandler : IRequestHandler<UpsertCustomizeTeamCommand, BasicResponse>
+ {
+     private readonly ServerDbContext _context;
+-    
+-    public UpsertCustomizeTeamCommandHandler(ServerDbContext context)
++    private readonly ITagInviteClient? _invites;
++    private readonly ILogger<UpsertCustomizeTeamCommandHandler> _log;
++
++    public UpsertCustomizeTeamCommandHandler(ServerDbContext context,
++        ILogger<UpsertCustomizeTeamCommandHandler> log,
++        ITagInviteClient? invites = null)
+     {
+         _context = context;
++        _log = log;
++        _invites = invites;
+     }
+ 
+-    public Task<BasicResponse> Handle(UpsertCustomizeTeamCommand request, CancellationToken cancellationToken)
++    public async Task<BasicResponse> Handle(UpsertCustomizeTeamCommand request, CancellationToken cancellationToken)
+     {
+         var updateRequest = request.Request;
+-        
++
+         var cardProfile = _context.CardProfiles
+             .Include(x => x.OnlinePairs)
+             .FirstOrDefault(x => x.AccessCode == updateRequest.AccessCode && x.ChipId == updateRequest.ChipId);
+-        
++
+         if (cardProfile == null)
+         {
+             throw new InvalidCardDataException("Card Profile is invalid");
+         }
+-        
++
+         if (updateRequest.Teams.Count == 0)
+         {
+-            return Task.FromResult(new BasicResponse
++            return new BasicResponse
+             {
+                 Success = true
+-            });
++            };
+         }
+ 
+         cardProfile.OnlinePairs.Clear();
+@@ -48,11 +56,11 @@ public class UpsertCustomizeTeamCommandHandler : IRequestHandler<UpsertCustomize
+             .Where(team => team.Id != 0)
+             .Select(team => team.Id)
+             .ToList();
+-            
++
+         var currentTeams = _context.TagTeamDataDbSet
+             .Where(tagTeam => tagTeam.CardId == cardProfile.Id || tagTeam.TeammateCardId == cardProfile.Id)
+             .ToList();
+-        
++
+         // Delete Logic
+         var removedTeams = currentTeams
+             .Where(team => !updatedTeamIds.Contains((uint)team.Id))
+@@ -60,7 +68,7 @@ public class UpsertCustomizeTeamCommandHandler : IRequestHandler<UpsertCustomize
+         currentTeams.RemoveAll(team => !updatedTeamIds.Contains((uint) team.Id));
+         _context.TagTeamDataDbSet.RemoveRange(removedTeams);
+         _context.SaveChanges();
+-        
++
+         // Update Logic
+         requestedTeams.ForEach(team =>
+         {
+@@ -82,7 +90,7 @@ public class UpsertCustomizeTeamCommandHandler : IRequestHandler<UpsertCustomize
+             updateTeam.EffectId = team.EffectId;
+             updateTeam.NameColorId = team.NameColorId;
+             updateTeam.BgmId = team.BgmId;
+-            
++
+             if (team.OnlineTag)
+             {
+                 cardProfile.OnlinePairs.Add(new OnlinePair()
+@@ -91,12 +99,39 @@ public class UpsertCustomizeTeamCommandHandler : IRequestHandler<UpsertCustomize
+                 });
+             }
+         });
+-        
++
+         _context.SaveChanges();
+-        
+-        return Task.FromResult(new BasicResponse
++
++        if (_invites != null)
++        {
++            var self = PilotId.Wire(cardProfile.Id);
++            foreach (var team in currentTeams.Where(t => !string.IsNullOrEmpty(t.SharedTagCode) && updatedTeamIds.Contains((uint)t.Id)))
++            {
++                try
++                {
++                    var saved = await _invites.UpdateSettingsAsync(team.SharedTagCode, self, new TagTeamSettings
++                    {
++                        TeamName = team.TeamName,
++                        BackgroundPartsId = team.BackgroundPartsId,
++                        EffectId = team.EffectId,
++                        EmblemId = team.EmblemId,
++                        BgmId = team.BgmId,
++                        NameColorId = team.NameColorId,
++                    }, cancellationToken);
++                    if (saved.Settings != null)
++                        team.SettingsUpdatedUtc = saved.Settings.UpdatedUtc;
++                }
++                catch (Exception ex)
++                {
++                    _log.LogWarning(ex, "UpsertTeams: could not push settings for card {CardId}", cardProfile.Id);
++                }
++            }
++            _context.SaveChanges();
++        }
++
++        return new BasicResponse
+         {
+             Success = true
+-        });
++        };
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 70753ec..7820594 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -85,7 +85,12 @@ public sealed class Matchmaker
+         public bool OneOnOne;
+         /// <summary>attr2 as sent (world 5: the pair key; world 22: the team class).</summary>
+         public long Attr2;
++        /// <summary>Key without attr2 (game|version|world|attr1). World 5 buckets use this so a shared
++        /// tag code can still pair when the two cabinets' attr2 values disagree.</summary>
++        public string BaseKey = "";
+         public string Key = "";
++        /// <summary>Shared cross-server tag codes registered for this cabinet's am_id; empty for same-server / legacy.</summary>
++        public string[] TagCodes = Array.Empty<string>();
+         public long? Soft;
+         public long Level;
+         public uint SeqNum, CreateRoom;
+@@ -130,8 +135,9 @@ public sealed class Matchmaker
+             u.Pair = policy == Policy.Pair;
+             u.Attr2 = attrs.GetValueOrDefault(AExtra);
+             if (u.Pair && e.MatchingTimeout == 0) u.Timeout = u.World == OnlineTagWorld ? OnlineTagTimeout : RecruitTimeout;
+-            u.Key = $"{e.World?.MuchaGameId}|{e.World?.Version}|{u.World}|{attrs.GetValueOrDefault(AGroup)}";
+-            // world 5: only identical pair keys meet; world 22: same team class; world 21: one first-come pool
++            u.BaseKey = $"{e.World?.MuchaGameId}|{e.World?.Version}|{u.World}|{attrs.GetValueOrDefault(AGroup)}";
++            u.Key = u.BaseKey;
++            // world 5: only identical pair keys meet (unless a shared tag code is registered); world 22: same team class; world 21: one first-come pool
+             if (policy is Policy.Class or Policy.Hard || (u.Pair && u.World != CasualRecruitWorld))
+                 u.Key += $"|{attrs.GetValueOrDefault(AExtra)}";
+             u.Soft = policy == Policy.Soft ? attrs.GetValueOrDefault(AExtra) : null;
+@@ -156,6 +162,9 @@ public sealed class Matchmaker
+     private readonly object _gate = new();
+     private readonly Dictionary<uint, Unit> _byNode = new();
+     private readonly List<Unit> _queue = new();
++    private readonly Dictionary<uint, string[]> _tagByAm = new();
++    /// <summary>Optional persisted invite / am_id→code store (the shared matchmaker). When null, <see cref="RegisterTagSearch"/> uses an in-memory map.</summary>
++    public TagInviteStore? Invites { get; init; }
+     private readonly Dictionary<uint, double> _ended = new();   // node -> when its unit was dropped by the server
+     private readonly Random _rng;
+     private uint _nextRoom = 1;
+@@ -270,6 +279,46 @@ public sealed class Matchmaker
+         _rng = seed == 0 ? new Random() : new Random(seed);
+     }
+ 
++    /// <summary>
++    /// Bind the shared tag codes this am_id will search with on world 5. Called by the card server
++    /// (LoadCard / /tag/register) before the cabinet's EntryMatching arrives. Empty codes clear the binding.
++    /// </summary>
++    public void RegisterTagSearch(uint amId, IEnumerable<string> codes)
++    {
++        if (amId == 0) return;
++        if (Invites != null)
++        {
++            Invites.RegisterSearch(amId, codes);
++            return;
++        }
++        var list = (codes ?? Array.Empty<string>())
++            .Select(TagInviteStore.Normalize)
++            .Where(c => c.Length == TagInviteStore.CodeLength)
++            .Distinct(StringComparer.OrdinalIgnoreCase)
++            .ToArray();
++        lock (_gate)
++        {
++            if (list.Length == 0) _tagByAm.Remove(amId);
++            else _tagByAm[amId] = list;
++        }
++    }
++
++    private string[] LookupTagCodes(uint amId)
++    {
++        if (amId == 0) return Array.Empty<string>();
++        if (Invites != null) return Invites.CodesForAm(amId).ToArray();
++        // Entry already holds _gate; RegisterTagSearch also takes _gate when Invites is null.
++        return _tagByAm.TryGetValue(amId, out var list) ? list : Array.Empty<string>();
++    }
++
++    private static bool TagCodeOverlap(Unit a, Unit b)
++    {
++        foreach (var c in a.TagCodes)
++            if (b.TagCodes.Any(o => string.Equals(c, o, StringComparison.OrdinalIgnoreCase)))
++                return true;
++        return false;
++    }
++
+     /// <summary>Parse OnlineMatching.FillTimerMode. Unrecognized or empty values become Rolling.</summary>
+     public static FillTimerMode ParseFillTimerMode(string? s)
+     {
+@@ -374,14 +423,20 @@ public sealed class Matchmaker
+                 Drop(old, now, reason: "same cabinet entered again");
+             foreach (var n in t.NodeIds) _byNode[n] = t;
+             _queue.Add(t);
++            if (t.Pair && t.World == OnlineTagWorld)
++            {
++                var am = t.Players.Count > 0 ? t.Players[0].BanapassportAmId : 0;
++                t.TagCodes = LookupTagCodes(am);   // holds _gate; LookupTagCodes must not lock it
++            }
+             NetEntry(e.Myclient, sourceIp, "entry");
+             if (NoCpuPartner && !t.OneOnOne && !t.Pair && t.HasCpuPartner)
+                 (Warn ?? Log)?.Invoke($"NOCPU-WARN node={e.Myclient.NodeId} {t.WorldName} entry has a CPU partner (\"N\"): " +
+                                       "never placed while NoCpuPartner is on (its results screen would hang); it waits for its own timeout");
+             TryMatch(now);
+             Log?.Invoke($"entry {t.WorldName} nodes=[{string.Join(",", t.NodeIds)}] slots={t.Slots} key={t.Key}" +
++                        (t.TagCodes.Length > 0 ? $" tag={string.Join(",", t.TagCodes)}" : "") +
+                         (t.Soft != null ? $" soft={t.Soft}" : "") + $" level={t.Level} queue={_queue.Count}");
+-            if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.Room == null)
++            if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.TagCodes.Length == 0 && t.Room == null)
+                 (Warn ?? Log)?.Invoke($"TAG-WARN node={e.Myclient.NodeId} online-tag entry with pair key 0 (no partner id from the card server?) - it will never pair");
+         }
+         return ErrorCode.Success;
+@@ -472,10 +527,27 @@ public sealed class Matchmaker
+     /// </param>
+     private bool Compatible(Unit a, Unit b, double now, bool ignoreSoft = false)
+     {
+-        if (a.Key != b.Key) return false;
++        if (a.World == OnlineTagWorld && b.World == OnlineTagWorld)
++        {
++            var aHas = a.TagCodes.Length > 0;
++            var bHas = b.TagCodes.Length > 0;
++            if (aHas || bHas)
++            {
++                // A registered code is the pair key: partners with the same code pair even if attr2
++                // differs; an unrelated searcher (different or missing code) never joins, even if attr2 matches.
++                if (!TagCodeOverlap(a, b)) return false;
++                if (a.BaseKey != b.BaseKey) return false;
++            }
++            else
++            {
++                // Legacy / same-server path (neither side registered a code): attr2 must agree.
++                if (a.Key != b.Key) return false;
++            }
++        }
++        else if (a.Key != b.Key) return false;
+         if (a.Pair != b.Pair) return false;
+         if (a.OneOnOne != b.OneOnOne) return false;
+-        if (a.Pair && a.World == OnlineTagWorld && a.Attr2 == 0) return false;   // no pair key: never pair at random
++        if (a.Pair && a.World == OnlineTagWorld && a.Attr2 == 0 && a.TagCodes.Length == 0) return false;   // no pair key: never pair at random
+         if (a.NodeIds.Overlaps(b.NodeIds)) return false;                 // same cabinet(s)
+         if (a.Pair && a.Humans.Any(c => b.Humans.Any(c2 => NetDiag.SameCabinet(c, c2)))) return false;   // never with itself
+         if (a.AmIds.Overlaps(b.AmIds)) return false;                     // same card twice
+@@ -583,7 +655,7 @@ public sealed class Matchmaker
+         do
+         {
+             made = false;
+-            foreach (var bucket in _queue.GroupBy(u => u.Key).Select(g => g.ToList()))
++            foreach (var bucket in _queue.GroupBy(u => u.World == OnlineTagWorld ? u.BaseKey : u.Key).Select(g => g.ToList()))
+             {
+                 var idx = bucket.Select((u, i) => (u, i)).ToDictionary(x => x.u, x => x.i);
+                 if (bucket[0].OneOnOne)
+diff --git a/Server-Infinite/Matchmaking/PilotId.cs b/Server-Infinite/Matchmaking/PilotId.cs
+new file mode 100644
+index 0000000..e3f4a3c
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/PilotId.cs
+@@ -0,0 +1,101 @@
++using System;
++
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>
++/// Maps a local card-server card id to a globally unique wire pilot / am_id.
++/// Cabinets use this value as <c>am_id</c> and, for online tag (world 5), as
++/// Attr2 = min(own, partner) and for leader election (own &lt; partner). Local
++/// card ids collide across card servers (both start at 1), so each server
++/// prefixes its own ServerId: Wire = ServerId * Block + localCardId.
++/// ServerId is 1..4000 so the result fits in uint and leaves room for card ids.
++/// A ServerId of 0 (uninitialized) leaves ids unchanged for backward compatibility.
++/// </summary>
++public static class PilotId
++{
++    public const int Block = 1_000_000;
++    public const int MaxServerId = 4000;
++
++    public static int ServerId { get; private set; }
++
++    public static uint Wire(int localCardId)
++    {
++        if (ServerId <= 0 || localCardId <= 0) return localCardId <= 0 ? 0u : (uint)localCardId;
++        return (uint)((long)ServerId * Block + localCardId);
++    }
++
++    public static int Local(uint wire) =>
++        ServerId <= 0 ? (int)wire : (int)(wire % (uint)Block);
++
++    public static int ServerOf(uint wire) =>
++        ServerId <= 0 ? 0 : (int)(wire / (uint)Block);
++
++    public static bool IsRemote(uint wire) =>
++        ServerId > 0 && ServerOf(wire) != 0 && ServerOf(wire) != ServerId;
++
++    public static void SetServerId(int serverId)
++    {
++        if (serverId < 0 || serverId > MaxServerId)
++            throw new ArgumentOutOfRangeException(nameof(serverId), serverId, $"ServerId must be 0..{MaxServerId}");
++        ServerId = serverId;
++    }
++
++    /// <summary>
++    /// Use <paramref name="configuredServerId"/> if it is &gt; 0; otherwise load or create
++    /// a persisted random id in [1, MaxServerId] at <paramref name="statePath"/>.
++    /// </summary>
++    public static int Initialize(int configuredServerId, string statePath, Action<string>? log = null)
++    {
++        if (configuredServerId > 0)
++        {
++            if (configuredServerId > MaxServerId)
++                throw new ArgumentOutOfRangeException(nameof(configuredServerId), configuredServerId, $"ServerId must be 1..{MaxServerId}");
++            ServerId = configuredServerId;
++            log?.Invoke($"OnlineTag ServerId={ServerId} (from config)");
++            return ServerId;
++        }
++
++        if (!string.IsNullOrWhiteSpace(statePath) && File.Exists(statePath))
++        {
++            var text = File.ReadAllText(statePath).Trim();
++            if (int.TryParse(text, out var id) && id > 0 && id <= MaxServerId)
++            {
++                ServerId = id;
++                log?.Invoke($"OnlineTag ServerId={ServerId} (from {statePath})");
++                return ServerId;
++            }
++        }
++
++        ServerId = Random.Shared.Next(1, MaxServerId + 1);
++        if (!string.IsNullOrWhiteSpace(statePath))
++        {
++            var dir = Path.GetDirectoryName(statePath);
++            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
++            File.WriteAllText(statePath, ServerId.ToString());
++            log?.Invoke($"OnlineTag ServerId={ServerId} (generated, saved to {statePath})");
++        }
++        else
++        {
++            log?.Invoke($"OnlineTag ServerId={ServerId} (generated, not persisted)");
++        }
++        return ServerId;
++    }
++
++    /// <summary>
++    /// Map a wire (or legacy local) id back to this server's local card id.
++    /// Returns -1 if the id belongs to another server (do not treat the remainder as a local card).
++    /// </summary>
++    public static int ToLocalOrUnmatched(long incoming)
++    {
++        if (incoming <= 0) return -1;
++        if (ServerId <= 0) return incoming <= int.MaxValue ? (int)incoming : -1;
++        // Legacy clients / un-updated partners still send the raw card id (&lt; Block).
++        if (incoming < Block) return (int)incoming;
++        if (incoming > uint.MaxValue) return -1;
++        var w = (uint)incoming;
++        return ServerOf(w) == ServerId ? Local(w) : -1;
++    }
++
++    public static bool IsThisCard(int localCardId, long incoming) =>
++        localCardId > 0 && ToLocalOrUnmatched(incoming) == localCardId;
++}
+diff --git a/Server-Infinite/Matchmaking/TagInviteStore.cs b/Server-Infinite/Matchmaking/TagInviteStore.cs
+new file mode 100644
+index 0000000..d752294
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/TagInviteStore.cs
+@@ -0,0 +1,289 @@
++using System.Text.Json;
++using System.Text.Json.Serialization;
++
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>
++/// A shared cross-server online-tag invite. Partners on different card servers
++/// cannot look each other up in a local DB, so they exchange this short code.
++/// The matchmaker also uses the code as a world-5 pair key (in addition to Attr2).
++/// </summary>
++public sealed class TagInvite
++{
++    public string Code { get; set; } = "";
++    public uint CreatorPilotId { get; set; }
++    public string CreatorName { get; set; } = "";
++    public uint PartnerPilotId { get; set; }
++    public string PartnerName { get; set; } = "";
++    public DateTime CreatedUtc { get; set; }
++    public DateTime? JoinedUtc { get; set; }
++
++    [JsonIgnore]
++    public bool Joined => PartnerPilotId != 0;
++
++    /// <summary>Shared team cosmetics (name, BGM, effect, …). Null until a partner saves them.</summary>
++    public TagTeamSettings? Settings { get; set; }
++}
++
++/// <summary>
++/// Cross-server team name and presentation. The matchmaker stamps <see cref="UpdatedUtc"/>
++/// so the last write wins even if the two card servers' clocks disagree.
++/// </summary>
++public sealed class TagTeamSettings
++{
++    public string TeamName { get; set; } = "";
++    public uint BackgroundPartsId { get; set; }
++    public uint EffectId { get; set; }
++    public uint EmblemId { get; set; }
++    public uint BgmId { get; set; }
++    public uint NameColorId { get; set; }
++    public DateTime UpdatedUtc { get; set; }
++    public uint UpdatedByPilotId { get; set; }
++
++    /// <summary>True when this payload should replace the last one applied locally (last-write-wins).</summary>
++    public bool IsNewerThan(DateTime? localUpdatedUtc) =>
++        localUpdatedUtc is null || UpdatedUtc > localUpdatedUtc;
++}
++
++/// <summary>
++/// In-memory + JSON-backed store for cross-server tag invites and am_id → code
++/// registrations. Lives on the shared matchmaker (VPS). Thread-safe.
++/// Never stores or logs card access codes / chip ids / passwords.
++/// </summary>
++public sealed class TagInviteStore
++{
++    public const int CodeLength = 8;
++    // Avoid 0/O/1/I so a partner can read the code aloud or off a screenshot.
++    private const string Alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
++    private static readonly JsonSerializerOptions JsonOpts = new()
++    {
++        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
++        WriteIndented = true,
++        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
++    };
++
++    private readonly object _gate = new();
++    private readonly string? _path;
++    private readonly Dictionary<string, TagInvite> _invites = new(StringComparer.OrdinalIgnoreCase);
++    private readonly Dictionary<uint, string[]> _codesByAm = new();
++
++    public TagInviteStore(string? statePath = null)
++    {
++        _path = string.IsNullOrWhiteSpace(statePath) ? null : statePath;
++        if (_path != null && File.Exists(_path))
++        {
++            try
++            {
++                var json = File.ReadAllText(_path);
++                var snap = JsonSerializer.Deserialize<Snapshot>(json, JsonOpts);
++                if (snap?.Invites != null)
++                {
++                    foreach (var inv in snap.Invites)
++                    {
++                        if (string.IsNullOrWhiteSpace(inv.Code)) continue;
++                        _invites[Normalize(inv.Code)] = inv;
++                    }
++                }
++                if (snap?.CodesByAm != null)
++                {
++                    foreach (var kv in snap.CodesByAm)
++                        _codesByAm[kv.Key] = kv.Value;
++                }
++            }
++            catch (Exception)
++            {
++                // corrupt state: start empty; new invites still work this run
++            }
++        }
++    }
++
++    public string Create(uint creatorPilotId, string creatorName)
++    {
++        if (creatorPilotId == 0) throw new ArgumentOutOfRangeException(nameof(creatorPilotId));
++        var name = creatorName?.Trim() ?? "";
++        lock (_gate)
++        {
++            // Reuse an open invite from the same creator so they can refresh the page
++            // and still see the same code.
++            foreach (var existing in _invites.Values)
++            {
++                if (existing.CreatorPilotId == creatorPilotId && !existing.Joined)
++                    return existing.Code;
++            }
++
++            string code;
++            do { code = NewCode(); } while (_invites.ContainsKey(code));
++            _invites[code] = new TagInvite
++            {
++                Code = code,
++                CreatorPilotId = creatorPilotId,
++                CreatorName = name,
++                CreatedUtc = DateTime.UtcNow,
++            };
++            Persist();
++            return code;
++        }
++    }
++
++    public TagInvite Join(string code, uint partnerPilotId, string partnerName)
++    {
++        if (partnerPilotId == 0) throw new ArgumentOutOfRangeException(nameof(partnerPilotId));
++        var key = Normalize(code);
++        if (key.Length != CodeLength) throw new InvalidOperationException("Invalid tag code.");
++        lock (_gate)
++        {
++            if (!_invites.TryGetValue(key, out var inv))
++                throw new InvalidOperationException("Tag code not found. Check that you typed it correctly and that the matchmaker is the same one your partner is using.");
++            if (inv.CreatorPilotId == partnerPilotId)
++                throw new InvalidOperationException("You cannot join your own tag code.");
++            if (inv.Joined && inv.PartnerPilotId != partnerPilotId)
++                throw new InvalidOperationException("That tag code is already in use by another player.");
++            // Idempotent re-join by the same partner (page refresh).
++            inv.PartnerPilotId = partnerPilotId;
++            inv.PartnerName = partnerName?.Trim() ?? inv.PartnerName;
++            inv.JoinedUtc ??= DateTime.UtcNow;
++            Persist();
++            return Clone(inv);
++        }
++    }
++
++    public TagInvite? Get(string code)
++    {
++        var key = Normalize(code);
++        lock (_gate)
++        {
++            return _invites.TryGetValue(key, out var inv) ? Clone(inv) : null;
++        }
++    }
++
++    /// <summary>Invites this pilot created or joined, newest first.</summary>
++    public IReadOnlyList<TagInvite> ForPilot(uint wirePilotId)
++    {
++        if (wirePilotId == 0) return Array.Empty<TagInvite>();
++        lock (_gate)
++        {
++            return _invites.Values
++                .Where(i => i.CreatorPilotId == wirePilotId || i.PartnerPilotId == wirePilotId)
++                .OrderByDescending(i => i.CreatedUtc)
++                .Select(Clone)
++                .ToList();
++        }
++    }
++
++    /// <summary>
++    /// Save shared team cosmetics for a joined invite. Only the creator or the partner may write.
++    /// The store stamps <see cref="TagTeamSettings.UpdatedUtc"/> with its own clock (last request wins).
++    /// </summary>
++    public TagInvite UpdateSettings(string code, uint byPilotId, TagTeamSettings settings)
++    {
++        if (byPilotId == 0) throw new ArgumentOutOfRangeException(nameof(byPilotId));
++        if (settings is null) throw new ArgumentNullException(nameof(settings));
++        var key = Normalize(code);
++        if (key.Length != CodeLength) throw new InvalidOperationException("Invalid tag code.");
++        lock (_gate)
++        {
++            if (!_invites.TryGetValue(key, out var inv))
++                throw new InvalidOperationException("Tag code not found.");
++            if (inv.CreatorPilotId != byPilotId && inv.PartnerPilotId != byPilotId)
++                throw new InvalidOperationException("Only the two partners can update this team's settings.");
++            var name = (settings.TeamName ?? "").Trim();
++            if (name.Length == 0) name = "EXTREME TEAM";
++            if (name.Length > 32) name = name[..32];
++            inv.Settings = new TagTeamSettings
++            {
++                TeamName = name,
++                BackgroundPartsId = settings.BackgroundPartsId,
++                EffectId = settings.EffectId,
++                EmblemId = settings.EmblemId,
++                BgmId = settings.BgmId,
++                NameColorId = settings.NameColorId,
++                UpdatedUtc = DateTime.UtcNow,
++                UpdatedByPilotId = byPilotId,
++            };
++            Persist();
++            return Clone(inv);
++        }
++    }
++
++    /// <summary>Bind the codes this am_id will search with on world 5.</summary>
++    public void RegisterSearch(uint amId, IEnumerable<string> codes)
++    {
++        if (amId == 0) return;
++        var list = (codes ?? Array.Empty<string>())
++            .Select(Normalize)
++            .Where(c => c.Length == CodeLength)
++            .Distinct(StringComparer.OrdinalIgnoreCase)
++            .ToArray();
++        lock (_gate)
++        {
++            if (list.Length == 0) _codesByAm.Remove(amId);
++            else _codesByAm[amId] = list;
++            Persist();
++        }
++    }
++
++    public IReadOnlyList<string> CodesForAm(uint amId)
++    {
++        lock (_gate)
++        {
++            return _codesByAm.TryGetValue(amId, out var list) ? list.ToArray() : Array.Empty<string>();
++        }
++    }
++
++    public static string Normalize(string? code) =>
++        (code ?? "").Trim().ToUpperInvariant();
++
++    private string NewCode()
++    {
++        Span<char> chars = stackalloc char[CodeLength];
++        for (var i = 0; i < CodeLength; i++)
++            chars[i] = Alphabet[Random.Shared.Next(Alphabet.Length)];
++        return new string(chars);
++    }
++
++    private void Persist()
++    {
++        if (_path == null) return;
++        var snap = new Snapshot
++        {
++            Invites = _invites.Values.ToList(),
++            CodesByAm = _codesByAm.ToDictionary(kv => kv.Key, kv => kv.Value),
++        };
++        var dir = Path.GetDirectoryName(_path);
++        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
++        var tmp = _path + ".tmp";
++        File.WriteAllText(tmp, JsonSerializer.Serialize(snap, JsonOpts));
++        File.Move(tmp, _path, overwrite: true);
++    }
++
++    private static TagInvite Clone(TagInvite i) => new()
++    {
++        Code = i.Code,
++        CreatorPilotId = i.CreatorPilotId,
++        CreatorName = i.CreatorName,
++        PartnerPilotId = i.PartnerPilotId,
++        PartnerName = i.PartnerName,
++        CreatedUtc = i.CreatedUtc,
++        JoinedUtc = i.JoinedUtc,
++        Settings = CloneSettings(i.Settings),
++    };
++
++    internal static TagTeamSettings? CloneSettings(TagTeamSettings? s) =>
++        s is null ? null : new TagTeamSettings
++        {
++            TeamName = s.TeamName,
++            BackgroundPartsId = s.BackgroundPartsId,
++            EffectId = s.EffectId,
++            EmblemId = s.EmblemId,
++            BgmId = s.BgmId,
++            NameColorId = s.NameColorId,
++            UpdatedUtc = s.UpdatedUtc,
++            UpdatedByPilotId = s.UpdatedByPilotId,
++        };
++
++    private sealed class Snapshot
++    {
++        public List<TagInvite> Invites { get; set; } = new();
++        public Dictionary<uint, string[]> CodesByAm { get; set; } = new();
++    }
++}
+diff --git a/Server-Infinite/Matchmaking/TagInviteUrl.cs b/Server-Infinite/Matchmaking/TagInviteUrl.cs
+new file mode 100644
+index 0000000..78d3199
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/TagInviteUrl.cs
+@@ -0,0 +1,17 @@
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>Resolves the shared /tag API URL from OnlineTag.InviteUrl or OnlineMatching.MatchUrl.</summary>
++public static class TagInviteUrl
++{
++    public static string? Resolve(string? inviteUrl, string? matchUrl)
++    {
++        if (!string.IsNullOrWhiteSpace(inviteUrl))
++            return inviteUrl.Trim().TrimEnd('/');
++        if (string.IsNullOrWhiteSpace(matchUrl))
++            return null;
++        var m = matchUrl.Trim().TrimEnd('/');
++        if (m.EndsWith("/match", StringComparison.OrdinalIgnoreCase))
++            return m[..^"/match".Length] + "/tag";
++        return m + "/tag";
++    }
++}
+diff --git a/Server-Infinite/Migrations/20261115050000_AddCrossServerTagColumns.cs b/Server-Infinite/Migrations/20261115050000_AddCrossServerTagColumns.cs
+new file mode 100644
+index 0000000..1c32de0
+--- /dev/null
++++ b/Server-Infinite/Migrations/20261115050000_AddCrossServerTagColumns.cs
+@@ -0,0 +1,46 @@
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Migrations;
++using ServerInfinite.Persistence;
++
++#nullable disable
++
++namespace ServerInfinite.Migrations;
++
++// exvs2-lobbies: store a cross-server partner's wire pilot id, display name, and shared tag code
++// on exvs2ob_tag_team_data so LoadCard / the WebUI can list teams whose partner is not a local card.
++// Hand-written (no Designer file); the model snapshot was updated to match.
++[DbContext(typeof(ServerDbContext))]
++[Migration("20261115050000_AddCrossServerTagColumns")]
++public partial class AddCrossServerTagColumns : Migration
++{
++    protected override void Up(MigrationBuilder migrationBuilder)
++    {
++        migrationBuilder.AddColumn<string>(
++            name: "RemotePartnerName",
++            table: "exvs2ob_tag_team_data",
++            type: "TEXT",
++            nullable: false,
++            defaultValue: "");
++
++        migrationBuilder.AddColumn<uint>(
++            name: "RemotePartnerPilotId",
++            table: "exvs2ob_tag_team_data",
++            type: "INTEGER",
++            nullable: false,
++            defaultValue: 0u);
++
++        migrationBuilder.AddColumn<string>(
++            name: "SharedTagCode",
++            table: "exvs2ob_tag_team_data",
++            type: "TEXT",
++            nullable: false,
++            defaultValue: "");
++    }
++
++    protected override void Down(MigrationBuilder migrationBuilder)
++    {
++        migrationBuilder.DropColumn(name: "RemotePartnerName", table: "exvs2ob_tag_team_data");
++        migrationBuilder.DropColumn(name: "RemotePartnerPilotId", table: "exvs2ob_tag_team_data");
++        migrationBuilder.DropColumn(name: "SharedTagCode", table: "exvs2ob_tag_team_data");
++    }
++}
+diff --git a/Server-Infinite/Migrations/20261115060000_AddTagTeamSettingsUpdatedUtc.cs b/Server-Infinite/Migrations/20261115060000_AddTagTeamSettingsUpdatedUtc.cs
+new file mode 100644
+index 0000000..6902671
+--- /dev/null
++++ b/Server-Infinite/Migrations/20261115060000_AddTagTeamSettingsUpdatedUtc.cs
+@@ -0,0 +1,28 @@
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Migrations;
++using ServerInfinite.Persistence;
++
++#nullable disable
++
++namespace ServerInfinite.Migrations;
++
++// exvs2-lobbies: last-write-wins timestamp for cross-server team cosmetics pulled from /tag.
++// Hand-written (no Designer file); the model snapshot was updated to match.
++[DbContext(typeof(ServerDbContext))]
++[Migration("20261115060000_AddTagTeamSettingsUpdatedUtc")]
++public partial class AddTagTeamSettingsUpdatedUtc : Migration
++{
++    protected override void Up(MigrationBuilder migrationBuilder)
++    {
++        migrationBuilder.AddColumn<DateTime>(
++            name: "SettingsUpdatedUtc",
++            table: "exvs2ob_tag_team_data",
++            type: "TEXT",
++            nullable: true);
++    }
++
++    protected override void Down(MigrationBuilder migrationBuilder)
++    {
++        migrationBuilder.DropColumn(name: "SettingsUpdatedUtc", table: "exvs2ob_tag_team_data");
++    }
++}
+diff --git a/Server-Infinite/Migrations/ServerDbContextModelSnapshot.cs b/Server-Infinite/Migrations/ServerDbContextModelSnapshot.cs
+index 5f37d66..5105f66 100644
+--- a/Server-Infinite/Migrations/ServerDbContextModelSnapshot.cs
++++ b/Server-Infinite/Migrations/ServerDbContextModelSnapshot.cs
+@@ -2268,6 +2268,20 @@ namespace ServerInfinite.Migrations
+                     b.Property<int>("OnlineRankPoint")
+                         .HasColumnType("INTEGER");
+ 
++                    b.Property<string>("RemotePartnerName")
++                        .IsRequired()
++                        .HasColumnType("TEXT");
++
++                    b.Property<uint>("RemotePartnerPilotId")
++                        .HasColumnType("INTEGER");
++
++                    b.Property<DateTime?>("SettingsUpdatedUtc")
++                        .HasColumnType("TEXT");
++
++                    b.Property<string>("SharedTagCode")
++                        .IsRequired()
++                        .HasColumnType("TEXT");
++
+                     b.Property<uint>("SkillPoint")
+                         .HasColumnType("INTEGER");
+ 
+diff --git a/Server-Infinite/Models/Cards/Team/TagTeamData.cs b/Server-Infinite/Models/Cards/Team/TagTeamData.cs
+index 16ab19b..f6358c1 100644
+--- a/Server-Infinite/Models/Cards/Team/TagTeamData.cs
++++ b/Server-Infinite/Models/Cards/Team/TagTeamData.cs
+@@ -16,8 +16,24 @@ public class TagTeamData : BaseEntity
+     [Required] 
+     public string TeamName { get; set; } = string.Empty;
+     
++    /// <summary>Local partner card id. 0 when the partner lives on another card server.</summary>
+     [Required]
+     public uint TeammateCardId { get; set; } = 0;
++
++    /// <summary>Partner's globally unique wire pilot id; 0 for a same-server partner (look up TeammateCardId).</summary>
++    public uint RemotePartnerPilotId { get; set; } = 0;
++
++    /// <summary>Partner display name when the partner is not a local card.</summary>
++    public string RemotePartnerName { get; set; } = string.Empty;
++
++    /// <summary>Shared matchmaker invite code; empty for same-server teams.</summary>
++    public string SharedTagCode { get; set; } = string.Empty;
++
++    /// <summary>
++    /// UTC timestamp of the last team-cosmetics payload applied from (or pushed to) /tag.
++    /// Null until a cross-server settings sync has happened. Used for last-write-wins.
++    /// </summary>
++    public DateTime? SettingsUpdatedUtc { get; set; }
+     
+     [Required]
+     public int OnlineRankPoint { get; set; } = 0;
+diff --git a/Server-Infinite/Models/Config/OnlineTagConfigurations.cs b/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
+index e786e80..df39448 100644
+--- a/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
+@@ -2,9 +2,11 @@ namespace ServerInfinite.Models.Config;
+ 
+ /// <summary>
+ /// [exvs2-lobbies / EXPERIMENTAL, untested with the real game] Online tag (play with a specific partner from another
+-/// shop), analysis/partner-invites.md. A tag team is created in the WebUI (partner's user id + invitation code); the
+-/// card server then lists it in LoadCard.MobileUserGroup.tag_teams (36), the cabinet offers it under online tag and
+-/// both cabinets search MMS world 5 with pair key = min(own pilot id, partner_id).
++/// shop), analysis/partner-invites.md. A tag team is created in the WebUI: same-server partners use user id + invitation
++/// code; cross-server partners (each on their own card server, same matchmaker) exchange a short partner code.
++/// The card server lists the team in LoadCard.MobileUserGroup.tag_teams (36). Cabinets search MMS world 5 with
++/// pair key = min(own wire pilot id, partner id). Wire ids are ServerId * 1_000_000 + local card id so they do not
++/// collide across card servers.
+ /// </summary>
+ public class OnlineTagConfigurations
+ {
+@@ -25,4 +27,25 @@ public class OnlineTagConfigurations
+     /// (shown in their WebUI). false = upstream behaviour (the code never changes).
+     /// </summary>
+     public bool OneTimeInviteCode { get; set; } = true;
++
++    /// <summary>
++    /// This card server's id in 1..4000, used to make wire pilot / am ids unique:
++    /// Wire = ServerId * 1_000_000 + local card id. 0 = load or generate a persisted id
++    /// (see <see cref="ServerIdFile"/>). Set this to a fixed value when you run more than
++    /// one card server so they never pick the same random id.
++    /// </summary>
++    public int ServerId { get; set; } = 0;
++
++    /// <summary>Where a generated ServerId is saved. Default is tag_server_id.txt in the process working directory.</summary>
++    public string ServerIdFile { get; set; } = "tag_server_id.txt";
++
++    /// <summary>
++    /// URL of the shared matchmaker's /tag API (for example http://matchmaker-host:28090/tag).
++    /// Empty: if OnlineMatching.MatchUrl ends with /match, that is rewritten to /tag; otherwise
++    /// this process's in-memory invite store is used (all-in-one / the VPS itself).
++    /// </summary>
++    public string InviteUrl { get; set; } = "";
++
++    /// <summary>JSON file for persisted invites and am_id registrations, used by the process that owns /tag.</summary>
++    public string InviteStateFile { get; set; } = "tag_invites.json";
+ }
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 85bbbcd..16c8c0e 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -82,13 +82,35 @@ try
+         return new ServerInfinite.Matchmaking.FileNodeIdAllocator(mm.NodeIdStateFile, mm.FirstNodeId);
+     });
+     builder.Services.AddSingleton(sp =>
++    {
++        var cfg = sp.GetRequiredService<IOptions<CardServerConfig>>().Value;
++        var path = string.IsNullOrWhiteSpace(cfg.OnlineTag.InviteStateFile)
++            ? "tag_invites.json"
++            : cfg.OnlineTag.InviteStateFile;
++        return new ServerInfinite.Matchmaking.TagInviteStore(path);
++    });
++    builder.Services.AddHttpClient("tag-invites");
++    builder.Services.AddSingleton<ServerInfinite.Common.TagInvites.ITagInviteClient>(sp =>
++    {
++        var cfg = sp.GetRequiredService<IOptions<CardServerConfig>>().Value;
++        var url = ServerInfinite.Matchmaking.TagInviteUrl.Resolve(cfg.OnlineTag.InviteUrl, cfg.OnlineMatching.MatchUrl);
++        if (string.IsNullOrEmpty(url))
++            return new ServerInfinite.Common.TagInvites.InProcessTagInviteClient(
++                sp.GetRequiredService<ServerInfinite.Matchmaking.TagInviteStore>(),
++                sp.GetRequiredService<ServerInfinite.Matchmaking.Matchmaker>());
++        var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("tag-invites");
++        return new ServerInfinite.Common.TagInvites.HttpTagInviteClient(http, url);
++    });
++    builder.Services.AddSingleton(sp =>
+     {
+         var mm = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.OnlineMatching;
+         var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Matchmaker");
+         var alloc = sp.GetRequiredService<ServerInfinite.Matchmaking.INodeIdAllocator>();
++        var invites = sp.GetRequiredService<ServerInfinite.Matchmaking.TagInviteStore>();
+         return new ServerInfinite.Matchmaking.Matchmaker(mm.FillAfterSeconds, mm.AllowPartialRooms,
+             mm.SoftAttributeWaitSeconds, mm.ShuffleSeed)
+         {
++            Invites = invites,
+             Log = message => logger.LogInformation("{Message}", message),
+             Warn = message => logger.LogWarning("{Message}", message),
+             Verbose = mm.VerboseLog,
+@@ -125,6 +147,12 @@ try
+                     "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns}",
+         config.OnlineMatching.NoCpuPartner, config.OnlineMatching.AllowPartialRooms, config.OnlineMatching.OneOnOneWorlds,
+         config.OnlineMatching.LoneTeamVsCpu, config.OnlineMatching.HumansTeamVsCpu, config.OnlineMatching.CpuStandInSeats);
++    var serverIdFile = string.IsNullOrWhiteSpace(config.OnlineTag.ServerIdFile) ? "tag_server_id.txt" : config.OnlineTag.ServerIdFile;
++    ServerInfinite.Matchmaking.PilotId.Initialize(config.OnlineTag.ServerId, serverIdFile, s => Log.Information("{Message}", s));
++    var inviteUrl = ServerInfinite.Matchmaking.TagInviteUrl.Resolve(config.OnlineTag.InviteUrl, config.OnlineMatching.MatchUrl);
++    Log.Information("OnlineTag ServerId={ServerId} InviteMode={Mode}",
++        ServerInfinite.Matchmaking.PilotId.ServerId,
++        string.IsNullOrEmpty(inviteUrl) ? "in-process" : "http");
+     
+     app.UseSerilogRequestLogging(options =>
+     {
+diff --git a/Server-Infinite/Strategy/Team/OnlineTagTeamList.cs b/Server-Infinite/Strategy/Team/OnlineTagTeamList.cs
+index 07da995..11601c2 100644
+--- a/Server-Infinite/Strategy/Team/OnlineTagTeamList.cs
++++ b/Server-Infinite/Strategy/Team/OnlineTagTeamList.cs
+@@ -1,4 +1,5 @@
+ using nue.protocol.exvs;
++using ServerInfinite.Matchmaking;
+ using ServerInfinite.Models.Cards;
+ using ServerInfinite.Models.Config;
+ using ServerInfinite.Persistence;
+@@ -6,39 +7,58 @@ using ServerInfinite.Persistence;
+ namespace ServerInfinite.Strategy.Team;
+ 
+ /// <summary>
+-/// [exvs2-lobbies / EXPERIMENTAL] The online-tag list of one card (analysis/partner-invites.md 6 Step A): every tag team
+-/// the card leads or is the partner of, with partner_id = the partner's pilot id (= its card id, the value the partner's
+-/// cabinet sends as its own pilot id). The cabinet builds the MMS world-5 pair key as min(own pilot id, partner_id) and
+-/// makes the lower id the leader, so both sides must see each other's real pilot id here.
+-/// Cross-card-server tags (Step C) need globally unique pilot ids first; keep every pilot-id-on-the-wire value going
+-/// through <see cref="WirePilotId"/> so a per-server id range can be added in one place.
++/// [exvs2-lobbies / EXPERIMENTAL] The online-tag list of one card (analysis/partner-invites.md 6 Step A + C):
++/// every tag team the card leads or is the partner of, with partner_id = the partner's wire pilot id
++/// (ServerId * 1_000_000 + local card id, or the stored RemotePartnerPilotId for a cross-server partner).
++/// The cabinet builds the MMS world-5 pair key as min(own pilot id, partner_id) and makes the lower id
++/// the leader, so both sides must see each other's real wire pilot id here.
+ /// </summary>
+ public static class OnlineTagTeamList
+ {
+-    public static uint WirePilotId(int cardId) => (uint)cardId;
++    public static uint WirePilotId(int cardId) => PilotId.Wire(cardId);
+ 
+     public static List<TagTeamGroup> Build(ServerDbContext context, CardProfile cardProfile, OnlineTagConfigurations cfg)
+     {
+-        var own = context.TagTeamDataDbSet
+-            .Where(x => x.CardId == cardProfile.Id)
+-            .ToList()
+-            .Select(t => (Team: t, Partner: (int)t.TeammateCardId));
+-        var asPartner = context.TagTeamDataDbSet
+-            .Where(x => x.TeammateCardId == (uint)cardProfile.Id)
+-            .ToList()
+-            .Select(t => (Team: t, Partner: t.CardId));
+-        return own.Concat(asPartner)
+-            .Where(x => x.Partner != 0 && x.Partner != cardProfile.Id)      // never a team with yourself
+-            .GroupBy(x => x.Team.Id).Select(g => g.First())                 // one entry per team
++        var items = new List<(Models.Cards.Team.TagTeamData Team, uint PartnerWire, int LocalPartner, string? RemoteName, string? Code)>();
++
++        foreach (var t in context.TagTeamDataDbSet.Where(x => x.CardId == cardProfile.Id).ToList())
++        {
++            if (t.RemotePartnerPilotId != 0)
++                items.Add((t, t.RemotePartnerPilotId, 0, t.RemotePartnerName, t.SharedTagCode));
++            else if (t.TeammateCardId != 0 && t.TeammateCardId != (uint)cardProfile.Id)
++                items.Add((t, WirePilotId((int)t.TeammateCardId), (int)t.TeammateCardId, null, t.SharedTagCode));
++        }
++
++        foreach (var t in context.TagTeamDataDbSet.Where(x => x.TeammateCardId == (uint)cardProfile.Id).ToList())
++        {
++            if (t.CardId == cardProfile.Id) continue;
++            items.Add((t, WirePilotId(t.CardId), t.CardId, null, t.SharedTagCode));
++        }
++
++        return items
++            .Where(x => x.PartnerWire != 0 && x.PartnerWire != WirePilotId(cardProfile.Id))
++            .GroupBy(x => x.Team.Id).Select(g => g.First())
+             .OrderBy(x => x.Team.Id)
+             .Take(Math.Max(0, cfg.MaxTeams))
+             .Select(x =>
+             {
+-                var g = TagTeamGroupBuilder.Build(context, x.Team, x.Partner, cfg.TagStatus);
+-                g.PartnerId = WirePilotId(x.Partner);
++                var g = TagTeamGroupBuilder.Build(context, x.Team, x.LocalPartner, cfg.TagStatus,
++                    partnerWireId: x.PartnerWire, remoteName: x.RemoteName);
++                g.PartnerId = x.PartnerWire;
+                 g.GroupTagPoint = (uint)Math.Max(0, x.Team.OnlineRankPoint);
+                 return g;
+             })
+             .ToList();
+     }
++
++    /// <summary>Shared tag codes this card should register with the matchmaker before a world-5 search.</summary>
++    public static string[] SharedCodes(ServerDbContext context, CardProfile cardProfile) =>
++        context.TagTeamDataDbSet
++            .Where(x => x.CardId == cardProfile.Id || x.TeammateCardId == (uint)cardProfile.Id)
++            .AsEnumerable()
++            .Select(x => x.SharedTagCode)
++            .Where(c => !string.IsNullOrWhiteSpace(c))
++            .Select(Matchmaking.TagInviteStore.Normalize)
++            .Distinct()
++            .ToArray();
+ }
+diff --git a/Server-Infinite/Strategy/Team/TagTeamGroupBuilder.cs b/Server-Infinite/Strategy/Team/TagTeamGroupBuilder.cs
+index 3813f6c..404e222 100644
+--- a/Server-Infinite/Strategy/Team/TagTeamGroupBuilder.cs
++++ b/Server-Infinite/Strategy/Team/TagTeamGroupBuilder.cs
+@@ -14,13 +14,14 @@ namespace ServerInfinite.Strategy.Team;
+ // styling/economy fields that are still owned by the WebUI editor.
+ internal static class TagTeamGroupBuilder
+ {
+-    public static TagTeamGroup Build(ServerDbContext context, TagTeamData tagTeam, int partnerCardId, uint tagStatus = 0)
++    public static TagTeamGroup Build(ServerDbContext context, TagTeamData tagTeam, int partnerCardId, uint tagStatus = 0,
++        uint? partnerWireId = null, string? remoteName = null)
+     {
+         var group = new TagTeamGroup
+         {
+             Id = (uint)tagTeam.Id,
+             Name = tagTeam.TeamName,
+-            PartnerId = (uint)partnerCardId,
++            PartnerId = partnerWireId ?? (uint)partnerCardId,
+             // Client schema marks `tag_status` as required. Server has no team-status concept
+             // yet, so default to 0 ("active/idle") until a richer team lifecycle is modelled.
+             // exvs2-lobbies: configurable (OnlineTag.TagStatus) for the online-tag list test.
+@@ -36,7 +37,10 @@ internal static class TagTeamGroupBuilder
+             BoostRemains = TeamConstants.BoostRemains,
+         };
+ 
+-        EnrichPartnerInfo(context, group, partnerCardId);
++        if (!string.IsNullOrEmpty(remoteName))
++            group.PartnerName = remoteName;
++        else if (partnerCardId != 0)
++            EnrichPartnerInfo(context, group, partnerCardId);
+         return group;
+     }
+ 
+diff --git a/Tests/Matchmaking.Tests/OnlineTagTests.cs b/Tests/Matchmaking.Tests/OnlineTagTests.cs
+index f7c4beb..d57e4fc 100644
+--- a/Tests/Matchmaking.Tests/OnlineTagTests.cs
++++ b/Tests/Matchmaking.Tests/OnlineTagTests.cs
+@@ -270,4 +270,94 @@ public class OnlineTagTests
+         Assert.Equal(G(b1), G(b2));
+         Assert.NotEqual(G(a1), G(b1));
+     }
++
++    [Fact]
++    public void SameTagCodePairsEvenWhenAttr2Differs()
++    {
++        var mm = New();
++        // Cross-server: both local id 1, but one side sent a mismatched attr2. The shared code is the pair key.
++        mm.RegisterTagSearch(1_000_001, new[] { "ABCD2345" });
++        mm.RegisterTagSearch(2_000_001, new[] { "ABCD2345" });
++        var a = Tag(1_000_001, 1);          // attr2 = 1
++        var b = Tag(2_000_001, 2_000_001);  // attr2 = 2_000_001
++        Assert.NotEqual(Math.Min(1_000_001u, 1u), Math.Min(2_000_001u, 2_000_001u));
++        Assert.Equal(ErrorCode.Success, mm.Entry(a, 0));
++        Assert.Equal(ErrorCode.Success, mm.Entry(b, 1));
++        var room = mm.Check(Node(a), 2).Room;
++        Assert.NotNull(room);
++        Assert.Equal(2, room!.Clients.Count);
++        Assert.All(room.Clients, c => Assert.Equal(0u, c.GroupId));
++        Assert.Same(room, mm.Check(Node(b), 2).Room);
++    }
++
++    [Fact]
++    public void DifferentTagCodesDoNotPairEvenWhenAttr2Matches()
++    {
++        var mm = New();
++        mm.RegisterTagSearch(1_000_001, new[] { "AAAA2222" });
++        mm.RegisterTagSearch(2_000_001, new[] { "BBBB3333" });
++        var a = Solo(Matchmaker.OnlineTagWorld, 1, 1_000_001);
++        var b = Solo(Matchmaker.OnlineTagWorld, 1, 2_000_001);
++        mm.Entry(a, 0); mm.Entry(b, 0);
++        Assert.Null(mm.Check(Node(a), 1).Room);
++        Assert.Null(mm.Check(Node(b), 1).Room);
++    }
++
++    [Fact]
++    public void UnrelatedPlayerWithNoCodeDoesNotJoinACodedPair()
++    {
++        var mm = New();
++        mm.RegisterTagSearch(1_000_001, new[] { "ABCD2345" });
++        mm.RegisterTagSearch(2_000_001, new[] { "ABCD2345" });
++        var a = Tag(1_000_001, 2_000_001);
++        var b = Tag(2_000_001, 1_000_001);
++        var x = Tag(3_000_001, 1_000_001); // same attr2 as a/b (min is 1_000_001), no matching code
++        mm.Entry(a, 0); mm.Entry(b, 1); mm.Entry(x, 2);
++        var room = mm.Check(Node(a), 3).Room!;
++        Assert.Equal(2, room.Clients.Count);
++        var nodes = room.Clients.Select(c => c.Client.NodeId).ToHashSet();
++        Assert.Contains(Node(a), nodes);
++        Assert.Contains(Node(b), nodes);
++        Assert.DoesNotContain(Node(x), nodes);
++        Assert.Null(mm.Check(Node(x), 3).Room);
++    }
++
++    [Fact]
++    public void LegacyAttr2PathStillPairsWhenNeitherSideRegisteredACode()
++    {
++        var mm = New();
++        var a = Tag(1_000_001, 2_000_001);
++        var b = Tag(2_000_001, 1_000_001);
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        Assert.NotNull(mm.Check(Node(a), 2).Room);
++    }
++
++    [Fact]
++    public void OnlineTagStillRespectsNetworkRealms()
++    {
++        var mm = New();
++        mm.Realms = NetDiag.ParseRealms("radmin=10.0.0.0/8,internet=0.0.0.0/0");
++        mm.RegisterTagSearch(1_000_001, new[] { "ABCD2345" });
++        mm.RegisterTagSearch(2_000_001, new[] { "ABCD2345" });
++        var a = Tag(1_000_001, 2_000_001, serial: "A");
++        a.Myclient.GlobalIpaddress = "10.1.2.3";
++        var b = Tag(2_000_001, 1_000_001, serial: "B");
++        b.Myclient.GlobalIpaddress = "8.8.8.8";
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        Assert.Null(mm.Check(Node(a), 2).Room);
++    }
++
++    [Fact]
++    public void SharedCodesDoNotBreakFes1on1OrNoCpuPartner()
++    {
++        var mm = New();
++        mm.NoCpuPartner = true;
++        mm.RegisterTagSearch(10, new[] { "ABCD2345" });
++        var a = Solo(20, 0, 10); // Fes 1on1
++        var b = Solo(20, 0, 20);
++        mm.Entry(a, 0); mm.Entry(b, 1);
++        var room = mm.Check(Node(a), 2).Room!;
++        Assert.Equal(2, room.Clients.Count);
++        Assert.Equal(new[] { 0u, 1u }, room.Clients.Select(c => c.GroupId).OrderBy(x => x));
++    }
+ }
+diff --git a/Tests/Matchmaking.Tests/PilotIdTests.cs b/Tests/Matchmaking.Tests/PilotIdTests.cs
+new file mode 100644
+index 0000000..0217b5f
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/PilotIdTests.cs
+@@ -0,0 +1,85 @@
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++public class PilotIdTests : IDisposable
++{
++    public PilotIdTests() => PilotId.SetServerId(0);
++
++    public void Dispose() => PilotId.SetServerId(0);
++
++    [Fact]
++    public void UninitializedServerLeavesLocalIdsUnchanged()
++    {
++        PilotId.SetServerId(0);
++        Assert.Equal(1u, PilotId.Wire(1));
++        Assert.Equal(42, PilotId.Local(42));
++        Assert.False(PilotId.IsRemote(1));
++        Assert.Equal(1, PilotId.ToLocalOrUnmatched(1));
++    }
++
++    [Fact]
++    public void WireIsServerTimesBlockPlusLocalId()
++    {
++        PilotId.SetServerId(1);
++        Assert.Equal(1_000_001u, PilotId.Wire(1));
++        PilotId.SetServerId(2);
++        Assert.Equal(2_000_001u, PilotId.Wire(1));
++        Assert.Equal(1, PilotId.Local(2_000_001));
++        Assert.Equal(2, PilotId.ServerOf(2_000_001));
++        Assert.True(PilotId.IsRemote(1_000_001));
++        Assert.False(PilotId.IsRemote(2_000_001));
++    }
++
++    [Fact]
++    public void TwoServersWithTheSameLocalCardIdDoNotShareAWireId()
++    {
++        PilotId.SetServerId(1);
++        var a = PilotId.Wire(1);
++        PilotId.SetServerId(2);
++        var b = PilotId.Wire(1);
++        Assert.NotEqual(a, b);
++        Assert.Equal(a, Math.Min(a, b)); // 1_000_001 < 2_000_001, so both sides agree on the pair key
++        Assert.Equal(1_000_001u, Math.Min(a, b));
++    }
++
++    [Fact]
++    public void ToLocalOrUnmatchedRejectsAnotherServersId()
++    {
++        PilotId.SetServerId(1);
++        Assert.Equal(1, PilotId.ToLocalOrUnmatched(1_000_001));
++        Assert.Equal(1, PilotId.ToLocalOrUnmatched(1)); // legacy local
++        Assert.Equal(-1, PilotId.ToLocalOrUnmatched(2_000_001));
++        Assert.True(PilotId.IsThisCard(1, 1_000_001));
++        Assert.False(PilotId.IsThisCard(1, 2_000_001));
++    }
++
++    [Fact]
++    public void InitializePersistsAGeneratedId()
++    {
++        var path = Path.Combine(Path.GetTempPath(), "pilotid-test-" + Guid.NewGuid().ToString("n") + ".txt");
++        try
++        {
++            var first = PilotId.Initialize(0, path);
++            Assert.InRange(first, 1, PilotId.MaxServerId);
++            Assert.True(File.Exists(path));
++            PilotId.SetServerId(0);
++            var second = PilotId.Initialize(0, path);
++            Assert.Equal(first, second);
++            var forced = PilotId.Initialize(7, path);
++            Assert.Equal(7, forced);
++        }
++        finally
++        {
++            if (File.Exists(path)) File.Delete(path);
++            PilotId.SetServerId(0);
++        }
++    }
++
++    [Fact]
++    public void ServerIdAboveMaxIsRejected()
++    {
++        Assert.Throws<ArgumentOutOfRangeException>(() => PilotId.SetServerId(PilotId.MaxServerId + 1));
++    }
++}
+diff --git a/Tests/Matchmaking.Tests/TagInviteStoreTests.cs b/Tests/Matchmaking.Tests/TagInviteStoreTests.cs
+new file mode 100644
+index 0000000..ab0d78a
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/TagInviteStoreTests.cs
+@@ -0,0 +1,138 @@
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++public class TagInviteStoreTests
++{
++    [Fact]
++    public void CreateReturnsAnEightCharacterCodeAndJoinIsIdempotent()
++    {
++        var store = new TagInviteStore();
++        var code = store.Create(1_000_001, "Alice");
++        Assert.Equal(TagInviteStore.CodeLength, code.Length);
++        Assert.Equal(code, store.Create(1_000_001, "Alice")); // reuse open invite
++        var inv = store.Join(code.ToLowerInvariant(), 2_000_001, "Bob");
++        Assert.True(inv.Joined);
++        Assert.Equal(1_000_001u, inv.CreatorPilotId);
++        Assert.Equal(2_000_001u, inv.PartnerPilotId);
++        Assert.Equal("Bob", inv.PartnerName);
++        var again = store.Join(code, 2_000_001, "Bob");
++        Assert.Equal(2_000_001u, again.PartnerPilotId);
++    }
++
++    [Fact]
++    public void CannotJoinOwnCodeOrAMissingCodeOrATakenCode()
++    {
++        var store = new TagInviteStore();
++        var code = store.Create(1_000_001, "A");
++        Assert.Throws<InvalidOperationException>(() => store.Join(code, 1_000_001, "A"));
++        Assert.Throws<InvalidOperationException>(() => store.Join("ZZZZZZZZ", 2_000_001, "B"));
++        store.Join(code, 2_000_001, "B");
++        Assert.Throws<InvalidOperationException>(() => store.Join(code, 3_000_001, "C"));
++    }
++
++    [Fact]
++    public void ForPilotListsCreatedAndJoinedInvites()
++    {
++        var store = new TagInviteStore();
++        var code = store.Create(1_000_001, "A");
++        store.Join(code, 2_000_001, "B");
++        Assert.Single(store.ForPilot(1_000_001));
++        Assert.Single(store.ForPilot(2_000_001));
++        Assert.Empty(store.ForPilot(3_000_001));
++    }
++
++    [Fact]
++    public void RegisterSearchRoundTripsAndPersists()
++    {
++        var path = Path.Combine(Path.GetTempPath(), "tag-invites-test-" + Guid.NewGuid().ToString("n") + ".json");
++        try
++        {
++            var store = new TagInviteStore(path);
++            var code = store.Create(1_000_001, "A");
++            store.Join(code, 2_000_001, "B");
++            store.RegisterSearch(1_000_001, new[] { code });
++            Assert.Equal(new[] { code }, store.CodesForAm(1_000_001));
++            store.UpdateSettings(code, 1_000_001, new TagTeamSettings
++            {
++                TeamName = "PERSIST TEAM",
++                BgmId = 3,
++                EffectId = 7,
++            });
++            var reloaded = new TagInviteStore(path);
++            Assert.Equal(code, reloaded.Get(code)!.Code);
++            Assert.Equal(2_000_001u, reloaded.Get(code)!.PartnerPilotId);
++            Assert.Equal(new[] { code }, reloaded.CodesForAm(1_000_001));
++            Assert.Equal("PERSIST TEAM", reloaded.Get(code)!.Settings!.TeamName);
++            Assert.Equal(3u, reloaded.Get(code)!.Settings!.BgmId);
++            Assert.Equal(7u, reloaded.Get(code)!.Settings!.EffectId);
++        }
++        finally
++        {
++            if (File.Exists(path)) File.Delete(path);
++        }
++    }
++
++    [Fact]
++    public void ResolveInviteUrlRewritesMatchUrl()
++    {
++        Assert.Equal("http://host:28090/tag", TagInviteUrl.Resolve(null, "http://host:28090/match"));
++        Assert.Equal("http://host:9/tag", TagInviteUrl.Resolve("http://host:9/tag/", "http://other/match"));
++        Assert.Null(TagInviteUrl.Resolve("", ""));
++    }
++
++    [Fact]
++    public void UpdateSettingsLastWriteWinsAndRejectsStrangers()
++    {
++        var store = new TagInviteStore();
++        var code = store.Create(1_000_001, "A");
++        store.Join(code, 2_000_001, "B");
++        var first = store.UpdateSettings(code, 1_000_001, new TagTeamSettings
++        {
++            TeamName = "FIRST",
++            BgmId = 1,
++            EffectId = 2,
++            BackgroundPartsId = 3,
++            EmblemId = 4,
++            NameColorId = 5,
++        });
++        Assert.Equal("FIRST", first.Settings!.TeamName);
++        Assert.Equal(1u, first.Settings.BgmId);
++        Assert.Equal(2u, first.Settings.EffectId);
++        Assert.Equal(1_000_001u, first.Settings.UpdatedByPilotId);
++        Assert.True(first.Settings.UpdatedUtc <= DateTime.UtcNow.AddSeconds(1));
++        var firstTs = first.Settings.UpdatedUtc;
++
++        var second = store.UpdateSettings(code, 2_000_001, new TagTeamSettings
++        {
++            TeamName = "SECOND",
++            BgmId = 9,
++            EffectId = 8,
++        });
++        Assert.Equal("SECOND", second.Settings!.TeamName);
++        Assert.Equal(9u, second.Settings.BgmId);
++        Assert.Equal(8u, second.Settings.EffectId);
++        Assert.Equal(2_000_001u, second.Settings.UpdatedByPilotId);
++        Assert.True(second.Settings.UpdatedUtc >= firstTs);
++        Assert.Equal("SECOND", store.ForPilot(1_000_001).Single().Settings!.TeamName);
++
++        Assert.Throws<InvalidOperationException>(() =>
++            store.UpdateSettings(code, 3_000_001, new TagTeamSettings { TeamName = "NOPE" }));
++        Assert.Throws<InvalidOperationException>(() =>
++            store.UpdateSettings("ZZZZZZZZ", 1_000_001, new TagTeamSettings { TeamName = "NOPE" }));
++        // missing or blank name falls back to the default, still last-write-wins
++        var blank = store.UpdateSettings(code, 1_000_001, new TagTeamSettings { TeamName = "  " });
++        Assert.Equal("EXTREME TEAM", blank.Settings!.TeamName);
++    }
++
++    [Fact]
++    public void SettingsIsNewerThanUsesLastWriteWins()
++    {
++        var newer = new TagTeamSettings { UpdatedUtc = new DateTime(2026, 11, 15, 13, 30, 0, DateTimeKind.Utc) };
++        Assert.True(newer.IsNewerThan(null));
++        Assert.True(newer.IsNewerThan(newer.UpdatedUtc.AddSeconds(-1)));
++        Assert.False(newer.IsNewerThan(newer.UpdatedUtc));
++        Assert.False(newer.IsNewerThan(newer.UpdatedUtc.AddSeconds(1)));
++    }
++}
+diff --git a/WebUIInfinite/Client/Pages/Components/Customize/CustomizeTeamTagsTab.razor b/WebUIInfinite/Client/Pages/Components/Customize/CustomizeTeamTagsTab.razor
+index 3ff2b23..b3a7cea 100644
+--- a/WebUIInfinite/Client/Pages/Components/Customize/CustomizeTeamTagsTab.razor
++++ b/WebUIInfinite/Client/Pages/Components/Customize/CustomizeTeamTagsTab.razor
+@@ -34,11 +34,36 @@
+                             <MudItem xs="12" sm="6">
+                                 <MudTextField @bind-Value="@CustomizeCardContext.TeamResponse.DistinctTeamFormationToken" Label="@localizer["teamtag_yourinvit"]" ReadOnly="true" Variant="Variant.Outlined"/>
+                             </MudItem>
++                            <MudItem xs="12">
++                                <MudTextField Value="@CustomizeCardContext.TeamResponse.YourPilotId.ToString()" Label="@localizer["teamtag_yourpilotid"]" ReadOnly="true" Variant="Variant.Outlined"/>
++                            </MudItem>
+                         </MudGrid>
+                     </MudCardContent>
+                 </MudCard>
+                 @if (CustomizeCardContext.TeamResponse.Teams.Count < MaxTeamCount)
+                 {
++                    <MudCard Outlined="true" Class="my-2" Elevation="5">
++                        <MudCardHeader>
++                            <MudText>@localizer["teamtag_crossserver"]</MudText>
++                        </MudCardHeader>
++                        <MudCardContent>
++                            <MudText Typo="Typo.body2" Class="mb-3">@localizer["teamtag_crossserver_help"]</MudText>
++                            <MudGrid>
++                                <MudItem xs="12" sm="8">
++                                    <MudTextField @bind-Value="@MyPartnerCode" Label="@localizer["teamtag_crossserver_yourcode"]" ReadOnly="true" Variant="Variant.Outlined"/>
++                                </MudItem>
++                                <MudItem xs="12" sm="4" Class="d-flex align-center">
++                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="CreatePartnerCode">@localizer["teamtag_crossserver_create"]</MudButton>
++                                </MudItem>
++                                <MudItem xs="12" sm="8">
++                                    <MudTextField @bind-Value="@JoinPartnerCode" Label="@localizer["teamtag_crossserver_joinlabel"]" Variant="Variant.Outlined"/>
++                                </MudItem>
++                                <MudItem xs="12" sm="4" Class="d-flex align-center">
++                                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true" OnClick="JoinPartnerCodeClick">@localizer["teamtag_crossserver_join"]</MudButton>
++                                </MudItem>
++                            </MudGrid>
++                        </MudCardContent>
++                    </MudCard>
+                     <MudCard Outlined="true" Class="my-2" Elevation="5">
+                         <MudCardHeader>
+                             <MudText>@localizer["teamtag_addteam"]</MudText>
+@@ -69,6 +94,10 @@
+                                 @foreach (var tagTeam in CustomizeCardContext.TeamResponse.Teams)
+                                 {
+                                     <MudItem xs="12">
++                                        @if (tagTeam.IsRemote)
++                                        {
++                                            <MudText Typo="Typo.caption">@localizer["teamtag_crossserver_remote"] @(string.IsNullOrEmpty(tagTeam.SharedTagCode) ? "" : $"({tagTeam.SharedTagCode})")</MudText>
++                                        }
+                                         <WebUIInfinite.Client.Pages.Components.Customize.Inner.TeamTag TagTeams="@CustomizeCardContext.TeamResponse.Teams" CurrentTeam="@tagTeam"
+                                                                                                OnDeleted="@(() => StateHasChanged())"
+                                                                                                EnableImagePreview="@EnableImagePreview"/>
+@@ -93,6 +122,58 @@
+     private const uint MaxTeamCount = 20;
+     private uint FriendUserId { get; set; } = 0;
+     private string FriendTeamToken { get; set; } = string.Empty;
++    private string MyPartnerCode { get; set; } = string.Empty;
++    private string JoinPartnerCode { get; set; } = string.Empty;
++
++    private async Task ReloadTeams()
++    {
++        var teams = await Http.GetFromJsonAsync<TeamResponse>($"/ui/team/getTeams/{CustomizeCardContext.AccessCode}/{CustomizeCardContext.ChipId}");
++        if (teams is not null)
++            CustomizeCardContext.TeamResponse = teams;
++    }
++
++    private async void CreatePartnerCode()
++    {
++        var result = await Http.PostAsJsonAsync("/ui/team/crossServerInvite", new BasicCardRequest
++        {
++            AccessCode = CustomizeCardContext.AccessCode,
++            ChipId = CustomizeCardContext.ChipId
++        });
++        var body = await result.Content.ReadFromJsonAsync<CrossServerInviteResponse>();
++        if (body is null || !body.Success)
++        {
++            Snackbar.Add(body?.Message ?? localizer["teamtag_crossserver_failed"], Severity.Warning);
++            return;
++        }
++        MyPartnerCode = body.Code;
++        Snackbar.Add(localizer["teamtag_crossserver_created"], Severity.Success);
++        StateHasChanged();
++    }
++
++    private async void JoinPartnerCodeClick()
++    {
++        if (string.IsNullOrWhiteSpace(JoinPartnerCode))
++        {
++            Snackbar.Add(localizer["teamtag_crossserver_blank"], Severity.Warning);
++            return;
++        }
++        var result = await Http.PostAsJsonAsync("/ui/team/joinCrossServer", new JoinCrossServerTeamRequest
++        {
++            AccessCode = CustomizeCardContext.AccessCode,
++            ChipId = CustomizeCardContext.ChipId,
++            Code = JoinPartnerCode.Trim()
++        });
++        var body = await result.Content.ReadFromJsonAsync<CrossServerInviteResponse>();
++        if (body is null || !body.Success)
++        {
++            Snackbar.Add(body?.Message ?? localizer["teamtag_crossserver_failed"], Severity.Warning);
++            return;
++        }
++        JoinPartnerCode = string.Empty;
++        await ReloadTeams();
++        Snackbar.Add(localizer["teamtag_crossserver_joined"], Severity.Success);
++        StateHasChanged();
++    }
+ 
+     private async void AddTeam()
+     {
+diff --git a/WebUIInfinite/Shared/Dto/Common/Team.cs b/WebUIInfinite/Shared/Dto/Common/Team.cs
+index db1534b..74ed2dd 100644
+--- a/WebUIInfinite/Shared/Dto/Common/Team.cs
++++ b/WebUIInfinite/Shared/Dto/Common/Team.cs
+@@ -14,4 +14,13 @@ public class Team
+     public uint BgmId { get; set; } = 0;
+     public uint NameColorId { get; set; } = 0;
+     public bool OnlineTag { get; set; } = false;
+-}
+\ No newline at end of file
++
++    /// <summary>True when the partner is on another card server (no local card row).</summary>
++    public bool IsRemote { get; set; } = false;
++
++    /// <summary>Partner's globally unique wire pilot id (same-server: ServerId * 1_000_000 + local id).</summary>
++    public uint PartnerPilotId { get; set; } = 0;
++
++    /// <summary>Shared cross-server partner code; empty for same-server teams.</summary>
++    public string SharedTagCode { get; set; } = string.Empty;
++}
+diff --git a/WebUIInfinite/Shared/Dto/Request/JoinCrossServerTeamRequest.cs b/WebUIInfinite/Shared/Dto/Request/JoinCrossServerTeamRequest.cs
+new file mode 100644
+index 0000000..d2619fc
+--- /dev/null
++++ b/WebUIInfinite/Shared/Dto/Request/JoinCrossServerTeamRequest.cs
+@@ -0,0 +1,8 @@
++namespace WebUIInfinite.Shared.Dto.Request;
++
++public class JoinCrossServerTeamRequest
++{
++    public string AccessCode { get; set; } = string.Empty;
++    public string ChipId { get; set; } = string.Empty;
++    public string Code { get; set; } = string.Empty;
++}
+diff --git a/WebUIInfinite/Shared/Dto/Response/CrossServerInviteResponse.cs b/WebUIInfinite/Shared/Dto/Response/CrossServerInviteResponse.cs
+new file mode 100644
+index 0000000..101e4c2
+--- /dev/null
++++ b/WebUIInfinite/Shared/Dto/Response/CrossServerInviteResponse.cs
+@@ -0,0 +1,8 @@
++namespace WebUIInfinite.Shared.Dto.Response;
++
++public class CrossServerInviteResponse
++{
++    public bool Success { get; set; }
++    public string Code { get; set; } = string.Empty;
++    public string Message { get; set; } = string.Empty;
++}
+diff --git a/WebUIInfinite/Shared/Dto/Response/TeamResponse.cs b/WebUIInfinite/Shared/Dto/Response/TeamResponse.cs
+index c7b0707..7476e38 100644
+--- a/WebUIInfinite/Shared/Dto/Response/TeamResponse.cs
++++ b/WebUIInfinite/Shared/Dto/Response/TeamResponse.cs
+@@ -6,4 +6,7 @@ public class TeamResponse
+ {
+     public string DistinctTeamFormationToken { get; set; } = string.Empty;
+     public List<Team> Teams { get; set; } = new();
+-}
+\ No newline at end of file
++
++    /// <summary>This card's globally unique wire pilot id, shown in the Teams tab for cross-server setups.</summary>
++    public uint YourPilotId { get; set; } = 0;
++}
+diff --git a/WebUIInfinite/Shared/Resources/Resource.en-US.resx b/WebUIInfinite/Shared/Resources/Resource.en-US.resx
+index b9d024a..0acf353 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.en-US.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.en-US.resx
+@@ -1126,4 +1126,40 @@
+   <data name="main_title" xml:space="preserve"><value>Main Title</value></data>
+   <data name="sub_title_1" xml:space="preserve"><value>Sub Title 1</value></data>
+   <data name="sub_title_2" xml:space="preserve"><value>Sub Title 2</value></data>
++  <data name="teamtag_yourpilotid" xml:space="preserve">
++    <value>Your Online Tag ID (set automatically; shown for reference)</value>
++  </data>
++  <data name="teamtag_crossserver" xml:space="preserve">
++    <value>Partner on another card server</value>
++  </data>
++  <data name="teamtag_crossserver_help" xml:space="preserve">
++    <value>Use this when each of you keeps your own cards on a different card server, and both servers point at the same matchmaker. One partner taps Create a code and sends that code to the other. The other partner types it under Join a partner's code and taps Join. Then open this tab again (or reload) so the team appears on both sides. Same-server friends should still use Friend's User ID and Invitation Code below.</value>
++  </data>
++  <data name="teamtag_crossserver_create" xml:space="preserve">
++    <value>Create a code</value>
++  </data>
++  <data name="teamtag_crossserver_yourcode" xml:space="preserve">
++    <value>Your partner code (the other person enters this under Join)</value>
++  </data>
++  <data name="teamtag_crossserver_joinlabel" xml:space="preserve">
++    <value>Partner's code</value>
++  </data>
++  <data name="teamtag_crossserver_join" xml:space="preserve">
++    <value>Join</value>
++  </data>
++  <data name="teamtag_crossserver_remote" xml:space="preserve">
++    <value>On another card server</value>
++  </data>
++  <data name="teamtag_crossserver_failed" xml:space="preserve">
++    <value>Could not create or join that partner code. Check that both card servers use the same matchmaker.</value>
++  </data>
++  <data name="teamtag_crossserver_created" xml:space="preserve">
++    <value>Send this code to your partner. They enter it under Partner's code and tap Join.</value>
++  </data>
++  <data name="teamtag_crossserver_joined" xml:space="preserve">
++    <value>You joined the team. Ask your partner to reopen the Teams tab so the team appears on their side too.</value>
++  </data>
++  <data name="teamtag_crossserver_blank" xml:space="preserve">
++    <value>Enter the partner code your teammate created.</value>
++  </data>
+ </root>
+diff --git a/WebUIInfinite/Shared/Resources/Resource.ja.resx b/WebUIInfinite/Shared/Resources/Resource.ja.resx
+index 249ef1e..b67e99f 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.ja.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.ja.resx
+@@ -1087,4 +1087,40 @@
+   <data name="main_title" xml:space="preserve"><value>メイン称号</value></data>
+   <data name="sub_title_1" xml:space="preserve"><value>サブ称号1</value></data>
+   <data name="sub_title_2" xml:space="preserve"><value>サブ称号2</value></data>
++  <data name="teamtag_yourpilotid" xml:space="preserve">
++    <value>オンラインタグID（自動設定、参考表示）</value>
++  </data>
++  <data name="teamtag_crossserver" xml:space="preserve">
++    <value>別のカードサーバーのパートナー</value>
++  </data>
++  <data name="teamtag_crossserver_help" xml:space="preserve">
++    <value>各自が別のカードサーバーで自分のカードを使い、両方のサーバーが同じマッチメーカーを指しているときに使います。どちらかが「コードを作成」を押し、そのコードを相手に伝えます。相手は「相手のパートナーコード」に入力して「参加」を押します。その後、このタブを開き直す（または再読み込みする）と、両方にチームが表示されます。同じカードサーバーの友人は、下の「フレンドのユーザーID」と「招待コード」を使ってください。</value>
++  </data>
++  <data name="teamtag_crossserver_create" xml:space="preserve">
++    <value>コードを作成</value>
++  </data>
++  <data name="teamtag_crossserver_yourcode" xml:space="preserve">
++    <value>あなたのパートナーコード（相手が「参加」欄に入力）</value>
++  </data>
++  <data name="teamtag_crossserver_joinlabel" xml:space="preserve">
++    <value>相手のパートナーコード</value>
++  </data>
++  <data name="teamtag_crossserver_join" xml:space="preserve">
++    <value>参加</value>
++  </data>
++  <data name="teamtag_crossserver_remote" xml:space="preserve">
++    <value>別のカードサーバー</value>
++  </data>
++  <data name="teamtag_crossserver_failed" xml:space="preserve">
++    <value>パートナーコードの作成または参加に失敗しました。両方のカードサーバーが同じマッチメーカーを使っているか確認してください。</value>
++  </data>
++  <data name="teamtag_crossserver_created" xml:space="preserve">
++    <value>このコードを相手に伝えてください。相手は「相手のパートナーコード」に入力して「参加」を押します。</value>
++  </data>
++  <data name="teamtag_crossserver_joined" xml:space="preserve">
++    <value>チームに参加しました。相手にもチームズタブを開き直してもらうと、相手側にも表示されます。</value>
++  </data>
++  <data name="teamtag_crossserver_blank" xml:space="preserve">
++    <value>相手が作成したパートナーコードを入力してください。</value>
++  </data>
+ </root>
+diff --git a/WebUIInfinite/Shared/Resources/Resource.resx b/WebUIInfinite/Shared/Resources/Resource.resx
+index ff86431..e194e6d 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.resx
+@@ -108,4 +108,40 @@
+   <data name="bgm_safe_mode_hint" xml:space="preserve">
+     <value>Tips: Enabling Game Commentary Mode will disable BGM play settings.</value>
+   </data>
+-</root>
++  <data name="teamtag_crossserver" xml:space="preserve">
++    <value>Partner on another card server</value>
++  </data>
++    <data name="teamtag_crossserver_help" xml:space="preserve">
++    <value>Use this when each of you keeps your own cards on a different card server, and both servers point at the same matchmaker. One partner taps Create a code and sends that code to the other. The other partner types it under Join a partner's code and taps Join. Then open this tab again (or reload) so the team appears on both sides. Same-server friends should still use Friend's User ID and Invitation Code below.</value>
++  </data>
++    <data name="teamtag_crossserver_create" xml:space="preserve">
++    <value>Create a code</value>
++  </data>
++    <data name="teamtag_crossserver_yourcode" xml:space="preserve">
++    <value>Your partner code (the other person enters this under Join)</value>
++  </data>
++    <data name="teamtag_crossserver_joinlabel" xml:space="preserve">
++    <value>Partner's code</value>
++  </data>
++    <data name="teamtag_crossserver_join" xml:space="preserve">
++    <value>Join</value>
++  </data>
++    <data name="teamtag_crossserver_remote" xml:space="preserve">
++    <value>On another card server</value>
++  </data>
++    <data name="teamtag_crossserver_failed" xml:space="preserve">
++    <value>Could not create or join that partner code. Check that both card servers use the same matchmaker.</value>
++  </data>
++    <data name="teamtag_crossserver_created" xml:space="preserve">
++    <value>Send this code to your partner. They enter it under Partner's code and tap Join.</value>
++  </data>
++    <data name="teamtag_crossserver_joined" xml:space="preserve">
++    <value>You joined the team. Ask your partner to reopen the Teams tab so the team appears on their side too.</value>
++  </data>
++    <data name="teamtag_crossserver_blank" xml:space="preserve">
++    <value>Enter the partner code your teammate created.</value>
++  </data>
++  <data name="teamtag_yourpilotid" xml:space="preserve">
++    <value>Your Online Tag ID (set automatically; shown for reference)</value>
++  </data>
++  </root>
+diff --git a/WebUIInfinite/Shared/Resources/Resource.zh-Hans.resx b/WebUIInfinite/Shared/Resources/Resource.zh-Hans.resx
+index daf27a2..6c24634 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.zh-Hans.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.zh-Hans.resx
+@@ -1126,4 +1126,40 @@
+   <data name="main_title" xml:space="preserve"><value>主称号</value></data>
+   <data name="sub_title_1" xml:space="preserve"><value>副称号1</value></data>
+   <data name="sub_title_2" xml:space="preserve"><value>副称号2</value></data>
++  <data name="teamtag_yourpilotid" xml:space="preserve">
++    <value>你的在线Tag ID（自动设定，仅供参考）</value>
++  </data>
++  <data name="teamtag_crossserver" xml:space="preserve">
++    <value>另一台卡片服务器上的搭档</value>
++  </data>
++  <data name="teamtag_crossserver_help" xml:space="preserve">
++    <value>当你们各自把卡片留在不同的卡片服务器、且两台服务器都指向同一个匹配服务器时使用。一方点击“创建代码”并把代码发给对方；另一方在“加入搭档的代码”中输入后点击“加入”。然后重新打开本页（或刷新），两边都会看到队伍。同一台卡片服务器上的朋友请继续使用下方的“好友用户ID”和“邀请码”。</value>
++  </data>
++  <data name="teamtag_crossserver_create" xml:space="preserve">
++    <value>创建代码</value>
++  </data>
++  <data name="teamtag_crossserver_yourcode" xml:space="preserve">
++    <value>你的搭档代码（对方在“加入”栏输入）</value>
++  </data>
++  <data name="teamtag_crossserver_joinlabel" xml:space="preserve">
++    <value>对方的搭档代码</value>
++  </data>
++  <data name="teamtag_crossserver_join" xml:space="preserve">
++    <value>加入</value>
++  </data>
++  <data name="teamtag_crossserver_remote" xml:space="preserve">
++    <value>在另一台卡片服务器</value>
++  </data>
++  <data name="teamtag_crossserver_failed" xml:space="preserve">
++    <value>无法创建或加入该搭档代码。请确认两台卡片服务器指向同一个匹配服务器。</value>
++  </data>
++  <data name="teamtag_crossserver_created" xml:space="preserve">
++    <value>把这个代码发给你的搭档。对方在“对方的搭档代码”中输入后点击“加入”。</value>
++  </data>
++  <data name="teamtag_crossserver_joined" xml:space="preserve">
++    <value>你已加入队伍。请让对方重新打开“队伍”页，两边都会看到。</value>
++  </data>
++  <data name="teamtag_crossserver_blank" xml:space="preserve">
++    <value>请输入搭档创建的代码。</value>
++  </data>
+ </root>
+diff --git a/WebUIInfinite/Shared/Resources/Resource.zh-Hant-TW.resx b/WebUIInfinite/Shared/Resources/Resource.zh-Hant-TW.resx
+index b6da67c..7a7a67f 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.zh-Hant-TW.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.zh-Hant-TW.resx
+@@ -1131,4 +1131,40 @@
+   <data name="main_title" xml:space="preserve"><value>主稱號</value></data>
+   <data name="sub_title_1" xml:space="preserve"><value>副稱號1</value></data>
+   <data name="sub_title_2" xml:space="preserve"><value>副稱號2</value></data>
++  <data name="teamtag_yourpilotid" xml:space="preserve">
++    <value>你的線上Tag ID（自動設定，僅供參考）</value>
++  </data>
++  <data name="teamtag_crossserver" xml:space="preserve">
++    <value>另一台卡片伺服器上的搭檔</value>
++  </data>
++  <data name="teamtag_crossserver_help" xml:space="preserve">
++    <value>當你們各自把卡片留在不同的卡片伺服器、且兩台伺服器都指向同一個配對伺服器時使用。一方點「建立代碼」並把代碼傳給對方；另一方在「加入搭檔的代碼」中輸入後點「加入」。然後重新開啟本頁（或重新整理），兩邊都會看到隊伍。同一台卡片伺服器上的朋友請繼續使用下方的「好友使用者 ID」和「邀請碼」。</value>
++  </data>
++  <data name="teamtag_crossserver_create" xml:space="preserve">
++    <value>建立代碼</value>
++  </data>
++  <data name="teamtag_crossserver_yourcode" xml:space="preserve">
++    <value>你的搭檔代碼（對方在「加入」欄輸入）</value>
++  </data>
++  <data name="teamtag_crossserver_joinlabel" xml:space="preserve">
++    <value>對方的搭檔代碼</value>
++  </data>
++  <data name="teamtag_crossserver_join" xml:space="preserve">
++    <value>加入</value>
++  </data>
++  <data name="teamtag_crossserver_remote" xml:space="preserve">
++    <value>在另一台卡片伺服器</value>
++  </data>
++  <data name="teamtag_crossserver_failed" xml:space="preserve">
++    <value>無法建立或加入該搭檔代碼。請確認兩台卡片伺服器指向同一個配對伺服器。</value>
++  </data>
++  <data name="teamtag_crossserver_created" xml:space="preserve">
++    <value>把這個代碼傳給你的搭檔。對方在「對方的搭檔代碼」中輸入後點「加入」。</value>
++  </data>
++  <data name="teamtag_crossserver_joined" xml:space="preserve">
++    <value>你已加入隊伍。請讓對方重新開啟「隊伍」頁，兩邊都會看到。</value>
++  </data>
++  <data name="teamtag_crossserver_blank" xml:space="preserve">
++    <value>請輸入搭檔建立的代碼。</value>
++  </data>
+ </root>
+diff --git a/WebUIInfinite/Shared/Resources/Resource.zh-Hant.resx b/WebUIInfinite/Shared/Resources/Resource.zh-Hant.resx
+index b6da67c..7a7a67f 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.zh-Hant.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.zh-Hant.resx
+@@ -1131,4 +1131,40 @@
+   <data name="main_title" xml:space="preserve"><value>主稱號</value></data>
+   <data name="sub_title_1" xml:space="preserve"><value>副稱號1</value></data>
+   <data name="sub_title_2" xml:space="preserve"><value>副稱號2</value></data>
++  <data name="teamtag_yourpilotid" xml:space="preserve">
++    <value>你的線上Tag ID（自動設定，僅供參考）</value>
++  </data>
++  <data name="teamtag_crossserver" xml:space="preserve">
++    <value>另一台卡片伺服器上的搭檔</value>
++  </data>
++  <data name="teamtag_crossserver_help" xml:space="preserve">
++    <value>當你們各自把卡片留在不同的卡片伺服器、且兩台伺服器都指向同一個配對伺服器時使用。一方點「建立代碼」並把代碼傳給對方；另一方在「加入搭檔的代碼」中輸入後點「加入」。然後重新開啟本頁（或重新整理），兩邊都會看到隊伍。同一台卡片伺服器上的朋友請繼續使用下方的「好友使用者 ID」和「邀請碼」。</value>
++  </data>
++  <data name="teamtag_crossserver_create" xml:space="preserve">
++    <value>建立代碼</value>
++  </data>
++  <data name="teamtag_crossserver_yourcode" xml:space="preserve">
++    <value>你的搭檔代碼（對方在「加入」欄輸入）</value>
++  </data>
++  <data name="teamtag_crossserver_joinlabel" xml:space="preserve">
++    <value>對方的搭檔代碼</value>
++  </data>
++  <data name="teamtag_crossserver_join" xml:space="preserve">
++    <value>加入</value>
++  </data>
++  <data name="teamtag_crossserver_remote" xml:space="preserve">
++    <value>在另一台卡片伺服器</value>
++  </data>
++  <data name="teamtag_crossserver_failed" xml:space="preserve">
++    <value>無法建立或加入該搭檔代碼。請確認兩台卡片伺服器指向同一個配對伺服器。</value>
++  </data>
++  <data name="teamtag_crossserver_created" xml:space="preserve">
++    <value>把這個代碼傳給你的搭檔。對方在「對方的搭檔代碼」中輸入後點「加入」。</value>
++  </data>
++  <data name="teamtag_crossserver_joined" xml:space="preserve">
++    <value>你已加入隊伍。請讓對方重新開啟「隊伍」頁，兩邊都會看到。</value>
++  </data>
++  <data name="teamtag_crossserver_blank" xml:space="preserve">
++    <value>請輸入搭檔建立的代碼。</value>
++  </data>
+ </root>
+-- 
+2.47.3
+
+
+From b368843e325e0442b605002e7e821f9f19f60fe7 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Sun, 15 Nov 2026 06:00:52 -0800
+Subject: [PATCH 26/26] Default OnlineTag.TagStatus to 1 so the in-game list is
+ selectable
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+With TagStatus 0, LoadCard sent tag_teams=1 but both cabinets showed an
+empty, greyed-out オンラインタッグ panel on TEAM SELECT (live 2026-11-15).
+The documented next value is 1; that is now the default and stays
+configurable. Confirmed in the real game at 5:57 AM Pacific Time: both
+cabs listed the shared team, searched world 5, and the VPS paired them.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                           |  4 ++--
+ Server-Infinite/Configurations/server.json      |  2 +-
+ .../Models/Config/OnlineTagConfigurations.cs    |  8 +++++---
+ Tests/Matchmaking.Tests/OnlineTagConfigTests.cs | 17 +++++++++++++++++
+ 4 files changed, 25 insertions(+), 6 deletions(-)
+ create mode 100644 Tests/Matchmaking.Tests/OnlineTagConfigTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 20678b7..a045fd7 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -138,7 +138,7 @@ Class 14), which matches like any other team.
+ | Piece | What this patch does |
+ |---|---|
+ | Invite (WebUI **Teams** tab, re-enabled) | Player A enters partner B's **User ID** + B's **Invitation Code** → a tag team A+B on the server. The server now checks the code itself (upstream trusted the WebUI), refuses a team with yourself / a duplicate / more than 20 per card, and (default) B gets a new code after it was used (`OneTimeInviteCode`). A new team no longer crashes the tab (BGM 0). |
+-| `LoadCard.MobileUserGroup.tag_teams` (36) | Filled for both partners: `id` = team id (same on both cards), `partner_id` = the partner's **pilot id** (= card id, the value the partner's cabinet uses as its own pilot id), `tag_status` = `OnlineTag.TagStatus` (default 0), partner name/level/class, `group_tag_point`. Log: `LoadCard online tag: CardId=… tag_teams=N … key K` |
++| `LoadCard.MobileUserGroup.tag_teams` (36) | Filled for both partners: `id` = team id (same on both cards), `partner_id` = the partner's **pilot id** (= card id, the value the partner's cabinet uses as its own pilot id), `tag_status` = `OnlineTag.TagStatus` (default 1), partner name/level/class, `group_tag_point`. Log: `LoadCard online tag: CardId=… tag_teams=N … key K` |
+ | Matchmaker world 5 (online tag) | **Pair** rule: exactly two solo cabinets with the same `(game, version, attr1, pair key)` → one room with both clients, **both group 0**, leader (lower am_id) first, the same list for both. Never short rooms, never CPU stand-ins; pair key 0 never pairs; NG lists (`bl_banapassport_am_ids`, `bl_loc_ids`), same card, same cabinet and network realms respected; the cabinet's timeout (90 s; 90 if it sends 0) then `MATCH_CANCELED`; cancel works as usual. Log: `MATCH room=… online-tag pair [n1,n2] key=K am=[a,b]`; `TAG-WARN` if the key is 0 or ≠ the lower am_id |
+ | Worlds 21 / 22 (partner recruit 急募) | Same pair rule: 21 casual = one first-come pool, 22 ranked = keyed by team class (attr2). Lower node id first (the game's recruit leader rule is unknown). No widening across classes yet |
+ | Team entries in worlds 5/21/22 | Refused (`ERR_MATCH_CONDITION`): those codes never send groups |
+@@ -148,7 +148,7 @@ Config (`CardServerConfig.OnlineTag`):
+ ```json
+ "OnlineTag": {
+   "SendTagTeams": true,       // fill LoadCard tag_teams (36)
+-  "TagStatus": 0,             // TagTeamGroup.tag_status (meaning unknown): try 0, then 1 if the online-tag list stays empty
++  "TagStatus": 1,             // TagTeamGroup.tag_status: 0 left the in-game list empty (2026-11-15 live); 1 is the default
+   "MaxTeams": 20,
+   "OneTimeInviteCode": true,  // the partner's same-server invitation code changes after a team is created with it
+   "ServerId": 0,              // 1..4000; 0 = load or generate a persisted id (ServerIdFile)
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index c6f3d96..f780498 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -61,7 +61,7 @@
+     },
+     "OnlineTag": {
+       "SendTagTeams": true,
+-      "TagStatus": 0,
++      "TagStatus": 1,
+       "MaxTeams": 20,
+       "OneTimeInviteCode": true,
+       "ServerId": 0,
+diff --git a/Server-Infinite/Models/Config/OnlineTagConfigurations.cs b/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
+index df39448..262ea0b 100644
+--- a/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineTagConfigurations.cs
+@@ -14,10 +14,12 @@ public class OnlineTagConfigurations
+     public bool SendTagTeams { get; set; } = true;
+ 
+     /// <summary>
+-    /// TagTeamGroup.tag_status (required field, meaning unknown). 0 first (static analysis, partner-invites.md 6 Step A);
+-    /// if the online-tag list stays empty in the game, try 1.
++    /// TagTeamGroup.tag_status (required field). Live test 2026-11-15: with 0, LoadCard sent tag_teams=1
++    /// but the in-game オンラインタッグ list stayed empty and the panel was unselectable on both cabs.
++    /// Default is therefore 1 (partner-invites.md 6 Step A: try 0, then 1 if the list stays empty).
++    /// Still configurable if a later trace shows a different value.
+     /// </summary>
+-    public uint TagStatus { get; set; } = 0;
++    public uint TagStatus { get; set; } = 1;
+ 
+     /// <summary>Max teams per card in the list (the WebUI allows 20 per leader).</summary>
+     public int MaxTeams { get; set; } = 20;
+diff --git a/Tests/Matchmaking.Tests/OnlineTagConfigTests.cs b/Tests/Matchmaking.Tests/OnlineTagConfigTests.cs
+new file mode 100644
+index 0000000..8d2841f
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/OnlineTagConfigTests.cs
+@@ -0,0 +1,17 @@
++using ServerInfinite.Models.Config;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++public class OnlineTagConfigTests
++{
++    [Fact]
++    public void DefaultTagStatusIsOneSoTheInGameListIsNotFilteredEmpty()
++    {
++        // Live 2026-11-15: TagStatus 0 produced LoadCard tag_teams=1 but an empty,
++        // unselectable オンラインタッグ panel on both cabinets. partner-invites.md Step A
++        // said to try 1 next; that is now the default and stays configurable.
++        Assert.Equal(1u, new OnlineTagConfigurations().TagStatus);
++        Assert.True(new OnlineTagConfigurations().SendTagTeams);
++    }
++}
 -- 
 2.47.3
 

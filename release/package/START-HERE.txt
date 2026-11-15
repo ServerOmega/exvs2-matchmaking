@@ -1,4 +1,4 @@
-EXVS2 Infinite Boost - online matchmaking server  (v0.2.0-pre, EXPERIMENTAL TEST BUILD)
+EXVS2 Infinite Boost - online matchmaking server  (v0.3.0-pre, EXPERIMENTAL TEST BUILD)
 =====================================================================================
 
 What is this?

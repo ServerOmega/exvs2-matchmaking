@@ -70,14 +70,27 @@ Then play
 ---------
   1. Start the game, insert your card, pick an online mode. EVERYONE must pick the SAME mode to meet
      (each mode has its own queue).
-  2. 4 players searching = a 2v2 right away. With 2-3 players, a 1v1 / 2v1 (CPU partners) starts after
-     ~15 seconds (the host's FillAfterSeconds setting).
+  2. 4 players searching = a 2v2 right away. With 2-3 players the search waits until a 4th human
+     joins, or until each cabinet's own matching timeout (~150 s). Fes 1on1 only needs 2 players.
   3. Cancelling the search in the game works.
 
-Online tag (play as a team with a chosen partner) - UNTESTED in the real game, both partners must use the
-SAME card server (Way 1, or both on the same PC):
+Online tag (play as a team with a chosen partner) — confirmed in the real game 2026-11-15, including
+partners on different card servers that share one matchmaker:
+
+  Same card server:
   1. Your partner opens the card website  http://<card server IP>:28080/  , logs in with their card,
      opens Customize -> Teams and sends you "Your User ID" and "Your Invitation Code" (privately; it works once).
   2. You open your own Customize -> Teams, enter them under Add Team, press ADD.
-  3. Both re-insert your cards, pick online mode -> team sortie -> online tag, choose the team,
-     and search at about the same time (each waits up to 90 s for the other).
+
+  Different card servers (each server has its own ServerId; MatchUrl / StunHost point at the same
+  matchmaker, e.g. http://<VPS_IP>:28090/match):
+  1. Each of you opens YOUR own card website -> Customize -> Teams.
+  2. One partner taps "Create a code" and sends the 8-character code to the other.
+  3. The other types it under "Partner's code" and taps Join. The creator reopens the Teams tab.
+  4. Team name / BGM / effect saved on one side show up on the other after a refresh or card reinsert.
+
+  In the game (both setups):
+  1. Both re-insert your cards. On TEAM SELECT pick オンラインタッグ (Online Tag) — not Mix Match,
+     Class, Fes, or 店内チーム — choose the shared team, and search at about the same time
+     (each waits up to 90 s for the other).
+  2. After the duo forms, a 2v2 still needs two more human players.

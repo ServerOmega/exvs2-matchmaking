@@ -54,25 +54,23 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 - [ ] Next card read (`PreLoadCard`) shows the stored rate/grade in the Class Match screen
 
 ## Online tag / partner recruit ([analysis/partner-invites.md](analysis/partner-invites.md))
-Box, fake cabinets + fake cards (2026-11-13): 15 unit tests + `server-sketch/loadtest/online_tag_e2e.py` 28/28 —
-everything below the line is for the **real game**. Both cabinets on the **same card server**; server built from
-the online-tag patch. Keep the server log lines named in each item.
+Box, fake cabinets + fake cards (2026-11-13): same-server invite tests + `server-sketch/loadtest/online_tag_e2e.py` 28/28.
+2026-11-15: 170 matchmaker unit tests + `server-sketch/loadtest/cross_server_tag_e2e.py` 23/23. Keep the server
+log lines named in each item.
 - [x] Box: WebUI invite (user id + code; wrong / self / duplicate / reused code refused; code rotates), LoadCard tag_teams on both partners, world-5 pairing, mismatched keys + timeout, two tag pairs → 2v2, casual recruit pair, ranked recruit by class
-- [ ] Create a tag team in the WebUI (Customize → Teams: partner's User ID + Invitation Code → ADD); both cards show it in the WebUI
-- [ ] Insert both cards: log `LoadCard online tag: CardId=… tag_teams=1 tag_status=0 [team T partner P key K]` for each
-- [ ] In the game, team sortie → **online tag** shows the team. If the list is empty: set `OnlineTag.TagStatus: 1`, restart, re-insert; record which value works
-- [ ] Both pick the team: one `entry online-tag … key=K` per cabinet with the **same K = lower pilot id**; then `MATCH room=… online-tag pair [n1,n2] key=K am=[a,b]` and no `TAG-WARN`. Note whether am_id equals the pilot id
-- [ ] After the pair room: do the cabinets connect to each other (P2P) and show "team formed"? Or do they reject the 2-client CheckMatching (record what the screen says, and capture CheckMatching with Wireshark)
-- [ ] Then exactly **one** team entry from the leader (lower pilot id) with the partner in `groups` (`entry mix-match nodes=[leader,member] slots=2` or class-team), and the member only polls. Does the member re-run IssueNodeId first (new node id)?
-- [ ] That team then matches (vs another team or 2 solos; or 1v1-style after `FillAfterSeconds`) and the battle starts; `SaveVsmOnResult` carries `tag_team_id` / partner
+- [x] Cross-server partner codes (box e2e): Create a code / Join on two card servers sharing `/tag`; wire ids; world-5 pair by shared code even when local card ids collide; team cosmetics last-write-wins through the matchmaker
+- [x] Real game 2026-11-15 5:57 AM Pacific Time: two cabinets on **different** card servers (ServerId 1 and 2) created/joined a partner code, picked **オンラインタッグ** on TEAM SELECT (`TagStatus` 1), and were paired on the VPS matchmaker (`MATCH` world 5, shared code). About 25 s later they joined Mix Match as one duo. A 2v2 still waited for two more humans (`NoCpuPartner`).
+- [x] `OnlineTag.TagStatus: 1` is required for the in-game list to be selectable (0 leaves the Online Tag panel greyed and empty). Default is now 1.
+- [ ] Same-server WebUI invite (User ID + Invitation Code → ADD) still needs a real-game pass
+- [ ] After the pair room: capture CheckMatching / P2P NAT for the world-5 duo (the 2026-11-15 test formed the team and then queued Mix Match as a duo)
+- [ ] A completed 4-human 2v2 after an online-tag duo forms (vs another team or 2 solos); `SaveVsmOnResult` carries `tag_team_id` / partner
 - [ ] Only one partner searches: after 90 s the cabinet gets `MATCH_CANCELED` (`drop … reason=matching timeout`); what does the game show (CAcSecPcbWantedFailer)?
 - [ ] One partner cancels while waiting: the other keeps waiting until its own 90 s; no room with a stranger
-- [ ] Two different tag teams searching at once never mix (different `key=`)
-- [ ] Results screen after a tag match (same hang as other 2-cabinet matches on one PC?)
+- [ ] Two different tag teams searching at once never mix (different `key=` / codes)
+- [ ] Results screen after a completed tag 2v2
 - [ ] Partner recruit (急募) casual: two cabinets → `MATCH … recruit-casual pair`; who becomes leader (first listed = lower node id?); line_type PAIR_LEADER / PAIR_MEMBER in CheckCommunication
 - [ ] Partner recruit ranked (Class Match): same class pairs (`recruit-ranked … key=…|class`), different classes don't
 - [ ] Instant team (即席チーム) after a solo win: confirm no new server request is needed
-- [ ] Later: tag partners on **different** card servers (needs globally unique pilot ids, partner-invites.md §6 Step C)
 
 ## Results-hang fixes ([analysis/results-hang-fixes.md](analysis/results-hang-fixes.md) section 4)
 Box, fake cabinets + fake cards (2026-11-14): 7 unit tests (`HangFixTests`) + `server-sketch/loadtest/hangfix_e2e.py`
@@ -131,7 +129,7 @@ Fake cabinets + fake cards only, PC offline, no game / DLL run. Details: `analys
 ## Rolling fill, in-store wait, and Fes 1on1 (2026-11-14, patch commits 15–18)
 
 Docs: [`server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md`](server-sketch/ib-server/RESULTS-GAP-AND-ROLLING-FILL.md).
-Those commits, plus v10–v12, are in `online-matchmaking.patch` (now 24 commits) and as a standalone series in
+Those commits, plus v10–v12, are in `online-matchmaking.patch` (now 26 commits) and as a standalone series in
 `server-sketch/ib-server/results-gap-and-rolling-fill/`.
 
 * [x] Rolling fill timer (`FillTimerMode=Rolling`, `FillAfterSeconds` 30, `MaxFillWaitSeconds` 90): four cabinets
@@ -159,3 +157,18 @@ sections 5–10. 150 matchmaker unit tests pass.
 * [x] Fill timers shipped at 3 s (`FillAfterSeconds` / `MaxFillWaitSeconds` / in-store overrides).
 * [x] VPS matchmaker (`<VPS_IP>:28090`, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
   after local card servers pointed `MatchUrl` / `StunHost` at the VPS.
+
+## Cross-server online tag (2026-11-15)
+
+Docs: [`docs/SETUP.md`](docs/SETUP.md) B5 and `ONLINE_MATCHMAKING.md` inside the card-server patch
+(now 26 commits). 170 matchmaker unit tests pass; `cross_server_tag_e2e.py` 23/23.
+
+* [x] Shared partner codes live on the matchmaker (`/tag`). Each card server needs a distinct
+  `OnlineTag.ServerId`. Leave `InviteUrl` empty so it is derived from `MatchUrl` (`/match` → `/tag`).
+* [x] Team name / BGM / effect / background / emblem / name color saved on one card server is pushed to
+  `/tag` and pulled on the other (last-write-wins, matchmaker timestamp).
+* [x] `OnlineTag.TagStatus` default 1: with 0 the in-game オンラインタッグ panel stayed greyed and empty
+  even after LoadCard sent `tag_teams=1`.
+* [x] Real game 2026-11-15 5:57 AM Pacific Time: cab 1 (ServerId 1) and cab 2 (ServerId 2) searched
+  Online Tag with the shared code and were paired immediately; they then entered Mix Match as a duo
+  and waited for two more humans (expected under `NoCpuPartner`).

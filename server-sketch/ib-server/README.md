@@ -18,7 +18,7 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..rolling-fill-timer` of the local branch; 24 commits).
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..cross-server-tag` of the local branch, 26 commits; the published series uses `<VPS_IP>` in the VPS tools commit).
 The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
@@ -29,13 +29,13 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 24 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 26 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
 # or Linux server:
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
-# matchmaker unit tests (150 passing, including NoCpuPartner + v12 SoftWait full-room tests):
+# matchmaker unit tests (170 passing, including NoCpuPartner, v12 SoftWait, and cross-server online tag):
 dotnet test Tests/Matchmaking.Tests
 ```
 Copy your existing `ServerInfinite.db` next to the new build if you want to keep cards; the new migration
@@ -74,7 +74,9 @@ Online tag (play with a chosen partner from another shop) has its own section, `
 | key | default | meaning |
 |---|---|---|
 | `SendTagTeams` | `true` | send the card's tag teams in `LoadCard.MobileUserGroup.tag_teams` (36): the online-tag list |
-| `TagStatus` | `0` | `TagTeamGroup.tag_status` (meaning unknown): try 0; if the online-tag list stays empty in the game, try 1 |
+| `TagStatus` | `1` | `TagTeamGroup.tag_status`. Must be 1 for the in-game オンラインタッグ list to be selectable (0 leaves the panel greyed and empty) |
+| `ServerId` | (auto, 1–4000) | Distinct per card server when several share one matchmaker. Combined with the local card id to form a wire pilot id (`ServerId * 1_000_000 + local id`) |
+| `InviteUrl` | (derived) | Shared `/tag` store. Leave empty: derived from `MatchUrl` by rewriting a trailing `/match` to `/tag`. Set only to override |
 | `MaxTeams` | `20` | teams per card in that list |
 | `OneTimeInviteCode` | `true` | the partner's invitation code changes after a team is created with it |
 
@@ -125,6 +127,12 @@ don't: 28/28 checks. The re-enabled WebUI Teams tab was checked in headless Chro
 Real game 2026-11-13: see [`../../analysis/real-game-test-2026-11-13.md`](../../analysis/real-game-test-2026-11-13.md)
 (STUN bind fix, badge clamp, FillAfterSeconds 15, CPU stand-in experiment, results-screen hang).
 
+Online tag 2026-11-15 (`../loadtest/cross_server_tag_e2e.py`, two Linux card servers + shared `/tag`):
+create/join partner codes, colliding local card ids via wire ids, world-5 pair by shared code, team
+cosmetics last-write-wins: 23/23. Real game the same morning: two cabinets on different card servers
+picked オンラインタッグ (`TagStatus` 1) and were paired on the VPS matchmaker at 5:57 AM Pacific Time;
+the duo then queued Mix Match and waited for two more humans (`NoCpuPartner`).
+
 ## Not done / risks
 * Only tested with two cabinets on one PC; hole-punch / P2P between separate machines still untested.
 * Results screen hangs when a cabinet's partner is a game-made CPU. `NoCpuPartner` (default on) prevents that in 2v2 modes by waiting for 4 humans. A Fes 1on1 through the VPS matchmaker completed on 2026-11-15 04:24 PT. See [RESULTS-GAP-AND-ROLLING-FILL.md](RESULTS-GAP-AND-ROLLING-FILL.md).
@@ -132,5 +140,7 @@ Real game 2026-11-13: see [`../../analysis/real-game-test-2026-11-13.md`](../../
 * Matchmaker state is in memory (a restart drops waiting players); hidden MMR from the Python sketch is not ported
   (no reliable link between MMS am_id and card id yet) — ranked pairs by class + level only.
 * The client is trusted for rate/grade (only NaN/out-of-range rates are rejected).
-* Online tag / partner recruit are untested in the game; tags work only when both partners use the same card
-  server (pilot ids are per-server DB ids).
+* Cross-server online tag was confirmed in the real game on 2026-11-15 5:57 AM Pacific Time (two card
+  servers, shared `/tag` partner code, world-5 pair). A completed 4-human 2v2 after the duo forms is
+  still untested. Same-server WebUI invite (User ID + Invitation Code) and partner recruit still need a
+  real-game pass.

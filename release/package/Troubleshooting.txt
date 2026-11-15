@@ -73,10 +73,13 @@ KNOWN ISSUES (this is an early test build)
      (Under investigation.)
      Test options and tools that help narrow it down: see Results-Hang-Testing.txt.
      2v2 matches only form with 4 human players (NoCpuPartner, default on). Fes 1on1 needs 2.
-  2. Only tested with two cabinets on one Windows PC (2026-11-13). Matching between different homes /
-     over the internet / over a VPN is NOT tested yet - you are the testers. Please report what happens.
-  3. Online tag and partner recruit are built but UNTESTED in the real game. Both partners must use the
-     same card server (player IDs are per server).
+  2. Two cabinets on one Windows PC (2026-11-13), plus a Fes 1on1 and a cross-server online-tag pair
+     through a remote matchmaker (2026-11-15). Matching between different homes / over a VPN still
+     needs more testers. Please report what happens.
+  3. Online tag was confirmed in the real game on 2026-11-15, including partners on different card
+     servers that share one matchmaker (Create a code / Join on the Teams tab, then pick
+     オンラインタッグ on TEAM SELECT). After the duo forms, a 2v2 still needs two more humans.
+     Partner recruit (random partner) is less tested.
   4. The matchmaker keeps the waiting list in memory: restarting the server drops players who are searching.
   5. No relay: two players who both have strict/CGNAT internet may never connect - use a VPN.
   6. Ranked (class match) results are trusted from the game; ranked pairing is by class and level only.
