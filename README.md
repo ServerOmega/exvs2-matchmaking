@@ -13,6 +13,8 @@
 > **2v2 matches only form with at least 4 human players.** With `NoCpuPartner` (default on), 2v2 modes never fill empty seats with CPU partners. Fewer than 4 searchers wait until each cabinet's own matching timeout (~150 s), then return to practice mode and can search again. Fes 1on1 (world 20) still needs only 2 players.
 
 
+## 💬 [Join the Discord: guides, troubleshooting and updates](https://discord.gg/YENXAmjkYX)
+
 ## ➡️ [Setup guide: host a matchmaking server / connect your cabinet](docs/SETUP.md)
 
 ## 🔒 [Security: access modes, the `/tag` shared secret, log masking, known risks](docs/SECURITY.md)
