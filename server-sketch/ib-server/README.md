@@ -18,7 +18,7 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save` and `suit-stats-page` commits, 48 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47).
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save`, `suit-stats-page`, `rematch-cooldown` and `global-leaderboards` commits, 50 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47). Commit 49 is the `rematch-cooldown` commit — see [Rematch cooldown](#rematch-cooldown-and-room-end-log-branch-rematch-cooldown); also kept alone as [`rematch-cooldown.patch`](rematch-cooldown.patch). Commit 50 (branch `global-leaderboards`, not released yet) adds global Class / Mix leaderboards through the matchmaker and sends the IB Class rate tables — see [Global leaderboards](#global-leaderboards-branch-global-leaderboards); also kept alone as [`global-leaderboards.patch`](global-leaderboards.patch) (apply on top of commit 49).
 The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
@@ -29,15 +29,15 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 48 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 50 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
 # or Linux server:
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
-# matchmaker unit tests (423 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, and security):
+# matchmaker unit tests (457 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, security, rematch cooldown, and the leaderboard store):
 dotnet test Tests/Matchmaking.Tests
-# card-server DB tests (24: online battle results + card stats page; in-memory SQLite; on Windows drop -p:LinuxHost=true):
+# card-server DB tests (31: online battle results, card stats page, leaderboard snapshots + Class rate tables; in-memory SQLite; on Windows drop -p:LinuxHost=true):
 dotnet test Tests/Server.Tests -p:LinuxHost=true
 ```
 Copy your existing `ServerInfinite.db` next to the new build if you want to keep cards; the new migration
@@ -80,6 +80,108 @@ with (same access-code check as the battle history). No DB schema change and no 
 
 The game save has no per-suit death count, so there is no K/D column. Strings are English for now (other languages
 fall back to English).
+
+## Rematch cooldown and ROOM-END log (branch `rematch-cooldown`)
+[`rematch-cooldown.patch`](rematch-cooldown.patch) is one commit (`git am`) on top of the v0.5.0 series (matchmaker at
+`cdd7bf8`); it also applies on top of `online-results-save.patch`. Running on the LA matchmaker since 2026-11-16 7:47 AM PT.
+
+Two 21-01 failures on four cabs were exact rematches of the room before (same four node ids), made 0 s and 20 s after that
+room's first re-entry (~27 s after its results); every other solo rematch in the matchmaker's history formed 39 s or more
+after it and played. The cause is not confirmed; the cooldown keeps such rooms out of that window.
+
+| Setting (`OnlineMatching`) | Default | Effect |
+|---|---|---|
+| `RematchCooldownSeconds` | `30` | Nodes whose last room is the same humans-vs-humans room are not put together again in a room made only of solo entries until this many seconds after that room's first re-entry. Other cabs still match at once; rooms with a team entry (continued duo, after-CPU duo), earlier CPU / lone-team / pair rooms and pair worlds are unchanged. `0` = off. |
+| `LogRoomEnd` | `true` | `ROOM-END` per cab after a match (`reentry`, `reentry-new-node`, `cancel-after-match`, `cancel`, `timeout`; seconds since the match; when it fetched the room) and `ROOM-SUMMARY` once every cab is accounted for. Logging only. |
+| `RoomEndTimeoutSeconds` | `900` | A cab with no re-entry or cancel this long after its match is logged as `timeout`. |
+
+Log lines: `REMATCH-COOLDOWN defer <world> nodes=[..] room=N pairs=[a+b,..] left=Ns`, `REMATCH-COOLDOWN placed room=M ..`,
+`ROOM-END room=N <world> node=X serial=.. reason=.. +Ns since match fetched=+Ns|never order=k/n`,
+`ROOM-SUMMARY room=N <world> humans=4 spread=Ns ends: node:reason@+Ns(fetch ..) ..`. The MMS protocol carries no UDPHP / RTT
+result (that goes to the card server's CheckCommunication), so these lines are what the matchmaker can see.
+
+Tests: `Matchmaking.Tests` 435/435 (15 new; every older scenario also passes with the new defaults on), cross-server e2e
+108/108 (fake cabinets), and a replay of the LA matchmaker history: only the two failed rooms would have been held.
+
+## Global leaderboards (branch `global-leaderboards`)
+> Tested with unit tests and two local servers with fake cards (Linux). Not yet on a VPS and not yet tried by a
+> player.
+
+[`global-leaderboards.patch`](global-leaderboards.patch) is one commit (`git am`) on top of commit 49.
+
+**Boards.** There are three public boards per matchmaker: **Class solo**, **Class team** and **Mix**. Each row shows
+rank, name, class / rate (Class boards), wins, losses, win rate, matches and top suit. A card is ranked only after
+`MinMatches` (5) matches on that board.
+* Class boards are ordered by class, then rate.
+* Mix is ordered by the Wilson 95% lower bound of the win rate, so 5-0 does not beat 45-5.
+
+**How the data gets there.**
+* Each card server sends a full snapshot of its own cards to `POST {tag}/leaderboard/submit`. `{tag}` is the online
+  tag URL, with the same `X-Tag-Secret` header and the same rate limit.
+* Snapshots go out every 10 minutes and about 15 s after each saved online Class / Mix result.
+* A row holds:
+  * a salted one-way card key: HMAC-SHA256 of the local card id under a random salt that never leaves that card
+    server;
+  * the card name, or none when the player turned "Show my name" off;
+  * stats.
+
+  **Access codes, chip ids and boot tokens are never sent or stored.**
+* The matchmaker keeps rows per server id + key in `leaderboard.json`.
+* It ignores stale snapshots: not newer than the last one from that server, or older than 24 h.
+* It refuses or limits:
+
+  | What | Limit | Answer |
+  |---|---|---|
+  | Snapshots from the future | more than 10 min ahead | 400 |
+  | Snapshots per server | one per 20 s | 429 |
+  | Body size | 512 KiB | 413 |
+  | Rows | 2000 per snapshot, 5000 per server, 100000 in total | extra rows rejected |
+  | Servers | 1000 | 507 |
+
+* Rows a server has not refreshed for 60 days are dropped.
+
+**Where to see it.**
+* On the matchmaker: `http://<VPS_IP>:28090/leaderboard` is a public page, and `/leaderboard/data?board=class-solo|class-team|mix`
+  returns JSON with names and stats only, with no keys or server ids.
+  * In `PublicMatchmaker` mode this is the only non-`/match` / `/mms` / `/tag` path the internet may read, and it has
+    its own per-IP limit (60/min, burst 20).
+  * `Leaderboard.PublicPage=false` turns it off.
+* Card-server web UI:
+  * The front page gets a **Leaderboards** section with tabs (also `/GlobalLeaderboards`).
+  * View Card → Stats gets a **Show my name on the global leaderboards** switch. Card secrets go in a POST body only.
+
+**Settings** (`CardServerConfig.Leaderboard`). All are optional; an old `server.json` keeps working.
+* `Enabled` (true): master switch.
+* Card server: `SubmitEnabled` (true), `SubmitIntervalMinutes` (10), `SubmitAfterResultSeconds` (15),
+  `SubmitMinMatches` (1), `HideNamesByDefault` (false; true makes names opt-in), `ViewCacheSeconds` (30).
+* Matchmaker: `AcceptSubmissions` (true), `RegionName` ("", a label such as "LA" or "EU"), `MinMatches` (5),
+  `MaxRows` (100), `PublicPage` (true), `PublicRequestsPerMinute` / `PublicBurst` (60 / 20).
+* Abuse limits: `MinSubmitIntervalSeconds`, `MaxSubmitBytes`, `MaxEntriesPerSubmit`, `MaxEntriesPerServer`,
+  `MaxTotalEntries`, `MaxServers`, `EntryExpiryDays`, `MaxClockSkewMinutes`, `MaxSnapshotAgeHours`.
+
+**Class rate stuck at 1500 (+0).** On real cabinets every online Class result reported `before = after = 1500`,
+`+0` and grade 0, for wins and losses alike. The cabinet computes the rate itself.
+
+*Cause:* the `LoadClassMatch` reply filled only OverBoost-era fields, so an IB cabinet got initial rate 0 and no grade
+thresholds or class-change rates.
+
+*Fix:* this commit sends those tables (`OnlineMatching.ClassRateTables`, default on):
+* initial rate `ClassInitialRate` (1500);
+* 10 grade bands of `ClassGradeRateStep` (100) for each class, with 1500 in grade 5;
+* class-change rates.
+
+*Fallback:* if the rate still does not move, `OnlineMatching.ClassRateServerFallback` (default off) makes the card
+server apply `+10 × (1 + score / 25000)` for a win and `−10` for a loss.
+
+Both are untested on a cabinet.
+
+**Tests.**
+* `Server.Tests` 31/31 (7 new).
+* `Matchmaking.Tests` 457/457 (19 new).
+* Leaderboard e2e 44/44: two local servers, fake cards, results → boards, secret required, size / stale / bad-input
+  answers, hide / show name, and no access code / chip id / salt / card key in the matchmaker's public output, files
+  or logs.
+* Cross-server e2e 103/103.
 
 ## Configure
 In `Configurations/server.json` under `CardServerConfig` → `OnlineMatching`:

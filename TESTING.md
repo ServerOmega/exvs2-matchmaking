@@ -49,6 +49,13 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 - [x] Box: local Linux server + fake cards + headless browser: the Stats tab renders mode cards, totals, the suit table and recent battles; wrong access code / another card's chip id gets no data
 - [ ] Real game: View Card → Stats on a card with online Class and Mix matches; numbers match the matches played; mode drop-down and column sorting work
 
+## Global leaderboards + Class rate tables (branch `global-leaderboards`, 2026-11-16)
+- [x] Box: `Server.Tests` 31/31 (7 new), `Matchmaking.Tests` 457/457 (19 new); leaderboard e2e 44/44 and cross-server e2e 103/103 (two local servers, fake cards)
+- [ ] VPS: `/leaderboard` page loads from the internet; `/tag/leaderboard/submit` without the secret gets 401
+- [ ] Real game: after an online Class / Mix match the card shows up on the boards (about 15 s after the result, given `MinMatches`)
+- [ ] Real game: "Show my name" off hides the name on the boards; on shows it again
+- [ ] Real game: with `ClassRateTables` on, a Class win / loss moves the rate away from 1500 (log `rate A->B (+x)`); if it still shows +0, try `ClassRateServerFallback`
+
 ## Casual / shuffle
 - [ ] 4 solo cabinets start a 2v2 using the server-assigned teams (`group_id`)
 - [x] 1v1 / 2v1 rooms: the game plays them; the CPU partner is added by each cabinet locally (2026-11-13). `CpuStandInSeats` (server lists CPU seats) also accepted but changes nothing visible; off by default
