@@ -25,6 +25,18 @@ network allows. See [analysis/lm-and-online.md](analysis/lm-and-online.md).
 
 See [TESTING.md](TESTING.md) for the checklist of things that still need a real-game test.
 
+## Findings and cabinet exe patches (15–16 November 2026)
+
+Cabinet tests from these two days — start order, Class vs Mix queues, pair search, official
+cabinet behaviour, result saving, Class rate, and loading-phase disconnects — are in
+[docs/findings-2026-11-15-16.md](docs/findings-2026-11-15-16.md).
+
+A **draft** guide to the optional, privately distributed game-executable patches (pair
+keep-searching and free-play no-game-over) is in
+[docs/exe-patching-guide.md](docs/exe-patching-guide.md). Those patches, their scripts, and
+any game executable are **not** in this repository. You must already own a legitimate copy
+of the game.
+
 Research and prototypes for a **universal online matchmaking server** for arcade
 *Mobile Suit Gundam: Extreme Vs. 2 Infinite Boost* (EXVS2 IB).
 The goal is a large shared player pool, beyond the Live Monitor (LM) store model's
@@ -90,6 +102,8 @@ analysis/            Matchmaking research and the extracted MMS .proto
 notes/               Lab index (kept as written; some older notes are still missing)
 server-sketch/       Python prototype, C# sketch, coturn example, ib-server card-server patch
 docs/SETUP.md        Step-by-step: hosting the server, connecting a cabinet, troubleshooting
+docs/findings-2026-11-15-16.md  Cabinet-test findings from 15–16 November 2026
+docs/exe-patching-guide.md      DRAFT guide to optional private game exe patches
 tools/re/            Reverse-engineering helper scripts (no game binary, no caches)
 ```
 
