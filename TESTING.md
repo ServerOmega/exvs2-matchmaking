@@ -44,6 +44,11 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 - [ ] Real game: GP and player level / exp after an online match match what the results screen showed (`PersistOnlineProgress`); if not, set it to `false` and report
 - [ ] Real game: a result the cabinet re-sends (slow card server) logs `SaveVsmOnResult duplicate ignored` and adds no second history row
 
+## Card stats page (branch `suit-stats-page`, 2026-11-16)
+- [x] Box: `Tests/Server.Tests` 24/24 (9 new: owner-only access, empty card, offline + online split by mode and suit, other cards excluded, recent cap, legacy totals, no card secrets in the response); `Matchmaking.Tests` 423/423; cross-server e2e 103/103 (fake cards)
+- [x] Box: local Linux server + fake cards + headless browser: the Stats tab renders mode cards, totals, the suit table and recent battles; wrong access code / another card's chip id gets no data
+- [ ] Real game: View Card → Stats on a card with online Class and Mix matches; numbers match the matches played; mode drop-down and column sorting work
+
 ## Casual / shuffle
 - [ ] 4 solo cabinets start a 2v2 using the server-assigned teams (`group_id`)
 - [x] 1v1 / 2v1 rooms: the game plays them; the CPU partner is added by each cabinet locally (2026-11-13). `CpuStandInSeats` (server lists CPU seats) also accepted but changes nothing visible; off by default

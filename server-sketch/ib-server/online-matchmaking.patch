@@ -1,7 +1,7 @@
 From 46f2cf5f59c4858078e5c4d44e3d60923d7e15c1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/47] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/48] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2328,7 +2328,7 @@ index 0000000..3b81d9a
 From 59a8ceaba76b4a9c00743b17e00ecb7abdc89ed3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/47] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/48] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2366,7 +2366,7 @@ index da8f5ea..3029cb0 100644
 From c10e1826eccd88272306b1f2f71b16126626baba Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/47] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/48] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2598,7 +2598,7 @@ index bda49e2..a9c56ab 100644
 From 9295ed8babeb0d6e6651d2c6790f26f1b85b6061 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/47] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/48] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2657,7 +2657,7 @@ index 872d2b3..4ef4c22 100644
 From 060e241c15c6a6ede6d3c0a9e267f1122e06afdd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/47] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/48] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2685,7 +2685,7 @@ index 90e35a8..5fad533 100644
 From a6cdb59e736f93bbb922a85b637ee0b9888254fc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/47] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/48] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3036,7 +3036,7 @@ index 3b81d9a..b5b7cbb 100644
 From 679ae7d833acb2a84183f4844568c34134ac5adf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/47] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/48] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3110,7 +3110,7 @@ index 2a72884..65ee897 100644
 From 4ecdd01d345a51c3a5560a882691a6e492be2c03 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/47] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/48] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3601,7 +3601,7 @@ index 0000000..f7c4beb
 From e460603df7dd164e85b3ed5cd456994a819a2601 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/47] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/48] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4043,7 +4043,7 @@ index 27c6cb7..94b83aa 100644
 From dcf1e9cf9fddc8862ad034846ebf1a1fb167a3d5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/47] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/48] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4139,7 +4139,7 @@ index 3709ff7..f37e4f8 100644
 From 0e7ec86f35d24461efb049eb1ae6b3eae7015728 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/47] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/48] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4219,7 +4219,7 @@ index 65ee897..81e88cd 100644
 From bb1f1c02bf7ac969890bdb686027ca10f450e7c8 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/47] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/48] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4749,7 +4749,7 @@ index 0000000..a4934f4
 From 581a1ce4c65e127e280234709143633cc1c9b7ee Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/47] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/48] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5398,7 +5398,7 @@ index b5b7cbb..74e757b 100644
 From 79b9fb419883b19d6a806e5b0bd07ca083e36acc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/47] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/48] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5884,7 +5884,7 @@ index 0000000..310cbdf
 From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 10:09:10 -0800
-Subject: [PATCH 15/47] Results-hang timing (logging only, default on):
+Subject: [PATCH 15/48] Results-hang timing (logging only, default on):
  RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
  to its next request; LogResultGap config; 5 tests
 
@@ -6127,7 +6127,7 @@ index 0000000..e276bd6
 From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 22:31:13 -0800
-Subject: [PATCH 16/47] Rolling fill timer: FillAfter restarts on each new
+Subject: [PATCH 16/48] Rolling fill timer: FillAfter restarts on each new
  compatible joiner
 
 FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
@@ -6551,7 +6551,7 @@ index 9942148..f189356 100644
 From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:10:30 -0800
-Subject: [PATCH 17/47] In-store fill override: InStoreFillAfterSeconds (60) /
+Subject: [PATCH 17/48] In-store fill override: InStoreFillAfterSeconds (60) /
  InStoreMaxFillWaitSeconds (120) for worlds 15/16
 
 2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
@@ -6768,7 +6768,7 @@ index 0000000..1eb99cd
 From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:17:43 -0800
-Subject: [PATCH 18/47] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+Subject: [PATCH 18/48] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
  2-client rooms, group 0 vs 1, matched at once
 
 Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
@@ -7067,7 +7067,7 @@ index 0000000..d09631a
 From c4b215d7c66e8b483ec14dbff820408bf865ec66 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 01:51:07 -0800
-Subject: [PATCH 19/47] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
+Subject: [PATCH 19/48] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
  own room after the fill timer
 
 After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
@@ -7210,7 +7210,7 @@ index a4934f4..f4c137c 100644
 From 693f911920c2dddb364016c35dc7cb79e0166b60 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 02:22:56 -0800
-Subject: [PATCH 20/47] NoCpuPartner: 2v2 worlds only form full 4-human rooms
+Subject: [PATCH 20/48] NoCpuPartner: 2v2 worlds only form full 4-human rooms
  (no solo ever gets a CPU partner)
 
 3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
@@ -7622,7 +7622,7 @@ index 0000000..dc76a5d
 From 6a14d730bbf0b85d5cfa78ca382a3c596ec48a3b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:45 -0800
-Subject: [PATCH 21/47] SoftWait no longer delays a complete 4-human room
+Subject: [PATCH 21/48] SoftWait no longer delays a complete 4-human room
  (v12-softfull)
 
 Same-flag (veteran / win-rate) 4-human rooms are still preferred. If none
@@ -7935,7 +7935,7 @@ index dc76a5d..43a422b 100644
 From 89312727284e25d7aded05c668fefafd54ddf52f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:50 -0800
-Subject: [PATCH 22/47] Ship 3-second fill timers as the default (NoCpuPartner
+Subject: [PATCH 22/48] Ship 3-second fill timers as the default (NoCpuPartner
  stays on)
 
 FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
@@ -8002,7 +8002,7 @@ index 545589a..04d3865 100644
 From 905b051e1058ad4967bedd178e8ede04df7d7889 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:55 -0800
-Subject: [PATCH 23/47] Add tools/vps: deploy the matchmaker to a Linux VPS
+Subject: [PATCH 23/48] Add tools/vps: deploy the matchmaker to a Linux VPS
 
 deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
 worktree) and installs it as systemd service exvs2-mm. Existing VPS
@@ -8317,7 +8317,7 @@ index 0000000..294f8aa
 From ecdccc9195516a7a604ef7a7e374512f23dc9d17 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:32:01 -0800
-Subject: [PATCH 24/47] Disclaimer: 2v2 matches only form with at least 4 human
+Subject: [PATCH 24/48] Disclaimer: 2v2 matches only form with at least 4 human
  players
 
 In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
@@ -8367,7 +8367,7 @@ index 0b51d79..5aa47c4 100644
 From f683cd36ee6ce7bee58d6f0b32ba7c31d2620fea Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:41:12 -0800
-Subject: [PATCH 25/47] Redact the VPS public IP from tools/vps
+Subject: [PATCH 25/48] Redact the VPS public IP from tools/vps
 
 Replace <VPS_IP> with the <VPS_IP> placeholder in the VPS README.
 deploy.sh no longer defaults to a public address; pass --host <VPS_IP>.
@@ -8453,7 +8453,7 @@ index e453372..365c1cc 100755
 From e64c1ed0f1424c4b322cbd4e7023e0f77b399049 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 26/47] Add cross-server online tag with shared partner codes
+Subject: [PATCH 26/48] Add cross-server online tag with shared partner codes
  and settings sync
 
 Players on different card servers can form an online-tag team by exchanging
@@ -11501,7 +11501,7 @@ index b6da67c..7a7a67f 100644
 From b368843e325e0442b605002e7e821f9f19f60fe7 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 27/47] Default OnlineTag.TagStatus to 1 so the in-game list is
+Subject: [PATCH 27/48] Default OnlineTag.TagStatus to 1 so the in-game list is
  selectable
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11607,7 +11607,7 @@ index 0000000..8d2841f
 From fc5eb57f5ec924c26a85a662646eef4a84f92414 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 07:36:31 -0800
-Subject: [PATCH 28/47] Security hardening: public allowlist, /tag shared
+Subject: [PATCH 28/48] Security hardening: public allowlist, /tag shared
  secret, source binding, expiry, rate limits, masking
 
 - SecurityGuardMiddleware (Security.AccessMode): PublicMatchmaker answers
@@ -13616,7 +13616,7 @@ index 294f8aa..b2ab9da 100644
 From e11c91c17e0a35943dd16fa3c8a3b2b48be8a332 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 07:36:40 -0800
-Subject: [PATCH 29/47] WebUI single-card login, card secrets masked in request
+Subject: [PATCH 29/48] WebUI single-card login, card secrets masked in request
  paths, TAG-WAIT partner log
 
 - WebUI saves the access code together with its chip id (one card at a
@@ -14289,7 +14289,7 @@ index 574e323..e460e11 100644
 From 12ce6d80d04455aa6f3e97a318192dcb33688a49 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 10:09:15 -0800
-Subject: [PATCH 30/47] Online tag: renames reach the partner's server,
+Subject: [PATCH 30/48] Online tag: renames reach the partner's server,
  cross-server team delete, last-team delete
 
 Renames: every tag-team sync (LoadCard / card insert and the WebUI Teams
@@ -15101,7 +15101,7 @@ index a231388..46243aa 100644
 From 5e4c85cb9bf6751ae98c22e9681f2fa56a129135 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 11:27:25 -0800
-Subject: [PATCH 31/47] Friends: results-screen friend requests, block (NG)
+Subject: [PATCH 31/48] Friends: results-screen friend requests, block (NG)
  lists, Friends page
 
 RegisterOption (306) is now always answered (empty success) when
@@ -19225,7 +19225,7 @@ index fa24352..cc69dd6 100755
 From 16d6002ead5945c5d67c968398e484780751f8d3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 11:50:57 -0800
-Subject: [PATCH 32/47] Friends: last played from real match results; WebUI
+Subject: [PATCH 32/48] Friends: last played from real match results; WebUI
  survives a dropped startup fetch
 
 Last played: when a card server saves a versus result (SaveVsmOnResult
@@ -19836,7 +19836,7 @@ index 0000000..2d64ab7
 From 1c64b1cbce54b7a03b85aae290fb5db6221d7543 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 13:44:53 -0800
-Subject: [PATCH 33/47] WebUI: Teams tab next to Friends, friend rows link to
+Subject: [PATCH 33/48] WebUI: Teams tab next to Friends, friend rows link to
  their tag team, clickable Teams list
 
 - Card menu: Teams button next to Friends -> new /Cards/Teams/{chip} page
@@ -20846,7 +20846,7 @@ index 87af860..c9c4ce6 100644
 From 1500aecb51d0e8b992186b48604e76f5a9dce1e5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 13:57:34 -0800
-Subject: [PATCH 34/47] Matchmaker: continue-pair fix (VsCpu, 18 s) and fast
+Subject: [PATCH 34/48] Matchmaker: continue-pair fix (VsCpu, 18 s) and fast
  cancel for CPU-partner entries under NoCpuPartner
 
 4-cab tests 12:45 / 13:19 / 13:49 PT: two idle teammates are auto-continued by the game as a pair after the
@@ -21370,7 +21370,7 @@ index b2ab9da..d56992b 100644
 From 1f4de54715b5b36de3aa8f6b5e51425f0399f9b3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 14:24:06 -0800
-Subject: [PATCH 35/47] Matchmaker: duo vs 2 CPU stand-ins after 12s (AnyDuo
+Subject: [PATCH 35/48] Matchmaker: duo vs 2 CPU stand-ins after 12s (AnyDuo
  scope), place CPU-partner teams in full rooms
 
 - ContinuePairScope AnyDuo (default): any 2-human team entry gets the VsCpu room, not only recent
@@ -21912,7 +21912,7 @@ index d56992b..179a2d7 100644
 From ff9ec8bde4553afb8b34b8efee1e4e0b47e5e047 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 14:54:56 -0800
-Subject: [PATCH 36/47] Matchmaker: two lone solos vs 2 CPU stand-ins after
+Subject: [PATCH 36/48] Matchmaker: two lone solos vs 2 CPU stand-ins after
  12s, waiting first for a running CPU room's players
 
 22:32-22:47Z retest: after each 4-human room the winners continue as a duo (CPU room via ContinuePair), while
@@ -22339,7 +22339,7 @@ index 179a2d7..ba8286d 100644
 From 018be4deebf140dbae8eacaa1e15d17e1cd5e698 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 15:08:22 -0800
-Subject: [PATCH 37/47] WebUI: Friends show team names; Teams list and
+Subject: [PATCH 37/48] WebUI: Friends show team names; Teams list and
  dedicated Edit Team page
 
 - Friends table: Team column (was empty "Online tag") and the team name
@@ -23692,7 +23692,7 @@ index c9c4ce6..3260de7 100644
 From cee1645f881f543311b7724b22b45b7a48978665 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 15:45:17 -0800
-Subject: [PATCH 38/47] Matchmaker: class/free solo-team world links for the
+Subject: [PATCH 38/48] Matchmaker: class/free solo-team world links for the
  regroup wait, experimental cross-world team room
 
 Class match test 15:34-15:41 PT: the winners continued as a class-team duo (world 14) and got the
@@ -24018,7 +24018,7 @@ index ba8286d..bb13f61 100644
 From ddf3726226ae9965a141805deb7fd22e3d62a633 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 16:02:56 -0800
-Subject: [PATCH 39/47] Solo pair vs CPU: off by default (cabs stuck after it),
+Subject: [PATCH 39/48] Solo pair vs CPU: off by default (cabs stuck after it),
  add a 4-human regroup guard
 
 Mix test 15:44-15:58 PT on ff9ec8b: room 7 (cabs 2+4, two solo entries teamed vs 2 CPU
@@ -24281,7 +24281,7 @@ index bb13f61..30c20c1 100644
 From 49612e9403e308f984b8862f8be5329a31afb618 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 17:08:24 -0800
-Subject: [PATCH 40/47] Matchmaker: pair-keep-searching test (no CPU room for
+Subject: [PATCH 40/48] Matchmaker: pair-keep-searching test (no CPU room for
  waiting duos)
 
 Official cabinets keep a searching pair queued and let the game start a
@@ -25144,7 +25144,7 @@ index 0000000..fd1729d
 From 54cc909206bcb52f1f91d0b317dddb6f4988d6ac Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 00:44:07 -0800
-Subject: [PATCH 41/47] Matchmaker: quarantine cancelled pair nodes until a
+Subject: [PATCH 41/48] Matchmaker: quarantine cancelled pair nodes until a
  clean restart
 
 12:19-12:23 AM PT Nov 16: a searching duo (PCB_03 node 1258, partner 1260)
@@ -25709,7 +25709,7 @@ index 0000000..3d2aeb5
 From 058f09c3f2fa0bfe7dbb4bea69b6bda0dc8c6b44 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:42:30 -0800
-Subject: [PATCH 42/47] Matchmaker: restore ContinuePairSeconds to 18; document
+Subject: [PATCH 42/48] Matchmaker: restore ContinuePairSeconds to 18; document
  2026-11-16 findings
 
 18 s is the original continue-pair value and stays under the game's ~30 s
@@ -25950,7 +25950,7 @@ index fd1729d..fefda2b 100644
 From 8d951cb363df50b656722e51ebca733cb99395c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:47:00 -0800
-Subject: [PATCH 43/47] ONLINE_MATCHMAKING.md: long waits are queue timing, not
+Subject: [PATCH 43/48] ONLINE_MATCHMAKING.md: long waits are queue timing, not
  a slow matchmaker
 
 16 Nov 2026 1:31-1:43 AM PT class test: rooms formed instantly once four
@@ -26001,7 +26001,7 @@ index 3b930aa..2ed09c7 100644
 From cff6cccf1548e27e07974ffcd72fa75b84f39f1a Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:44:05 -0800
-Subject: [PATCH 44/47] Matchmaker: CPU room on the first poll for a pair back
+Subject: [PATCH 44/48] Matchmaker: CPU room on the first poll for a pair back
  from its CPU room
 
 Class match test 2026-11-16 1:27-1:31 AM PT (VPS 54cc909, ContinuePairSeconds 18):
@@ -26437,7 +26437,7 @@ index 193a263..43b298e 100644
 From 6330fc7720e09c8532672751e014313501b0b21a Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 02:06:17 -0800
-Subject: [PATCH 45/47] ONLINE_MATCHMAKING.md: document
+Subject: [PATCH 45/48] ONLINE_MATCHMAKING.md: document
  ContinuePairAfterCpuSeconds (default 2)
 
 A pair returning from its own humans-vs-CPU room is sent a CPU room on the
@@ -26539,7 +26539,7 @@ index fefda2b..2693be1 100644
 From 1478c7ff8523fd43b9f715ba858e3e62740ff397 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 02:07:23 -0800
-Subject: [PATCH 46/47] ONLINE_MATCHMAKING.md: ContinuePairAfterCpuSeconds
+Subject: [PATCH 46/48] ONLINE_MATCHMAKING.md: ContinuePairAfterCpuSeconds
  confirmed on cabinets
 
 16 November 2026 2:04:21 AM PT: a class-team pair got its first CPU room at
@@ -26599,7 +26599,7 @@ index e22dc50..34955a1 100644
 From 131000f7937793a31473e86d175e4f1656704105 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 05:02:59 -0800
-Subject: [PATCH 47/47] SaveVsmOnResult: store online battle results like
+Subject: [PATCH 47/48] SaveVsmOnResult: store online battle results like
  offline ones
 
 Online battles (Class, Mix, Fes) only stored the badge and the class
@@ -27700,6 +27700,1543 @@ index f0e7bee..2ec895c 100644
 +    public static readonly string OnlineOtherTeam = "OnlineOtherTeam";
  }
 \ No newline at end of file
+-- 
+2.47.3
+
+
+From b06899f5e316741a5f8c1a86622488c0a25a4799 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 07:31:45 -0800
+Subject: [PATCH 48/48] View Card: Stats tab (VS Mobile style per-card and
+ per-suit stats)
+
+New first tab on View Card, read-only, card owner only (same access code + chip id check as the battle history),
+GET ui/card-stats/get-card-stats/{accessCode}/{chipId}. No schema change; reads existing tables:
+- Win rate by mode: Total, Offline (solo + team), Class solo, Class team, Mix, Fes, Other (win/loss record).
+- Totals (damage, avg damage, kills, no-damage battles, EX burst damage, Class 10-win streaks) and burst types.
+- Sortable per-suit table: lifetime per-suit stats for "All modes", battle-history split for a single mode;
+  battles, wins, losses, win rate, avg damage dealt / taken, kills, kills per battle, no-damage battles,
+  EX burst damage, last played. Names / cost from wwwroot/data/MobileSuits.json.
+- Recent 30 battles: date, mode, suit, result, damage dealt / taken, time.
+The response carries no card identifiers. English strings (neutral + en-US resources; other languages fall back).
+
+Tests/Server.Tests: +9 (CardStatsTests), 24/24. Matchmaking.Tests 423/423, cross-server e2e 103/103.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  18 +-
+ .../Controllers/UI/CardStatsController.cs     |  22 ++
+ .../Handlers/UI/Stats/GetCardStatsCommand.cs  | 217 +++++++++++
+ Tests/Server.Tests/CardStatsTests.cs          | 344 ++++++++++++++++++
+ .../ViewCard/Filler/CardStatsFiller.cs        |  29 ++
+ .../Context/ViewCard/ViewCardContext.cs       |   2 +
+ .../Components/View/CardStatsComponent.razor  | 248 +++++++++++++
+ WebUIInfinite/Client/Pages/ViewCard.razor     |   5 +
+ WebUIInfinite/Client/Pages/ViewCard.razor.cs  |   2 +
+ WebUIInfinite/Client/Program.cs               |   1 +
+ .../Shared/Dto/Stats/CardStatsDto.cs          | 207 +++++++++++
+ .../Shared/Resources/Resource.en-US.resx      | 135 +++++++
+ WebUIInfinite/Shared/Resources/Resource.resx  | 135 +++++++
+ 13 files changed, 1364 insertions(+), 1 deletion(-)
+ create mode 100644 Server-Infinite/Controllers/UI/CardStatsController.cs
+ create mode 100644 Server-Infinite/Handlers/UI/Stats/GetCardStatsCommand.cs
+ create mode 100644 Tests/Server.Tests/CardStatsTests.cs
+ create mode 100644 WebUIInfinite/Client/Command/ViewCard/Filler/CardStatsFiller.cs
+ create mode 100644 WebUIInfinite/Client/Pages/Components/View/CardStatsComponent.razor
+ create mode 100644 WebUIInfinite/Shared/Dto/Stats/CardStatsDto.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 54a1d8b..1898c43 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -506,7 +506,7 @@ Waits come from the cabinets, not from a server delay:
+ Tips: everyone pick the same mode; wait until all four are on the search screen; use Mix Match for a
+ pair plus solos.
+ 
+-## Online battle results (2026-11-16, branch `online-results-save`) — DB tests only, not yet tried in-game
++## Online battle results (2026-11-16, branch `online-results-save`) — confirmed on cabinets (Class solo + Mix)
+ Before this, an online battle (`SaveVsmOnResult`) stored only the badge and, for Class Match, rate / class / grade /
+ class win-lose. Internet games never reached the card's battle history or stats. Now, with
+ `OnlineMatching.PersistOnlineBattleResults` (default `true`), the result goes through the same save commands as an
+@@ -540,6 +540,22 @@ Tests: `Tests/Server.Tests` (15, in-memory SQLite with all migrations): Class so
+ class persistence off, Mix solo / team, Fes, other modes, retry de-duplication (also after a restart), retry without
+ timestamp, two battles in one room, two cards in one battle, flag off, progress off, unknown session, failure rollback.
+ 
++## Card stats page (2026-11-16, branch `suit-stats-page`) — DB + local HTTP tests, not yet tried by a player
++View Card has a new first tab, **Stats** (VS Mobile style), read-only, for the logged-in card only (the same access
++code + chip id check as the battle history; `GET /ui/card-stats/get-card-stats/{accessCode}/{chipId}`; the response
++holds no card identifiers). No DB schema change; it reads the existing tables:
++
++| Section | Source |
++|---|---|
++| Win rate by mode: Total, Offline (solo + team), Class solo, Class team, Mix, Fes, Other | win/loss record (lifetime). Total is never shown below the sum of the modes; Other = online battles outside Class / Mix / Fes (private rooms...) |
++| Totals: damage, avg damage, kills, no-damage battles, EX burst damage, Class 10-win streaks; burst types | player statistics, burst-type statistics |
++| By mobile suit (sortable: name, cost, battles, wins, losses, win rate, avg damage, avg taken, kills, kills/battle, no-damage battles, EX burst damage, last played) | "All modes" = lifetime per-suit statistics (`MobileSuitPvPStatistic`); a single mode = counted from battle history (only battles with a stored history row; online ones from the online-results build on). Suit names / costs from `wwwroot/data/MobileSuits.json` |
++| Recent battles (30): date, mode, suit, result, damage dealt / taken, time | battle history |
++
++Deaths per suit are not stored by the game save (only kills), so there is no K/D column.
++Tests: `Tests/Server.Tests/CardStatsTests.cs` (9): owner-only access, empty card, offline + online split by mode and
++suit, other cards excluded, recent cap, legacy totals, no secrets in the response, mode keys, per-mode table rows.
++
+ ## Known gaps / risks
+ * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
+   (`BindMatchNodesToSourceIp` limits Check/Cancel to the IP that entered, but is not a login.)
+diff --git a/Server-Infinite/Controllers/UI/CardStatsController.cs b/Server-Infinite/Controllers/UI/CardStatsController.cs
+new file mode 100644
+index 0000000..e7fb80e
+--- /dev/null
++++ b/Server-Infinite/Controllers/UI/CardStatsController.cs
+@@ -0,0 +1,22 @@
++using MediatR;
++using Microsoft.AspNetCore.Mvc;
++using ServerInfinite.Handlers.UI.Stats;
++using WebUIInfinite.Shared.Dto.Stats;
++
++namespace ServerInfinite.Controllers.UI;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: View Card -> Stats. Read-only; the access code + chip id pair must match one card,
++/// exactly like ui/battle-history.
++/// </summary>
++[ApiController]
++[Route("ui/card-stats")]
++public class CardStatsController(IMediator mediator) : BaseController<CardStatsController>
++{
++    [HttpGet("get-card-stats/{accessCode}/{chipId}")]
++    [Produces("application/json")]
++    public async Task<ActionResult<CardStatsDto>> GetCardStats(string accessCode, string chipId)
++    {
++        return await mediator.Send(new GetCardStatsCommand(accessCode, chipId));
++    }
++}
+diff --git a/Server-Infinite/Handlers/UI/Stats/GetCardStatsCommand.cs b/Server-Infinite/Handlers/UI/Stats/GetCardStatsCommand.cs
+new file mode 100644
+index 0000000..a5b8454
+--- /dev/null
++++ b/Server-Infinite/Handlers/UI/Stats/GetCardStatsCommand.cs
+@@ -0,0 +1,217 @@
++using MediatR;
++using Microsoft.EntityFrameworkCore;
++using ServerInfinite.Persistence;
++using WebUIInfinite.Shared.Dto.Stats;
++using WebUIInfinite.Shared.Exception;
++
++namespace ServerInfinite.Handlers.UI.Stats;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: per-card stats page (View Card -> Stats). Read-only; same card check as the battle
++/// history page (access code + chip id must belong to the same card). Sources, all existing tables (no migration):
++/// win/loss record (per-mode lifetime counters), player statistics, per-suit PvP statistics, suit usage, burst
++/// statistics, and battle history + self rows (per-mode split per suit, recent battles).
++/// </summary>
++public record GetCardStatsCommand(string AccessCode, string ChipId) : IRequest<CardStatsDto>;
++
++public class GetCardStatsCommandHandler(ServerDbContext context) : IRequestHandler<GetCardStatsCommand, CardStatsDto>
++{
++    public async Task<CardStatsDto> Handle(GetCardStatsCommand request, CancellationToken cancellationToken)
++    {
++        if (string.IsNullOrEmpty(request.AccessCode) || string.IsNullOrEmpty(request.ChipId))
++        {
++            throw new InvalidCardDataException("Card Profile is invalid");
++        }
++
++        var cardId = await context.CardProfiles.AsNoTracking()
++            .Where(x => x.AccessCode == request.AccessCode && x.ChipId == request.ChipId)
++            .Select(x => (int?)x.Id)
++            .FirstOrDefaultAsync(cancellationToken);
++
++        if (cardId is null)
++        {
++            throw new InvalidCardDataException("Card Profile is invalid");
++        }
++
++        return await Build(context, cardId.Value, cancellationToken);
++    }
++
++    public static async Task<CardStatsDto> Build(ServerDbContext context, int cardId, CancellationToken ct = default)
++    {
++        var dto = new CardStatsDto();
++
++        // ---- per-mode lifetime win/loss ----
++        var wl = await context.WinLossRecordDbSet.AsNoTracking().FirstOrDefaultAsync(x => x.CardId == cardId, ct);
++        if (wl is not null)
++        {
++            var offlineWin = wl.ShuffleWin + wl.TeamWin;
++            var offlineLose = wl.ShuffleLose + wl.TeamLose;
++            var knownWin = offlineWin + wl.ClassSoloWin + wl.ClassTeamWin + wl.FreeWin + wl.FesWin;
++            var knownLose = offlineLose + wl.ClassSoloLose + wl.ClassTeamLose + wl.FreeLose + wl.FesLose;
++            // Class win/loss is counted by the class-match persistence; older data may have per-mode counters that
++            // were never added to the totals, so the total is never shown below the sum of the modes.
++            var totalWin = Math.Max(wl.TotalWin, knownWin);
++            var totalLose = Math.Max(wl.TotalLose, knownLose);
++            dto.ModeRecords.Add(Rec(StatsModes.Total, totalWin, totalLose));
++            dto.ModeRecords.Add(Rec(StatsModes.Offline, offlineWin, offlineLose));
++            dto.ModeRecords.Add(Rec(StatsModes.OfflineSolo, wl.ShuffleWin, wl.ShuffleLose));
++            dto.ModeRecords.Add(Rec(StatsModes.OfflineTeam, wl.TeamWin, wl.TeamLose));
++            dto.ModeRecords.Add(Rec(StatsModes.ClassSolo, wl.ClassSoloWin, wl.ClassSoloLose));
++            dto.ModeRecords.Add(Rec(StatsModes.ClassTeam, wl.ClassTeamWin, wl.ClassTeamLose));
++            dto.ModeRecords.Add(Rec(StatsModes.Mix, wl.FreeWin, wl.FreeLose));
++            dto.ModeRecords.Add(Rec(StatsModes.Fes, wl.FesWin, wl.FesLose));
++            dto.ModeRecords.Add(Rec(StatsModes.Other, totalWin - knownWin, totalLose - knownLose));
++        }
++
++        // ---- lifetime totals ----
++        var ps = await context.PlayerBattleStatisticDbSet.AsNoTracking().FirstOrDefaultAsync(x => x.CardId == cardId, ct);
++        if (ps is not null)
++        {
++            dto.Totals = new CareerTotalsDto
++            {
++                GivenDamage = ps.TotalGivenDamage,
++                EnemyDefeated = ps.TotalEnemyDefeatedCount,
++                NoDamageBattles = ps.TotalNoDamageBattleCount,
++                ExBurstDamage = ps.TotalExBurstDamage,
++                ClassTenWinStreaks = ps.TotalClassMatchTenConsecutiveWinCount,
++            };
++        }
++
++        // ---- burst types ----
++        dto.Bursts = (await context.PlayerBurstStatisticsDbSet.AsNoTracking()
++                .Where(x => x.CardId == cardId)
++                .Select(x => new { x.BurstType, x.TotalBattle, x.TotalWin })
++                .ToListAsync(ct))
++            .GroupBy(x => x.BurstType)
++            .Select(g => new BurstStatsDto
++            {
++                BurstType = g.Key,
++                Battles = (uint)g.Sum(x => (long)x.TotalBattle),
++                Wins = (uint)g.Sum(x => (long)x.TotalWin),
++            })
++            .OrderBy(x => x.BurstType)
++            .ToList();
++
++        // ---- per suit: lifetime PvP stats ----
++        var suits = new Dictionary<uint, SuitStatsDto>();
++        SuitStatsDto Suit(uint id)
++        {
++            if (!suits.TryGetValue(id, out var s))
++            {
++                s = new SuitStatsDto { MobileSuitId = id };
++                suits[id] = s;
++            }
++            return s;
++        }
++
++        var pvp = await context.MobileSuitPvPStatisticDbSet.AsNoTracking()
++            .Where(x => x.CardId == cardId)
++            .ToListAsync(ct);
++        foreach (var row in pvp)
++        {
++            var s = Suit(row.MstMobileSuitId);
++            s.Battles += row.TotalBattleCount;
++            s.Wins += row.TotalWinCount;
++            s.GivenDamage += row.TotalGivenDamage;
++            s.EnemyDefeated += row.TotalEnemyDefeatedCount;
++            s.NoDamageBattles += row.TotalNoDamageBattleCount;
++            s.ExBurstDamage += row.TotalExBurstDamage;
++            s.ClassTenWinStreaks += row.TotalClassMatchTenConsecutiveWinCount;
++        }
++
++        // ---- battle history (per-mode split + recent) ----
++        var histories = await context.BattleHistoryDbSet.AsNoTracking()
++            .Where(x => x.CardId == cardId)
++            .Select(x => new
++            {
++                x.Id, x.BattleMode, x.IsWin, x.PlayedAt, x.GivenDamage, x.TakenDamage, x.ElapsedSeconds, x.Score,
++                x.BurstType,
++            })
++            .ToListAsync(ct);
++        var historyIds = histories.Select(x => x.Id).ToList();
++        var selfSuitByHistory = new Dictionary<int, uint>();
++        foreach (var chunk in historyIds.Chunk(500))
++        {
++            var ids = chunk.ToList();
++            var selves = await context.BattleSelfDbSet.AsNoTracking()
++                .Where(x => ids.Contains(x.BattleHistoryId))
++                .Select(x => new { x.BattleHistoryId, x.CardId, x.MobileSuitId })
++                .ToListAsync(ct);
++            foreach (var self in selves.OrderBy(x => x.CardId == (uint)cardId ? 0 : 1))
++            {
++                selfSuitByHistory.TryAdd(self.BattleHistoryId, self.MobileSuitId);
++            }
++        }
++
++        dto.HistoryBattleCount = histories.Count;
++        foreach (var h in histories)
++        {
++            if (!selfSuitByHistory.TryGetValue(h.Id, out var suitId) || suitId == 0)
++            {
++                continue;
++            }
++            var mode = StatsModes.FromBattleMode(h.BattleMode);
++            var s = Suit(suitId);
++            var m = s.Modes.FirstOrDefault(x => x.Mode == mode);
++            if (m is null)
++            {
++                m = new SuitModeStatsDto { Mode = mode };
++                s.Modes.Add(m);
++            }
++            m.Battles++;
++            if (h.IsWin) m.Wins++;
++            m.GivenDamage += h.GivenDamage;
++            m.TakenDamage += h.TakenDamage;
++            if (h.PlayedAt > s.LastPlayedAt) s.LastPlayedAt = h.PlayedAt;
++        }
++
++        dto.RecentBattles = histories
++            .OrderByDescending(x => x.PlayedAt)
++            .ThenByDescending(x => x.Id)
++            .Take(CardStatsDto.RecentLimit)
++            .Select(h => new RecentBattleDto
++            {
++                PlayedAt = h.PlayedAt,
++                Mode = StatsModes.FromBattleMode(h.BattleMode),
++                MobileSuitId = selfSuitByHistory.GetValueOrDefault(h.Id),
++                IsWin = h.IsWin,
++                GivenDamage = h.GivenDamage,
++                TakenDamage = h.TakenDamage,
++                ElapsedSeconds = h.ElapsedSeconds,
++                Score = h.Score,
++                BurstType = h.BurstType,
++            })
++            .ToList();
++
++        // ---- times used (only for suits that have PvP data) ----
++        if (suits.Count > 0)
++        {
++            var usage = await context.MobileSuitUsageDbSet.AsNoTracking()
++                .Where(x => x.CardId == cardId)
++                .Select(x => new { x.MstMobileSuitId, x.MsUsedNum })
++                .ToListAsync(ct);
++            foreach (var u in usage)
++            {
++                if (suits.TryGetValue(u.MstMobileSuitId, out var s))
++                {
++                    s.TimesUsed += u.MsUsedNum;
++                }
++            }
++        }
++
++        foreach (var s in suits.Values)
++        {
++            s.Modes = s.Modes.OrderBy(x => Array.IndexOf(StatsModes.BattleModes, x.Mode)).ToList();
++        }
++
++        dto.Suits = suits.Values
++            .OrderByDescending(x => x.Battles)
++            .ThenByDescending(x => x.Modes.Sum(m => m.Battles))
++            .ThenBy(x => x.MobileSuitId)
++            .ToList();
++
++        return dto;
++    }
++
++    private static ModeRecordDto Rec(string mode, uint win, uint lose) => new() { Mode = mode, Wins = win, Losses = lose };
++}
+diff --git a/Tests/Server.Tests/CardStatsTests.cs b/Tests/Server.Tests/CardStatsTests.cs
+new file mode 100644
+index 0000000..23c3c65
+--- /dev/null
++++ b/Tests/Server.Tests/CardStatsTests.cs
+@@ -0,0 +1,344 @@
++using System.Text.Json;
++using Microsoft.Data.Sqlite;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Options;
++using nue.protocol.exvs;
++using ServerInfinite.Handlers.Game.Online;
++using ServerInfinite.Handlers.UI.Stats;
++using ServerInfinite.Models.Cards;
++using ServerInfinite.Models.Cards.Battle.History;
++using ServerInfinite.Models.Config;
++using ServerInfinite.Persistence;
++using WebUIInfinite.Shared.Dto.Stats;
++using WebUIInfinite.Shared.Exception;
++using Xunit;
++
++namespace Server.Tests;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: View Card -> Stats (GetCardStatsCommand). Read-only, card owner only (access code +
++/// chip id), per-mode summary, per-suit table with a per-mode split, recent battles.
++/// </summary>
++public sealed class CardStatsTests : IDisposable
++{
++    private readonly SqliteConnection _connection;
++    private readonly ServerDbContext _db;
++
++    public CardStatsTests()
++    {
++        OnlineBattleResults.ResetForTests();
++        _connection = new SqliteConnection("DataSource=:memory:");
++        _connection.Open();
++        _db = NewContext();
++        _db.Database.Migrate();
++    }
++
++    public void Dispose()
++    {
++        _db.Dispose();
++        _connection.Dispose();
++    }
++
++    private ServerDbContext NewContext() =>
++        new(new DbContextOptionsBuilder<ServerDbContext>().UseSqlite(_connection).Options);
++
++    private CardProfile NewCard(string session, string name = "PILOT")
++    {
++        var card = new CardProfile
++        {
++            AccessCode = "ac-" + session,
++            ChipId = "chip-" + session,
++            SessionId = session,
++            UserName = name,
++            IsNewCard = false,
++            DistinctTeamFormationToken = Guid.NewGuid().ToString("n")[..16],
++        };
++        _db.CardProfiles.Add(card);
++        _db.SaveChangesAsync().GetAwaiter().GetResult();
++        return card;
++    }
++
++    private void SendOnline(CardProfile card, OnlineMatchingMode mode, bool shuffle, bool win, uint suit, uint roomId,
++        ulong playedAt, uint given = 900, uint taken = 1500, uint burstType = 1)
++    {
++        var result = new Request.SaveVsmOnResult.PlayResultGroup
++        {
++            PlayedAt = playedAt, WinFlag = win, VsElapsedTime = 125, StageId = 5,
++            MstMobileSuitId = suit, SkillPointMobileSuitId = suit, ResultScore = 1000, ResultOrder = 1,
++            LevelId = 3, PlayerLevelId = 3, LevelExp = 10, Gp = 100,
++            GivenDamage = given, TakenDamage = taken, Burst = 1, BurstType = burstType, BurstGivenDamage = 100,
++            ComboGivenDamage = 200, ConsecutiveWin = win ? 1u : 0u, RoomId = roomId, OnlineMatchingMode = mode, BadgeId = 1,
++            Partner = new AdversaryManGroup { PilotId = 0, CpuFlag = 1, MstMobileSuitId = 402 },
++        };
++        result.Foes.Add(new AdversaryManGroup { PilotId = 3_000_456, CpuFlag = 0, MstMobileSuitId = 332, DownNum = 1 });
++        result.Foes.Add(new AdversaryManGroup { PilotId = 0, CpuFlag = 1, MstMobileSuitId = 333, DownNum = 1 });
++        if (mode == OnlineMatchingMode.OmmClass)
++        {
++            result.class_match_result = new Request.SaveVsmOnResult.PlayResultGroup.ClassMatchResult
++            {
++                ClassIdSolo = 2, ClassIdTeam = 2, BeforeRate = 1500f, AfterRate = 1500f, ObtainedRate = 0f, GradeId = 3,
++            };
++        }
++        var request = new Request
++        {
++            Type = MethodType.MthdSaveVsmOnResult,
++            RequestId = "test",
++            save_vsm_on_result = new Request.SaveVsmOnResult
++            {
++                PilotId = (uint)card.Id, SessionId = card.SessionId, ShuffleFlag = shuffle, Result = result,
++            },
++        };
++        var config = new CardServerConfig { LogNetworkReport = false };
++        using var db = NewContext();
++        var handler = new SaveVsmOnResultCommandHandler(NullLogger<SaveVsmOnResultCommandHandler>.Instance, db,
++            Options.Create(config));
++        var response = handler.Handle(new SaveVsmOnResultCommand(request), CancellationToken.None).GetAwaiter().GetResult();
++        Assert.Equal(Error.Success, response.Error);
++    }
++
++    /// <summary>An offline battle as SaveVsmResult would leave it: lifetime counters + a history row.</summary>
++    private void AddOffline(CardProfile card, bool win, uint suit, ulong playedAt, bool team = false)
++    {
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        if (win) wl.TotalWin++; else wl.TotalLose++;
++        if (team) { if (win) wl.TeamWin++; else wl.TeamLose++; }
++        else { if (win) wl.ShuffleWin++; else wl.ShuffleLose++; }
++        var pvp = db.MobileSuitPvPStatisticDbSet.FirstOrDefault(x => x.CardId == card.Id && x.MstMobileSuitId == suit);
++        if (pvp is null)
++        {
++            pvp = new ServerInfinite.Models.Cards.MobileSuit.MobileSuitPvPStatistic { CardId = card.Id, MstMobileSuitId = suit };
++            db.MobileSuitPvPStatisticDbSet.Add(pvp);
++        }
++        pvp.TotalBattleCount++;
++        if (win) pvp.TotalWinCount++;
++        pvp.TotalGivenDamage += 600;
++        pvp.TotalEnemyDefeatedCount += 2;
++        db.BattleHistoryDbSet.Add(new BattleHistory
++        {
++            CardId = card.Id, BattleMode = team ? "OfflineTeam" : "OfflineSolo", IsWin = win, PlayedAt = playedAt,
++            ElapsedSeconds = 90, GivenDamage = 600, TakenDamage = 300,
++            BattleSelf = new BattleSelf { CardId = (uint)card.Id, MobileSuitId = suit, PlayerName = card.UserName },
++        });
++        db.SaveChangesAsync().GetAwaiter().GetResult();
++    }
++
++    private CardStatsDto Stats(CardProfile card)
++    {
++        using var db = NewContext();
++        return new GetCardStatsCommandHandler(db)
++            .Handle(new GetCardStatsCommand(card.AccessCode, card.ChipId), CancellationToken.None).GetAwaiter().GetResult();
++    }
++
++    private static ModeRecordDto Mode(CardStatsDto s, string mode) => s.ModeRecords.Single(x => x.Mode == mode);
++
++    [Fact]
++    public void OnlyTheMatchingAccessCodeAndChipIdGetTheStats()
++    {
++        var a = NewCard("a");
++        var b = NewCard("b");
++        using var db = NewContext();
++        var handler = new GetCardStatsCommandHandler(db);
++        Task<CardStatsDto> Get(string ac, string chip) =>
++            handler.Handle(new GetCardStatsCommand(ac, chip), CancellationToken.None);
++
++        Assert.ThrowsAsync<InvalidCardDataException>(() => Get("wrong", a.ChipId)).GetAwaiter().GetResult();
++        Assert.ThrowsAsync<InvalidCardDataException>(() => Get(a.AccessCode, b.ChipId)).GetAwaiter().GetResult();
++        Assert.ThrowsAsync<InvalidCardDataException>(() => Get("", "")).GetAwaiter().GetResult();
++        Assert.NotNull(Get(a.AccessCode, a.ChipId).GetAwaiter().GetResult());
++    }
++
++    [Fact]
++    public void NewCardHasEmptyStats()
++    {
++        var s = Stats(NewCard("new"));
++        Assert.Equal(0u, Mode(s, StatsModes.Total).Battles);
++        Assert.Empty(s.Suits);
++        Assert.Empty(s.RecentBattles);
++        Assert.Equal(0, s.HistoryBattleCount);
++    }
++
++    [Fact]
++    public void OnlineAndOfflineBattlesAreSplitByModeAndSuit()
++    {
++        var card = NewCard("mix");
++        AddOffline(card, win: true, suit: 100, playedAt: 1_794_700_000);
++        AddOffline(card, win: false, suit: 100, playedAt: 1_794_700_100, team: true);
++        SendOnline(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true, suit: 313, roomId: 15, playedAt: 1_794_730_000);
++        SendOnline(card, OnlineMatchingMode.OmmFree, shuffle: true, win: false, suit: 313, roomId: 16, playedAt: 1_794_730_500, given: 500, taken: 2000);
++        SendOnline(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true, suit: 401, roomId: 17, playedAt: 1_794_731_000, burstType: 2);
++
++        var s = Stats(card);
++
++        Assert.Equal((3u, 2u), (Mode(s, StatsModes.Total).Wins, Mode(s, StatsModes.Total).Losses));
++        Assert.Equal((1u, 1u), (Mode(s, StatsModes.Offline).Wins, Mode(s, StatsModes.Offline).Losses));
++        Assert.Equal((1u, 0u), (Mode(s, StatsModes.OfflineSolo).Wins, Mode(s, StatsModes.OfflineSolo).Losses));
++        Assert.Equal((0u, 1u), (Mode(s, StatsModes.OfflineTeam).Wins, Mode(s, StatsModes.OfflineTeam).Losses));
++        Assert.Equal((1u, 0u), (Mode(s, StatsModes.ClassSolo).Wins, Mode(s, StatsModes.ClassSolo).Losses));
++        Assert.Equal(0u, Mode(s, StatsModes.ClassTeam).Battles);
++        Assert.Equal((1u, 1u), (Mode(s, StatsModes.Mix).Wins, Mode(s, StatsModes.Mix).Losses));
++        Assert.Equal(0u, Mode(s, StatsModes.Other).Battles);
++        Assert.Equal(60.0, Mode(s, StatsModes.Total).WinRate, 3);
++
++        Assert.Equal(5, s.HistoryBattleCount);
++        Assert.Equal(new uint[] { 100, 313, 401 }, s.Suits.Select(x => x.MobileSuitId).OrderBy(x => x).ToArray());
++
++        var gx = s.Suits.Single(x => x.MobileSuitId == 313);
++        Assert.Equal(2u, gx.Battles);
++        Assert.Equal(1u, gx.Wins);
++        Assert.Equal(1u, gx.Losses);
++        Assert.Equal(1400ul, gx.GivenDamage);
++        Assert.Equal(700.0, gx.AverageDamage, 3);
++        Assert.Equal(2u, gx.TimesUsed);
++        Assert.Equal(1_794_730_500ul, gx.LastPlayedAt);
++        Assert.Equal(new[] { StatsModes.ClassSolo, StatsModes.Mix }, gx.Modes.Select(m => m.Mode).ToArray());
++        var gxMix = gx.Modes.Single(m => m.Mode == StatsModes.Mix);
++        Assert.Equal((1u, 0u, 500ul, 2000ul), (gxMix.Battles, gxMix.Wins, gxMix.GivenDamage, gxMix.TakenDamage));
++
++        var offlineSuit = s.Suits.Single(x => x.MobileSuitId == 100);
++        Assert.Equal((2u, 1u), (offlineSuit.Battles, offlineSuit.Wins));
++        Assert.Equal(new[] { StatsModes.OfflineSolo, StatsModes.OfflineTeam }, offlineSuit.Modes.Select(m => m.Mode).ToArray());
++
++        Assert.Equal(5, s.RecentBattles.Count);
++        Assert.Equal(new ulong[] { 1_794_731_000, 1_794_730_500, 1_794_730_000, 1_794_700_100, 1_794_700_000 },
++            s.RecentBattles.Select(x => x.PlayedAt).ToArray());
++        Assert.Equal((StatsModes.Mix, 401u, true), (s.RecentBattles[0].Mode, s.RecentBattles[0].MobileSuitId, s.RecentBattles[0].IsWin));
++        Assert.Equal(StatsModes.ClassSolo, s.RecentBattles[2].Mode);
++        Assert.Equal(StatsModes.OfflineTeam, s.RecentBattles[3].Mode);
++
++        Assert.Equal(2300ul, s.Totals.GivenDamage);   // the three online battles (900 + 500 + 900) (offline rows were seeded per-suit only)
++        Assert.Contains(s.Bursts, b => b.BurstType == 2 && b.Battles == 1 && b.Wins == 1);
++        Assert.Contains(s.Bursts, b => b.BurstType == 1 && b.Battles == 2 && b.Wins == 1);
++    }
++
++    [Fact]
++    public void OtherCardsBattlesAreNotIncluded()
++    {
++        var a = NewCard("own");
++        var b = NewCard("other");
++        SendOnline(a, OnlineMatchingMode.OmmFree, shuffle: true, win: true, suit: 313, roomId: 1, playedAt: 1_794_730_000);
++        SendOnline(b, OnlineMatchingMode.OmmFree, shuffle: true, win: false, suit: 401, roomId: 1, playedAt: 1_794_730_000);
++        AddOffline(b, win: true, suit: 100, playedAt: 1_794_700_000);
++
++        var s = Stats(a);
++        Assert.Equal(1u, Mode(s, StatsModes.Total).Battles);
++        Assert.Equal(new uint[] { 313 }, s.Suits.Select(x => x.MobileSuitId).ToArray());
++        Assert.Single(s.RecentBattles);
++        Assert.Equal(1, s.HistoryBattleCount);
++    }
++
++    [Fact]
++    public void RecentBattlesAreCapped()
++    {
++        var card = NewCard("many");
++        for (var i = 0; i < CardStatsDto.RecentLimit + 5; i++)
++        {
++            AddOffline(card, win: i % 2 == 0, suit: 100, playedAt: 1_794_700_000ul + (ulong)i);
++        }
++        var s = Stats(card);
++        Assert.Equal(CardStatsDto.RecentLimit, s.RecentBattles.Count);
++        Assert.Equal(1_794_700_000ul + CardStatsDto.RecentLimit + 4, s.RecentBattles[0].PlayedAt);
++        Assert.Equal((uint)CardStatsDto.RecentLimit + 5, s.Suits.Single().Modes.Single().Battles);
++    }
++
++    [Fact]
++    public void TotalIsNeverBelowTheSumOfTheModes()
++    {
++        // older data: class wins counted by the class persistence without the total
++        var card = NewCard("legacy");
++        using (var db = NewContext())
++        {
++            var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++            wl.ClassSoloWin = 4;
++            wl.ClassSoloLose = 2;
++            wl.ShuffleWin = 1;
++            wl.TotalWin = 1;
++            db.SaveChangesAsync().GetAwaiter().GetResult();
++        }
++        var s = Stats(card);
++        Assert.Equal((5u, 2u), (Mode(s, StatsModes.Total).Wins, Mode(s, StatsModes.Total).Losses));
++        Assert.Equal(0u, Mode(s, StatsModes.Other).Battles);
++
++        using (var db = NewContext())
++        {
++            var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++            wl.TotalWin = 8; // e.g. private-room online battles: only in the total
++            wl.TotalLose = 2;
++            db.SaveChangesAsync().GetAwaiter().GetResult();
++        }
++        s = Stats(card);
++        Assert.Equal((3u, 0u), (Mode(s, StatsModes.Other).Wins, Mode(s, StatsModes.Other).Losses));
++    }
++
++    [Fact]
++    public void ResponseCarriesNoCardSecrets()
++    {
++        var card = NewCard("secret-xyz");
++        SendOnline(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true, suit: 313, roomId: 3, playedAt: 1_794_730_000);
++        var json = JsonSerializer.Serialize(Stats(card));
++        Assert.DoesNotContain(card.ChipId, json);
++        Assert.DoesNotContain(card.AccessCode, json);
++        Assert.DoesNotContain(card.SessionId, json);
++    }
++
++    [Fact]
++    public void BattleModeKeys()
++    {
++        Assert.Equal(StatsModes.OfflineSolo, StatsModes.FromBattleMode("OfflineSolo"));
++        Assert.Equal(StatsModes.OfflineTeam, StatsModes.FromBattleMode("OfflineTeam"));
++        Assert.Equal(StatsModes.ClassSolo, StatsModes.FromBattleMode("ClassMatchSolo"));
++        Assert.Equal(StatsModes.ClassTeam, StatsModes.FromBattleMode("ClassMatchTeam"));
++        Assert.Equal(StatsModes.Mix, StatsModes.FromBattleMode("FreeSolo"));
++        Assert.Equal(StatsModes.Mix, StatsModes.FromBattleMode("FreeTeam"));
++        Assert.Equal(StatsModes.Fes, StatsModes.FromBattleMode("FesSolo"));
++        Assert.Equal(StatsModes.Fes, StatsModes.FromBattleMode("FesTeam"));
++        Assert.Equal(StatsModes.Other, StatsModes.FromBattleMode("OnlineOtherSolo"));
++        Assert.Equal(StatsModes.Other, StatsModes.FromBattleMode("Triad"));
++        Assert.Equal(StatsModes.Other, StatsModes.FromBattleMode(null));
++    }
++
++    [Fact]
++    public void SuitTableRowsPerModeFilter()
++    {
++        var suits = new List<SuitStatsDto>
++        {
++            new()
++            {
++                MobileSuitId = 1, Battles = 10, Wins = 6, GivenDamage = 8000, EnemyDefeated = 15, TimesUsed = 12,
++                Modes =
++                {
++                    new SuitModeStatsDto { Mode = StatsModes.OfflineSolo, Battles = 2, Wins = 1, GivenDamage = 1000, TakenDamage = 800 },
++                    new SuitModeStatsDto { Mode = StatsModes.OfflineTeam, Battles = 2, Wins = 2, GivenDamage = 1400, TakenDamage = 400 },
++                    new SuitModeStatsDto { Mode = StatsModes.Mix, Battles = 1, Wins = 0, GivenDamage = 300, TakenDamage = 1800 },
++                },
++            },
++            new() { MobileSuitId = 2, Battles = 3, Wins = 3, GivenDamage = 3000 },
++            new() { MobileSuitId = 3 },
++        };
++
++        var all = SuitStatsRow.Build(suits, SuitStatsRow.AllModes);
++        Assert.Equal(new uint[] { 1, 2 }, all.Select(r => r.MobileSuitId).ToArray()); // no empty rows
++        var r1 = all[0];
++        Assert.Equal((10u, 6u, 4u), (r1.Battles, r1.Wins, r1.Losses));
++        Assert.Equal(60.0, r1.WinRate, 3);
++        Assert.Equal(800.0, r1.AverageDamage, 3);
++        Assert.Equal(600.0, r1.AverageTaken!.Value, 3);      // 3000 taken over 5 history battles
++        Assert.Equal(1.5, r1.DefeatedPerBattle!.Value, 3);
++        Assert.Null(all[1].AverageTaken);                  // no history for suit 2
++
++        var offline = SuitStatsRow.Build(suits, StatsModes.Offline);
++        var o = Assert.Single(offline);
++        Assert.Equal((4u, 3u), (o.Battles, o.Wins));
++        Assert.Equal(600.0, o.AverageDamage, 3);
++        Assert.Equal(300.0, o.AverageTaken!.Value, 3);
++        Assert.Null(o.EnemyDefeated);
++
++        var mix = Assert.Single(SuitStatsRow.Build(suits, StatsModes.Mix));
++        Assert.Equal((1u, 0u, 0.0), (mix.Battles, mix.Wins, mix.WinRate));
++        Assert.Empty(SuitStatsRow.Build(suits, StatsModes.ClassSolo));
++
++        Assert.Equal(new[] { SuitStatsRow.AllModes, StatsModes.Offline, StatsModes.OfflineSolo, StatsModes.OfflineTeam, StatsModes.Mix },
++            SuitStatsRow.AvailableModes(suits).ToArray());
++    }
++}
+diff --git a/WebUIInfinite/Client/Command/ViewCard/Filler/CardStatsFiller.cs b/WebUIInfinite/Client/Command/ViewCard/Filler/CardStatsFiller.cs
+new file mode 100644
+index 0000000..320b791
+--- /dev/null
++++ b/WebUIInfinite/Client/Command/ViewCard/Filler/CardStatsFiller.cs
+@@ -0,0 +1,29 @@
++using System.Net.Http.Json;
++using WebUIInfinite.Client.Context.ViewCard;
++using WebUIInfinite.Shared.Dto.Stats;
++
++namespace WebUIInfinite.Client.Command.ViewCard.Filler;
++
++/// <summary>exvs2-lobbies 2026-11-16: View Card -> Stats tab data. A failure leaves the tab empty, not the page.</summary>
++public class CardStatsFiller : IViewCardContextFiller
++{
++    private readonly HttpClient _httpClient;
++
++    public CardStatsFiller(HttpClient httpClient)
++    {
++        _httpClient = httpClient;
++    }
++
++    public async Task Fill(ViewCardContext viewCardContext)
++    {
++        try
++        {
++            viewCardContext.CardStats = await _httpClient.GetFromJsonAsync<CardStatsDto>(
++                $"/ui/card-stats/get-card-stats/{Uri.EscapeDataString(viewCardContext.AccessCode)}/{Uri.EscapeDataString(viewCardContext.ChipId)}");
++        }
++        catch (Exception)
++        {
++            viewCardContext.CardStats = null;
++        }
++    }
++}
+diff --git a/WebUIInfinite/Client/Context/ViewCard/ViewCardContext.cs b/WebUIInfinite/Client/Context/ViewCard/ViewCardContext.cs
+index 1f09e7a..02b7eea 100644
+--- a/WebUIInfinite/Client/Context/ViewCard/ViewCardContext.cs
++++ b/WebUIInfinite/Client/Context/ViewCard/ViewCardContext.cs
+@@ -1,4 +1,5 @@
+ using WebUIInfinite.Shared.Dto.History;
++using WebUIInfinite.Shared.Dto.Stats;
+ using WebUIInfinite.Shared.Dto.Triad;
+ 
+ namespace WebUIInfinite.Client.Context.ViewCard;
+@@ -9,4 +10,5 @@ public class ViewCardContext
+     public string ChipId { get; set; } = string.Empty;
+     public TriadCourseOverallResult TriadCourseOverallResult { get; set; } = new();
+     public List<BattleHistorySummary> BattleHistorySummaries { get; set; } = new();
++    public CardStatsDto? CardStats { get; set; }
+ }
+\ No newline at end of file
+diff --git a/WebUIInfinite/Client/Pages/Components/View/CardStatsComponent.razor b/WebUIInfinite/Client/Pages/Components/View/CardStatsComponent.razor
+new file mode 100644
+index 0000000..a641d19
+--- /dev/null
++++ b/WebUIInfinite/Client/Pages/Components/View/CardStatsComponent.razor
+@@ -0,0 +1,248 @@
++@* exvs2-lobbies 2026-11-16: View Card -> Stats (VS Mobile style): mode summary, sortable per-suit table, recent battles. *@
++@using WebUIInfinite.Client.Services.MS
++@using WebUIInfinite.Shared.Dto.Common
++@using WebUIInfinite.Shared.Dto.Stats
++@inject IMobileSuitDataService MobileSuitDataService
++
++@if (CardStats is null)
++{
++    <MudAlert Severity="Severity.Info">@localizer["card_stats_unavailable"]</MudAlert>
++    return;
++}
++
++<MudStack Spacing="4">
++    @* ---- summary per mode ---- *@
++    <MudText Typo="Typo.h6">@localizer["card_stats_summary"]</MudText>
++    <MudGrid Spacing="2">
++        @foreach (var rec in SummaryRecords)
++        {
++            <MudItem xs="6" sm="4" md="3" lg="2">
++                <MudPaper Elevation="3" Class="pa-3" Style="text-align:center; height:100%">
++                    <MudText Typo="Typo.subtitle2">@ModeName(rec.Mode)</MudText>
++                    <MudText Typo="Typo.h5" Color="@(rec.Battles == 0 ? Color.Default : Color.Primary)">@Pct(rec.WinRate, rec.Battles)</MudText>
++                    <MudText Typo="Typo.body2">@rec.Wins @localizer["card_stats_w"] / @rec.Losses @localizer["card_stats_l"]</MudText>
++                    <MudText Typo="Typo.caption">@rec.Battles @localizer["card_stats_battles"]</MudText>
++                </MudPaper>
++            </MudItem>
++        }
++    </MudGrid>
++
++    <MudGrid Spacing="2">
++        <MudItem xs="12" md="7">
++            <MudSimpleTable Dense="true" Elevation="2" Bordered="true">
++                <tbody>
++                    <tr><td>@localizer["card_stats_total_damage"]</td><td style="text-align:right">@CardStats.Totals.GivenDamage.ToString("N0")</td></tr>
++                    <tr><td>@localizer["card_stats_avg_damage"]</td><td style="text-align:right">@Avg(CardStats.Totals.GivenDamage, PvpBattles)</td></tr>
++                    <tr><td>@localizer["card_stats_defeated"]</td><td style="text-align:right">@CardStats.Totals.EnemyDefeated.ToString("N0")</td></tr>
++                    <tr><td>@localizer["card_stats_no_damage"]</td><td style="text-align:right">@CardStats.Totals.NoDamageBattles.ToString("N0")</td></tr>
++                    <tr><td>@localizer["card_stats_ex_burst_damage"]</td><td style="text-align:right">@CardStats.Totals.ExBurstDamage.ToString("N0")</td></tr>
++                    <tr><td>@localizer["card_stats_class_streaks"]</td><td style="text-align:right">@CardStats.Totals.ClassTenWinStreaks.ToString("N0")</td></tr>
++                </tbody>
++            </MudSimpleTable>
++        </MudItem>
++        <MudItem xs="12" md="5">
++            <MudSimpleTable Dense="true" Elevation="2" Bordered="true">
++                <thead>
++                    <tr><th>@localizer["card_stats_burst"]</th><th style="text-align:right">@localizer["card_stats_battles"]</th><th style="text-align:right">@localizer["card_stats_win_rate"]</th></tr>
++                </thead>
++                <tbody>
++                    @if (CardStats.Bursts.Count == 0)
++                    {
++                        <tr><td colspan="3">-</td></tr>
++                    }
++                    @foreach (var b in CardStats.Bursts)
++                    {
++                        <tr><td>@BurstName(b.BurstType)</td><td style="text-align:right">@b.Battles</td><td style="text-align:right">@Pct(b.WinRate, b.Battles)</td></tr>
++                    }
++                </tbody>
++            </MudSimpleTable>
++        </MudItem>
++    </MudGrid>
++
++    @* ---- per suit ---- *@
++    <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="mt-4">
++        <MudText Typo="Typo.h6">@localizer["card_stats_by_suit"]</MudText>
++        <MudSpacer/>
++        <div style="min-width:220px">
++            <MudSelect T="string" Value="_mode" ValueChanged="OnModeChanged" Label="@localizer["card_stats_mode"]" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
++                @foreach (var m in _modes)
++                {
++                    <MudSelectItem T="string" Value="@m">@ModeName(m)</MudSelectItem>
++                }
++            </MudSelect>
++        </div>
++    </MudStack>
++    <MudText Typo="Typo.caption">@(_mode == SuitStatsRow.AllModes ? localizer["card_stats_note_lifetime"] : localizer["card_stats_note_history"])</MudText>
++
++    <MudTable Elevation="3" Items="@_rows" T="SuitStatsRow" Hover="true" Dense="true" FixedHeader="true" Breakpoint="Breakpoint.Sm"
++              RowsPerPage="25">
++        <HeaderContent>
++            <MudTh><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => SuitName(x.MobileSuitId)))">@localizer["card_stats_suit"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => SuitCost(x.MobileSuitId)))">@localizer["card_stats_cost"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="@(new Func<SuitStatsRow, object>(x => x.Battles))">@localizer["card_stats_battles"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.Wins))">@localizer["card_stats_wins"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.Losses))">@localizer["card_stats_losses"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.WinRate))">@localizer["card_stats_win_rate"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.AverageDamage))">@localizer["card_stats_avg_damage"]</MudTableSortLabel></MudTh>
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.AverageTaken ?? -1))">@localizer["card_stats_avg_taken"]</MudTableSortLabel></MudTh>
++            @if (_mode == SuitStatsRow.AllModes)
++            {
++                <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.EnemyDefeated ?? 0))">@localizer["card_stats_defeated"]</MudTableSortLabel></MudTh>
++                <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.DefeatedPerBattle ?? 0))">@localizer["card_stats_defeated_per_battle"]</MudTableSortLabel></MudTh>
++                <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.NoDamageBattles ?? 0))">@localizer["card_stats_no_damage"]</MudTableSortLabel></MudTh>
++                <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.ExBurstDamage ?? 0))">@localizer["card_stats_ex_burst_damage"]</MudTableSortLabel></MudTh>
++            }
++            <MudTh Style="text-align:center"><MudTableSortLabel SortBy="@(new Func<SuitStatsRow, object>(x => x.LastPlayedAt))">@localizer["card_stats_last_played"]</MudTableSortLabel></MudTh>
++        </HeaderContent>
++        <RowTemplate>
++            <MudTd DataLabel="@localizer["card_stats_suit"]">
++                <div class="d-flex gap-3 align-center">
++                    <img src="@($"images/mobile_suits/{context.MobileSuitId}.webp")" alt="" style="width:72px" onerror="this.style.display='none'"/>
++                    <span>@SuitName(context.MobileSuitId)</span>
++                </div>
++            </MudTd>
++            <MudTd DataLabel="@localizer["card_stats_cost"]" Style="text-align:center">@CostText(context.MobileSuitId)</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_battles"]" Style="text-align:center">@context.Battles</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_wins"]" Style="text-align:center">@context.Wins</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_losses"]" Style="text-align:center">@context.Losses</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_win_rate"]" Style="text-align:center">@Pct(context.WinRate, context.Battles)</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_avg_damage"]" Style="text-align:center">@(context.Battles == 0 ? "-" : context.AverageDamage.ToString("N0"))</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_avg_taken"]" Style="text-align:center">@(context.AverageTaken is null ? "-" : context.AverageTaken.Value.ToString("N0"))</MudTd>
++            @if (_mode == SuitStatsRow.AllModes)
++            {
++                <MudTd DataLabel="@localizer["card_stats_defeated"]" Style="text-align:center">@context.EnemyDefeated</MudTd>
++                <MudTd DataLabel="@localizer["card_stats_defeated_per_battle"]" Style="text-align:center">@((context.DefeatedPerBattle ?? 0).ToString("0.00"))</MudTd>
++                <MudTd DataLabel="@localizer["card_stats_no_damage"]" Style="text-align:center">@context.NoDamageBattles</MudTd>
++                <MudTd DataLabel="@localizer["card_stats_ex_burst_damage"]" Style="text-align:center">@((context.ExBurstDamage ?? 0).ToString("N0"))</MudTd>
++            }
++            <MudTd DataLabel="@localizer["card_stats_last_played"]" Style="text-align:center">@Date(context.LastPlayedAt)</MudTd>
++        </RowTemplate>
++        <NoRecordsContent>
++            <MudText>@localizer["card_stats_no_battles"]</MudText>
++        </NoRecordsContent>
++        <PagerContent>
++            <MudTablePager PageSizeOptions="@(new[] { 10, 25, 50, 100 })"/>
++        </PagerContent>
++    </MudTable>
++
++    @* ---- recent battles ---- *@
++    <MudText Typo="Typo.h6" Class="mt-4">@localizer["card_stats_recent"]</MudText>
++    <MudTable Elevation="3" Items="@CardStats.RecentBattles" T="RecentBattleDto" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm">
++        <HeaderContent>
++            <MudTh>@localizer["card_stats_date"]</MudTh>
++            <MudTh>@localizer["card_stats_mode"]</MudTh>
++            <MudTh>@localizer["card_stats_suit"]</MudTh>
++            <MudTh Style="text-align:center">@localizer["card_stats_result"]</MudTh>
++            <MudTh Style="text-align:center">@localizer["card_stats_damage_dealt"]</MudTh>
++            <MudTh Style="text-align:center">@localizer["card_stats_damage_taken"]</MudTh>
++            <MudTh Style="text-align:center">@localizer["card_stats_time"]</MudTh>
++        </HeaderContent>
++        <RowTemplate>
++            <MudTd DataLabel="@localizer["card_stats_date"]">@Date(context.PlayedAt, true)</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_mode"]">@ModeName(context.Mode)</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_suit"]">@SuitName(context.MobileSuitId)</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_result"]" Style="text-align:center">
++                @if (context.IsWin)
++                {
++                    <MudText Color="Color.Info" Typo="Typo.body2">WIN</MudText>
++                }
++                else
++                {
++                    <MudText Color="Color.Error" Typo="Typo.body2">LOSE</MudText>
++                }
++            </MudTd>
++            <MudTd DataLabel="@localizer["card_stats_damage_dealt"]" Style="text-align:center">@context.GivenDamage</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_damage_taken"]" Style="text-align:center">@context.TakenDamage</MudTd>
++            <MudTd DataLabel="@localizer["card_stats_time"]" Style="text-align:center">@($"{context.ElapsedSeconds / 60}:{context.ElapsedSeconds % 60:00}")</MudTd>
++        </RowTemplate>
++        <NoRecordsContent>
++            <MudText>@localizer["card_stats_no_battles"]</MudText>
++        </NoRecordsContent>
++    </MudTable>
++</MudStack>
++
++@code {
++    [Parameter] public CardStatsDto? CardStats { get; set; }
++
++    private string _mode = SuitStatsRow.AllModes;
++    private List<string> _modes = new() { SuitStatsRow.AllModes };
++    private List<SuitStatsRow> _rows = new();
++    private CardStatsDto? _built;
++
++    private static readonly string[] SummaryOrder =
++    {
++        StatsModes.Total, StatsModes.Offline, StatsModes.ClassSolo, StatsModes.ClassTeam, StatsModes.Mix, StatsModes.Fes, StatsModes.Other,
++    };
++
++    private IEnumerable<ModeRecordDto> SummaryRecords => CardStats is null
++        ? Enumerable.Empty<ModeRecordDto>()
++        : SummaryOrder
++            .Select(m => CardStats.ModeRecords.FirstOrDefault(r => r.Mode == m))
++            .Where(r => r is not null && (r.Battles > 0 || r.Mode is StatsModes.Total or StatsModes.Offline or StatsModes.ClassSolo or StatsModes.Mix))
++            .Select(r => r!);
++
++    private ulong PvpBattles => CardStats is null ? 0 : (ulong)CardStats.Suits.Sum(s => (long)s.Battles);
++
++    protected override void OnParametersSet()
++    {
++        if (ReferenceEquals(_built, CardStats)) return;
++        _built = CardStats;
++        if (CardStats is null) return;
++        _modes = SuitStatsRow.AvailableModes(CardStats.Suits);
++        if (!_modes.Contains(_mode)) _mode = SuitStatsRow.AllModes;
++        _rows = SuitStatsRow.Build(CardStats.Suits, _mode);
++    }
++
++    private void OnModeChanged(string mode)
++    {
++        _mode = mode;
++        _rows = CardStats is null ? new() : SuitStatsRow.Build(CardStats.Suits, _mode);
++    }
++
++    private MobileSuit? Suit(uint id) => MobileSuitDataService.GetMobileSuitById(id);
++
++    private string SuitName(uint id)
++    {
++        var ms = Suit(id);
++        if (ms is null) return $"#{id}";
++        var lang = Thread.CurrentThread.CurrentCulture.Name;
++        var name = lang switch
++        {
++            "ja" => ms.ValueJP,
++            "zh-Hans" => ms.ValueCN,
++            "zh-Hant" => ms.ValueTC,
++            "zh-Hant-TW" => ms.ValueTC2,
++            _ => ms.Value,
++        };
++        return string.IsNullOrWhiteSpace(name) ? ms.Value : name;
++    }
++
++    private uint SuitCost(uint id) => Suit(id)?.Cost ?? 0;
++
++    private string CostText(uint id)
++    {
++        var cost = SuitCost(id);
++        return cost == 0 ? "-" : cost.ToString();
++    }
++
++    private string ModeName(string mode) => localizer[$"card_stats_mode_{mode}"];
++
++    private string BurstName(uint burstType) => burstType switch
++    {
++        0 => localizer["card_stats_burst_extend"],
++        1 => localizer["card_stats_burst_fighting"],
++        2 => localizer["card_stats_burst_shooting"],
++        _ => $"#{burstType}",
++    };
++
++    private static string Pct(double rate, uint battles) => battles == 0 ? "-" : rate.ToString("0.0") + "%";
++
++    private static string Avg(ulong total, ulong battles) => battles == 0 ? "-" : ((double)total / battles).ToString("N0");
++
++    private static string Date(ulong unixSeconds, bool withTime = false)
++    {
++        if (unixSeconds == 0) return "-";
++        var local = DateTimeOffset.FromUnixTimeSeconds((long)unixSeconds).ToLocalTime();
++        return withTime ? local.ToString("g") : local.ToString("d");
++    }
++}
+diff --git a/WebUIInfinite/Client/Pages/ViewCard.razor b/WebUIInfinite/Client/Pages/ViewCard.razor
+index 92d1ff7..2398f37 100644
+--- a/WebUIInfinite/Client/Pages/ViewCard.razor
++++ b/WebUIInfinite/Client/Pages/ViewCard.razor
+@@ -28,6 +28,11 @@ else
+ {
+     <MudStack Class="mt-2">
+         <MudTabs Outlined="true" Position="Position.Top" Rounded="true" Border="true" ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6">
++            <MudTabPanel Text="@localizer["card_stats"]">
++                <WebUIInfinite.Client.Pages.Components.View.CardStatsComponent
++                    CardStats="_viewCardContext.CardStats"
++                />
++            </MudTabPanel>
+             <MudTabPanel Text="@localizer["triadcoursescores"]">
+                 <WebUIInfinite.Client.Pages.Components.View.TriadViewComponent
+                     TriadCourseConfigs="TriadStageDataService.GetTriadCourseConfigs()"
+diff --git a/WebUIInfinite/Client/Pages/ViewCard.razor.cs b/WebUIInfinite/Client/Pages/ViewCard.razor.cs
+index e906615..c2df97e 100644
+--- a/WebUIInfinite/Client/Pages/ViewCard.razor.cs
++++ b/WebUIInfinite/Client/Pages/ViewCard.razor.cs
+@@ -28,6 +28,7 @@ public partial class ViewCard
+     
+     [Inject] private TriadCourseOverallResultFiller _triadCourseOverallResultFiller { get; set; }
+     [Inject] private BattleHistoriesFiller _battleHistoriesFiller { get; set; }
++    [Inject] private CardStatsFiller _cardStatsFiller { get; set; }
+     
+     private bool _loading = true;
+     
+@@ -55,6 +56,7 @@ public partial class ViewCard
+ 
+         await _triadCourseOverallResultFiller.Fill(_viewCardContext);
+         await _battleHistoriesFiller.Fill(_viewCardContext);
++        await _cardStatsFiller.Fill(_viewCardContext);
+     }
+     
+     protected override void OnParametersSet()
+diff --git a/WebUIInfinite/Client/Program.cs b/WebUIInfinite/Client/Program.cs
+index 0a91cf2..70fe5dc 100644
+--- a/WebUIInfinite/Client/Program.cs
++++ b/WebUIInfinite/Client/Program.cs
+@@ -96,6 +96,7 @@ builder.Services.AddSingleton<TrainingProfileSaver, TrainingProfileSaver>();
+ 
+ builder.Services.AddSingleton<TriadCourseOverallResultFiller, TriadCourseOverallResultFiller>();
+ builder.Services.AddSingleton<BattleHistoriesFiller, BattleHistoriesFiller>();
++builder.Services.AddSingleton<CardStatsFiller, CardStatsFiller>();
+ 
+ builder.Services.AddSingleton<ISelectorService, SelectorService>();
+ 
+diff --git a/WebUIInfinite/Shared/Dto/Stats/CardStatsDto.cs b/WebUIInfinite/Shared/Dto/Stats/CardStatsDto.cs
+new file mode 100644
+index 0000000..68d2156
+--- /dev/null
++++ b/WebUIInfinite/Shared/Dto/Stats/CardStatsDto.cs
+@@ -0,0 +1,207 @@
++namespace WebUIInfinite.Shared.Dto.Stats;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: one card's stats page (View Card -> Stats), VS Mobile style.
++/// Read-only snapshot built from the existing tables; no card identifiers (chip id / access code) are included.
++/// </summary>
++public class CardStatsDto
++{
++    /// <summary>Win/loss per mode from the card's win/loss record (lifetime). Keys: see <see cref="StatsModes"/>.</summary>
++    public List<ModeRecordDto> ModeRecords { get; set; } = new();
++
++    /// <summary>Lifetime totals from the player statistics row.</summary>
++    public CareerTotalsDto Totals { get; set; } = new();
++
++    /// <summary>One row per mobile suit the card has played in PvP (lifetime per-suit stats + battle-history split).</summary>
++    public List<SuitStatsDto> Suits { get; set; } = new();
++
++    /// <summary>Lifetime battles / wins per burst type (see BurstType: 0 Extend, 1 Fighting, 2 Shooting).</summary>
++    public List<BurstStatsDto> Bursts { get; set; } = new();
++
++    /// <summary>Most recent battles, newest first (at most <see cref="RecentLimit"/>).</summary>
++    public List<RecentBattleDto> RecentBattles { get; set; } = new();
++
++    /// <summary>Battle-history rows the per-mode split is based on (history only exists for battles saved by this server).</summary>
++    public int HistoryBattleCount { get; set; }
++
++    public const int RecentLimit = 30;
++}
++
++public static class StatsModes
++{
++    public const string Total = "Total";
++    public const string Offline = "Offline";
++    public const string OfflineSolo = "OfflineSolo";
++    public const string OfflineTeam = "OfflineTeam";
++    public const string ClassSolo = "ClassSolo";
++    public const string ClassTeam = "ClassTeam";
++    public const string Mix = "Mix";
++    public const string Fes = "Fes";
++    public const string Other = "Other";
++
++    /// <summary>Modes a battle can be in (battle-history split); <see cref="Total"/> and <see cref="Offline"/> are sums.</summary>
++    public static readonly string[] BattleModes = { OfflineSolo, OfflineTeam, ClassSolo, ClassTeam, Mix, Fes, Other };
++
++    /// <summary>Stored BattleHistory.BattleMode -> stats mode key.</summary>
++    public static string FromBattleMode(string? battleMode) => battleMode switch
++    {
++        "OfflineSolo" => OfflineSolo,
++        "OfflineTeam" => OfflineTeam,
++        "ClassMatchSolo" => ClassSolo,
++        "ClassMatchTeam" => ClassTeam,
++        "FreeSolo" or "FreeTeam" => Mix,
++        "FesSolo" or "FesTeam" => Fes,
++        _ => Other,
++    };
++
++    public static bool IsOffline(string mode) => mode is OfflineSolo or OfflineTeam;
++}
++
++public class ModeRecordDto
++{
++    public string Mode { get; set; } = string.Empty;
++    public uint Wins { get; set; }
++    public uint Losses { get; set; }
++    public uint Battles => Wins + Losses;
++    public double WinRate => Battles == 0 ? 0 : 100.0 * Wins / Battles;
++}
++
++public class CareerTotalsDto
++{
++    public ulong GivenDamage { get; set; }
++    public ulong EnemyDefeated { get; set; }
++    public ulong NoDamageBattles { get; set; }
++    public ulong ExBurstDamage { get; set; }
++    public ulong ClassTenWinStreaks { get; set; }
++}
++
++public class SuitModeStatsDto
++{
++    public string Mode { get; set; } = string.Empty;
++    public uint Battles { get; set; }
++    public uint Wins { get; set; }
++    public ulong GivenDamage { get; set; }
++    public ulong TakenDamage { get; set; }
++}
++
++public class SuitStatsDto
++{
++    public uint MobileSuitId { get; set; }
++
++    // lifetime per-suit PvP statistics (exvs2ob_ms_pvp_stat)
++    public uint Battles { get; set; }
++    public uint Wins { get; set; }
++    public uint Losses => Battles >= Wins ? Battles - Wins : 0;
++    public double WinRate => Battles == 0 ? 0 : 100.0 * Wins / Battles;
++    public ulong GivenDamage { get; set; }
++    public ulong EnemyDefeated { get; set; }
++    public ulong NoDamageBattles { get; set; }
++    public ulong ExBurstDamage { get; set; }
++    public ulong ClassTenWinStreaks { get; set; }
++    public double AverageDamage => Battles == 0 ? 0 : (double)GivenDamage / Battles;
++    public double DefeatedPerBattle => Battles == 0 ? 0 : (double)EnemyDefeated / Battles;
++
++    /// <summary>Times the suit was chosen (exvs2ob_ms_usage), includes non-PvP play.</summary>
++    public uint TimesUsed { get; set; }
++
++    // battle-history split (only battles with a stored history row)
++    public List<SuitModeStatsDto> Modes { get; set; } = new();
++    public ulong LastPlayedAt { get; set; }
++}
++
++public class BurstStatsDto
++{
++    public uint BurstType { get; set; }
++    public uint Battles { get; set; }
++    public uint Wins { get; set; }
++    public double WinRate => Battles == 0 ? 0 : 100.0 * Wins / Battles;
++}
++
++public class RecentBattleDto
++{
++    public ulong PlayedAt { get; set; }
++    public string Mode { get; set; } = string.Empty;
++    public uint MobileSuitId { get; set; }
++    public bool IsWin { get; set; }
++    public uint GivenDamage { get; set; }
++    public uint TakenDamage { get; set; }
++    public uint ElapsedSeconds { get; set; }
++    public uint Score { get; set; }
++    public uint BurstType { get; set; }
++}
++
++/// <summary>One per-suit table row for a mode filter ("All" = lifetime per-suit stats, else the battle-history split).</summary>
++public class SuitStatsRow
++{
++    public const string AllModes = "All";
++
++    public uint MobileSuitId { get; init; }
++    public uint Battles { get; init; }
++    public uint Wins { get; init; }
++    public uint Losses => Battles >= Wins ? Battles - Wins : 0;
++    public double WinRate => Battles == 0 ? 0 : 100.0 * Wins / Battles;
++    public double AverageDamage { get; init; }
++    /// <summary>Average damage taken; only known from battle history (null when no history battles).</summary>
++    public double? AverageTaken { get; init; }
++    /// <summary>Lifetime-only columns (null for a single-mode filter, the tables do not split them per mode).</summary>
++    public ulong? EnemyDefeated { get; init; }
++    public double? DefeatedPerBattle { get; init; }
++    public ulong? NoDamageBattles { get; init; }
++    public ulong? ExBurstDamage { get; init; }
++    public uint TimesUsed { get; init; }
++    public ulong LastPlayedAt { get; init; }
++
++    public static List<SuitStatsRow> Build(IEnumerable<SuitStatsDto> suits, string mode)
++    {
++        var rows = new List<SuitStatsRow>();
++        foreach (var s in suits)
++        {
++            var historyBattles = (uint)s.Modes.Sum(m => (long)m.Battles);
++            var historyTaken = (ulong)s.Modes.Sum(m => (decimal)m.TakenDamage);
++            if (mode == AllModes)
++            {
++                if (s.Battles == 0 && historyBattles == 0) continue;
++                rows.Add(new SuitStatsRow
++                {
++                    MobileSuitId = s.MobileSuitId,
++                    Battles = s.Battles,
++                    Wins = s.Wins,
++                    AverageDamage = s.AverageDamage,
++                    AverageTaken = historyBattles == 0 ? null : (double)historyTaken / historyBattles,
++                    EnemyDefeated = s.EnemyDefeated,
++                    DefeatedPerBattle = s.DefeatedPerBattle,
++                    NoDamageBattles = s.NoDamageBattles,
++                    ExBurstDamage = s.ExBurstDamage,
++                    TimesUsed = s.TimesUsed,
++                    LastPlayedAt = s.LastPlayedAt,
++                });
++                continue;
++            }
++
++            var picked = s.Modes.Where(m => m.Mode == mode || (mode == StatsModes.Offline && StatsModes.IsOffline(m.Mode))).ToList();
++            var battles = (uint)picked.Sum(m => (long)m.Battles);
++            if (battles == 0) continue;
++            rows.Add(new SuitStatsRow
++            {
++                MobileSuitId = s.MobileSuitId,
++                Battles = battles,
++                Wins = (uint)picked.Sum(m => (long)m.Wins),
++                AverageDamage = (double)picked.Sum(m => (decimal)m.GivenDamage) / battles,
++                AverageTaken = (double)picked.Sum(m => (decimal)m.TakenDamage) / battles,
++                TimesUsed = s.TimesUsed,
++                LastPlayedAt = s.LastPlayedAt,
++            });
++        }
++        return rows;
++    }
++
++    /// <summary>Mode filters that have at least one history battle, in display order.</summary>
++    public static List<string> AvailableModes(IEnumerable<SuitStatsDto> suits)
++    {
++        var present = suits.SelectMany(s => s.Modes).Where(m => m.Battles > 0).Select(m => m.Mode).ToHashSet();
++        var list = new List<string> { AllModes };
++        if (present.Contains(StatsModes.OfflineSolo) && present.Contains(StatsModes.OfflineTeam)) list.Add(StatsModes.Offline);
++        list.AddRange(StatsModes.BattleModes.Where(present.Contains));
++        return list;
++    }
++}
+diff --git a/WebUIInfinite/Shared/Resources/Resource.en-US.resx b/WebUIInfinite/Shared/Resources/Resource.en-US.resx
+index ed56e93..e02cab6 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.en-US.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.en-US.resx
+@@ -1504,4 +1504,139 @@
+   <data name="teams_open_page" xml:space="preserve">
+     <value>Open Teams page</value>
+   </data>
++  <data name="card_stats" xml:space="preserve">
++    <value>Stats</value>
++  </data>
++  <data name="card_stats_unavailable" xml:space="preserve">
++    <value>Stats could not be loaded for this card.</value>
++  </data>
++  <data name="card_stats_summary" xml:space="preserve">
++    <value>Win rate by mode</value>
++  </data>
++  <data name="card_stats_w" xml:space="preserve">
++    <value>W</value>
++  </data>
++  <data name="card_stats_l" xml:space="preserve">
++    <value>L</value>
++  </data>
++  <data name="card_stats_battles" xml:space="preserve">
++    <value>Battles</value>
++  </data>
++  <data name="card_stats_wins" xml:space="preserve">
++    <value>Wins</value>
++  </data>
++  <data name="card_stats_losses" xml:space="preserve">
++    <value>Losses</value>
++  </data>
++  <data name="card_stats_win_rate" xml:space="preserve">
++    <value>Win rate</value>
++  </data>
++  <data name="card_stats_total_damage" xml:space="preserve">
++    <value>Total damage dealt</value>
++  </data>
++  <data name="card_stats_avg_damage" xml:space="preserve">
++    <value>Avg damage</value>
++  </data>
++  <data name="card_stats_avg_taken" xml:space="preserve">
++    <value>Avg taken</value>
++  </data>
++  <data name="card_stats_defeated" xml:space="preserve">
++    <value>Kills</value>
++  </data>
++  <data name="card_stats_defeated_per_battle" xml:space="preserve">
++    <value>Kills / battle</value>
++  </data>
++  <data name="card_stats_no_damage" xml:space="preserve">
++    <value>No-damage battles</value>
++  </data>
++  <data name="card_stats_ex_burst_damage" xml:space="preserve">
++    <value>EX burst damage</value>
++  </data>
++  <data name="card_stats_class_streaks" xml:space="preserve">
++    <value>Class 10-win streaks</value>
++  </data>
++  <data name="card_stats_burst" xml:space="preserve">
++    <value>Burst type</value>
++  </data>
++  <data name="card_stats_burst_extend" xml:space="preserve">
++    <value>Extend</value>
++  </data>
++  <data name="card_stats_burst_fighting" xml:space="preserve">
++    <value>Fighting</value>
++  </data>
++  <data name="card_stats_burst_shooting" xml:space="preserve">
++    <value>Shooting</value>
++  </data>
++  <data name="card_stats_by_suit" xml:space="preserve">
++    <value>By mobile suit</value>
++  </data>
++  <data name="card_stats_mode" xml:space="preserve">
++    <value>Mode</value>
++  </data>
++  <data name="card_stats_note_lifetime" xml:space="preserve">
++    <value>All modes: the card's lifetime per-suit totals. Avg taken and last played come from saved battle history.</value>
++  </data>
++  <data name="card_stats_note_history" xml:space="preserve">
++    <value>Single mode: counted from saved battle history only (online battles are saved from the online results build on).</value>
++  </data>
++  <data name="card_stats_suit" xml:space="preserve">
++    <value>Mobile suit</value>
++  </data>
++  <data name="card_stats_cost" xml:space="preserve">
++    <value>Cost</value>
++  </data>
++  <data name="card_stats_last_played" xml:space="preserve">
++    <value>Last played</value>
++  </data>
++  <data name="card_stats_no_battles" xml:space="preserve">
++    <value>No battles yet.</value>
++  </data>
++  <data name="card_stats_recent" xml:space="preserve">
++    <value>Recent battles</value>
++  </data>
++  <data name="card_stats_date" xml:space="preserve">
++    <value>Date</value>
++  </data>
++  <data name="card_stats_result" xml:space="preserve">
++    <value>Result</value>
++  </data>
++  <data name="card_stats_damage_dealt" xml:space="preserve">
++    <value>Damage dealt</value>
++  </data>
++  <data name="card_stats_damage_taken" xml:space="preserve">
++    <value>Damage taken</value>
++  </data>
++  <data name="card_stats_time" xml:space="preserve">
++    <value>Time</value>
++  </data>
++  <data name="card_stats_mode_All" xml:space="preserve">
++    <value>All modes (lifetime)</value>
++  </data>
++  <data name="card_stats_mode_Total" xml:space="preserve">
++    <value>Total</value>
++  </data>
++  <data name="card_stats_mode_Offline" xml:space="preserve">
++    <value>Offline</value>
++  </data>
++  <data name="card_stats_mode_OfflineSolo" xml:space="preserve">
++    <value>Offline (solo)</value>
++  </data>
++  <data name="card_stats_mode_OfflineTeam" xml:space="preserve">
++    <value>Offline (team)</value>
++  </data>
++  <data name="card_stats_mode_ClassSolo" xml:space="preserve">
++    <value>Class (solo)</value>
++  </data>
++  <data name="card_stats_mode_ClassTeam" xml:space="preserve">
++    <value>Class (team)</value>
++  </data>
++  <data name="card_stats_mode_Mix" xml:space="preserve">
++    <value>Mix</value>
++  </data>
++  <data name="card_stats_mode_Fes" xml:space="preserve">
++    <value>Fes</value>
++  </data>
++  <data name="card_stats_mode_Other" xml:space="preserve">
++    <value>Other</value>
++  </data>
+ </root>
+diff --git a/WebUIInfinite/Shared/Resources/Resource.resx b/WebUIInfinite/Shared/Resources/Resource.resx
+index 3260de7..bf5bf7a 100644
+--- a/WebUIInfinite/Shared/Resources/Resource.resx
++++ b/WebUIInfinite/Shared/Resources/Resource.resx
+@@ -486,4 +486,139 @@
+   <data name="teams_open_page" xml:space="preserve">
+     <value>Open Teams page</value>
+   </data>
++  <data name="card_stats" xml:space="preserve">
++    <value>Stats</value>
++  </data>
++  <data name="card_stats_unavailable" xml:space="preserve">
++    <value>Stats could not be loaded for this card.</value>
++  </data>
++  <data name="card_stats_summary" xml:space="preserve">
++    <value>Win rate by mode</value>
++  </data>
++  <data name="card_stats_w" xml:space="preserve">
++    <value>W</value>
++  </data>
++  <data name="card_stats_l" xml:space="preserve">
++    <value>L</value>
++  </data>
++  <data name="card_stats_battles" xml:space="preserve">
++    <value>Battles</value>
++  </data>
++  <data name="card_stats_wins" xml:space="preserve">
++    <value>Wins</value>
++  </data>
++  <data name="card_stats_losses" xml:space="preserve">
++    <value>Losses</value>
++  </data>
++  <data name="card_stats_win_rate" xml:space="preserve">
++    <value>Win rate</value>
++  </data>
++  <data name="card_stats_total_damage" xml:space="preserve">
++    <value>Total damage dealt</value>
++  </data>
++  <data name="card_stats_avg_damage" xml:space="preserve">
++    <value>Avg damage</value>
++  </data>
++  <data name="card_stats_avg_taken" xml:space="preserve">
++    <value>Avg taken</value>
++  </data>
++  <data name="card_stats_defeated" xml:space="preserve">
++    <value>Kills</value>
++  </data>
++  <data name="card_stats_defeated_per_battle" xml:space="preserve">
++    <value>Kills / battle</value>
++  </data>
++  <data name="card_stats_no_damage" xml:space="preserve">
++    <value>No-damage battles</value>
++  </data>
++  <data name="card_stats_ex_burst_damage" xml:space="preserve">
++    <value>EX burst damage</value>
++  </data>
++  <data name="card_stats_class_streaks" xml:space="preserve">
++    <value>Class 10-win streaks</value>
++  </data>
++  <data name="card_stats_burst" xml:space="preserve">
++    <value>Burst type</value>
++  </data>
++  <data name="card_stats_burst_extend" xml:space="preserve">
++    <value>Extend</value>
++  </data>
++  <data name="card_stats_burst_fighting" xml:space="preserve">
++    <value>Fighting</value>
++  </data>
++  <data name="card_stats_burst_shooting" xml:space="preserve">
++    <value>Shooting</value>
++  </data>
++  <data name="card_stats_by_suit" xml:space="preserve">
++    <value>By mobile suit</value>
++  </data>
++  <data name="card_stats_mode" xml:space="preserve">
++    <value>Mode</value>
++  </data>
++  <data name="card_stats_note_lifetime" xml:space="preserve">
++    <value>All modes: the card's lifetime per-suit totals. Avg taken and last played come from saved battle history.</value>
++  </data>
++  <data name="card_stats_note_history" xml:space="preserve">
++    <value>Single mode: counted from saved battle history only (online battles are saved from the online results build on).</value>
++  </data>
++  <data name="card_stats_suit" xml:space="preserve">
++    <value>Mobile suit</value>
++  </data>
++  <data name="card_stats_cost" xml:space="preserve">
++    <value>Cost</value>
++  </data>
++  <data name="card_stats_last_played" xml:space="preserve">
++    <value>Last played</value>
++  </data>
++  <data name="card_stats_no_battles" xml:space="preserve">
++    <value>No battles yet.</value>
++  </data>
++  <data name="card_stats_recent" xml:space="preserve">
++    <value>Recent battles</value>
++  </data>
++  <data name="card_stats_date" xml:space="preserve">
++    <value>Date</value>
++  </data>
++  <data name="card_stats_result" xml:space="preserve">
++    <value>Result</value>
++  </data>
++  <data name="card_stats_damage_dealt" xml:space="preserve">
++    <value>Damage dealt</value>
++  </data>
++  <data name="card_stats_damage_taken" xml:space="preserve">
++    <value>Damage taken</value>
++  </data>
++  <data name="card_stats_time" xml:space="preserve">
++    <value>Time</value>
++  </data>
++  <data name="card_stats_mode_All" xml:space="preserve">
++    <value>All modes (lifetime)</value>
++  </data>
++  <data name="card_stats_mode_Total" xml:space="preserve">
++    <value>Total</value>
++  </data>
++  <data name="card_stats_mode_Offline" xml:space="preserve">
++    <value>Offline</value>
++  </data>
++  <data name="card_stats_mode_OfflineSolo" xml:space="preserve">
++    <value>Offline (solo)</value>
++  </data>
++  <data name="card_stats_mode_OfflineTeam" xml:space="preserve">
++    <value>Offline (team)</value>
++  </data>
++  <data name="card_stats_mode_ClassSolo" xml:space="preserve">
++    <value>Class (solo)</value>
++  </data>
++  <data name="card_stats_mode_ClassTeam" xml:space="preserve">
++    <value>Class (team)</value>
++  </data>
++  <data name="card_stats_mode_Mix" xml:space="preserve">
++    <value>Mix</value>
++  </data>
++  <data name="card_stats_mode_Fes" xml:space="preserve">
++    <value>Fes</value>
++  </data>
++  <data name="card_stats_mode_Other" xml:space="preserve">
++    <value>Other</value>
++  </data>
+ </root>
 -- 
 2.47.3
 

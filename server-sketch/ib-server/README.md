@@ -18,7 +18,7 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save` commit, 47 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series).
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save` and `suit-stats-page` commits, 48 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47).
 The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
@@ -29,7 +29,7 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 47 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 48 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
@@ -37,14 +37,14 @@ dotnet publish Server-Infinite -c Release -r win-x64
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
 # matchmaker unit tests (423 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, and security):
 dotnet test Tests/Matchmaking.Tests
-# card-server DB tests (15, online battle results; in-memory SQLite; on Windows drop -p:LinuxHost=true):
+# card-server DB tests (24: online battle results + card stats page; in-memory SQLite; on Windows drop -p:LinuxHost=true):
 dotnet test Tests/Server.Tests -p:LinuxHost=true
 ```
 Copy your existing `ServerInfinite.db` next to the new build if you want to keep cards; the new migration
 (`AddClassMatchGrade`) adds one column on first start. **Back the DB up first.**
 
 ## Online battle results (branch `online-results-save`)
-> Tested with DB tests and fake cards only; not yet tried in a real online match.
+> Confirmed on real cabinets on 16 Nov 2026 (online Class solo and Mix matches saved to history and stats).
 
 Until now an online battle (`SaveVsmOnResult`) stored only the badge and, for Class Match, rate / class / grade, so
 internet games never showed up in View Card → battle history or in the stats. With
@@ -63,6 +63,23 @@ A re-sent save of the same battle (same card, room, time, suit, mode) is ignored
 played with this build are recorded. No DB schema change; back up `ServerInfinite.db` before swapping builds anyway.
 Set `"PersistOnlineBattleResults": false` to get the previous behaviour. Details: `ONLINE_MATCHMAKING.md` →
 "Online battle results" inside the patch.
+
+## Card stats page (branch `suit-stats-page`)
+> Tested with DB tests, a local server and fake cards; not yet tried by a player.
+
+View Card gets a new first tab, **Stats** (VS Mobile style). It is read-only and only shows the card you are logged in
+with (same access-code check as the battle history). No DB schema change and no new settings.
+
+* **Win rate by mode**: Total, Offline (solo + team), Class (solo), Class (team), Mix, Fes, Other.
+* **Totals**: damage dealt, average damage, kills, no-damage battles, EX burst damage, Class 10-win streaks, and win
+  rate per burst type.
+* **By mobile suit** (sort by any column): battles, wins, losses, win rate, average damage dealt / taken, kills,
+  kills per battle, no-damage battles, EX burst damage, last played. "All modes" shows the card's lifetime per-suit
+  totals; picking one mode (Class, Mix, Offline...) shows the split counted from saved battle history.
+* **Recent battles** (last 30): date, mode, suit, result, damage dealt / taken, time.
+
+The game save has no per-suit death count, so there is no K/D column. Strings are English for now (other languages
+fall back to English).
 
 ## Configure
 In `Configurations/server.json` under `CardServerConfig` → `OnlineMatching`:
