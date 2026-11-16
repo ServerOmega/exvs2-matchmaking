@@ -17,7 +17,7 @@ WorkingDirectory=/home/exvs2/exvs2-matchmaking/server-linux
 ExecStart=/home/exvs2/exvs2-matchmaking/server-linux/Server-Infinite
 Restart=on-failure
 RestartSec=5
-# Never run it as root. Ports above 1024 (28080, 3478, 3479) need no special rights.
+# Never run it as root. Ports above 1024 (28090, 28080, 3478, 3479) need no special rights.
 NoNewPrivileges=true
 
 [Install]

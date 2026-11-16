@@ -15,8 +15,9 @@ A. Point the game at a card server  -  pick ONE way
 Way 1: Use the host's server as your card server  (simplest; your cards live on the host's server)
   In the game's POC config.ini (in your game folder), section [config]:
       Server = 203.0.113.10
-  Only the IP. No "http://", no port. The game talks to the card server on port 28080, so the host must
-  keep the default port 28080.
+  Only the IP. No "http://", no port. The game talks to the card server on port 28080, so this only
+  works when the host's card server listens on 28080 (typically a LAN or VPN host, not a public VPS).
+  A public / VPS matchmaker listens on 28090 and does not serve cards to the internet — use Way 2.
   Your old cards are NOT on the host's server: you start fresh there (or the host imports your database).
   Since v0.4.0-pre a host on a PUBLIC IP serves only matchmaking to the internet by default
   (AccessMode PublicMatchmaker). Way 1 then works only over a VPN / LAN, or if the host chose
@@ -29,11 +30,12 @@ Way 2: Keep your own card server on your PC, match on the host's server  (cards 
        and type the host's address (203.0.113.10). Then 3-Start-Server.bat.
        This writes, in server\Configurations\server.json -> CardServerConfig -> OnlineMatching:
            "Enabled": true,
-           "MatchUrl": "http://203.0.113.10:28080/match",     <- the host's matchmaker
+           "MatchUrl": "http://203.0.113.10:28090/match",     <- the host's matchmaker (port 28090)
            "StunHost": "203.0.113.10",                         <- the host's STUN
            "BuiltinStun": false
-       2-Configure assumes the host's matchmaker uses the default port 28080. If the host changed it
-       (kestrel.json on the host), change only the port in MatchUrl to the host's port.
+       The matchmaker is on 28090; your own card server (and its web page at
+       http://127.0.0.1:28080/) stays on 28080. 2-Configure "2 = PLAY" assumes 28090.
+       If the host changed the matchmaker port, change only the port in MatchUrl.
     2. Your game keeps  Server = 127.0.0.1  (POC config.ini default) - SnowLauncher does that by itself.
     3. Close any OTHER card server on your PC first (only one program can use port 28080),
        e.g. the official Server.exe. Your cards: copy ServerInfinite.db into server\ (step 1 can do it for you).
@@ -146,8 +148,8 @@ partners on different card servers that share one matchmaker:
   2. You open your own Customize -> Teams, enter them under Add Team, press ADD.
 
   Different card servers (each server has its own ServerId; MatchUrl / StunHost point at the same
-  matchmaker, e.g. http://<VPS_IP>:28080/match — use port 28080; a host may still accept 28090 as a
-  legacy alias, but new configs should use 28080. Every card server needs the matchmaker's online-tag
+  matchmaker, e.g. http://<VPS_IP>:28090/match — the matchmaker is on 28090; your own card
+  server (and its web page at http://<card server IP>:28080/) stays on 28080. Every card server needs the matchmaker's online-tag
   shared secret - 2-Configure "2 = PLAY" asks for it, or set TagSecret under OnlineTag in server.json;
   the matchmaker's host gives it to you privately, never in a public chat):
   1. Each of you opens YOUR own card website -> Customize -> Teams.

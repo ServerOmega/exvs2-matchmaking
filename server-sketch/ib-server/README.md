@@ -91,7 +91,8 @@ Network log lines (`NET ...`, `NET-WARN ...`, `MATCH-NET ...`, `drop ... reason=
 ## Run the pieces
 1. **STUN**: `BuiltinStun: true` (UDP 3478 + 3479 open), or coturn: `turnserver -c ../coturn/turnserver.conf` (set `external-ip`).
 2. **Card server + MMS**: start the patched server (port 28080 by default, `Configurations/kestrel.json`).
-   Open TCP 28080 for other players' cabinets (card + `/match` traffic share the port).
+   Port **28080** is the local card server and its web page. A public / VPS matchmaker listens on **TCP 28090**;
+   players keep their own card server on 28080 and set `MatchUrl` to `http://<VPS_IP>:28090/match`.
 3. *(optional)* external matchmaker instead of the built-in one: `python3 ../python/mms_server.py --port 5000`
    and set `MatchUrl` to `http://<ip>:5000/mms`.
 4. **Cabinet**: back up `testmode_pcb.json`, set `battleMode: 0` in the active entry (with `svd1.py`), point the

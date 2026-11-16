@@ -31,8 +31,10 @@ Build the zip: `release/make-release.sh v0.4.1-pre` → `release/dist/` (not com
   are this PC's LAN IP; the launcher keeps the ini in memory (close it before editing); start the patched
   server first so it holds port 28080. Every cabinet needs its own card (20-digit access code, 32-hex chip id
   in `card.ini` and `SnowLauncher.ini`), not only its own serial. LM discovery is a LAN broadcast: one LM per
-  home network, or isolate, when two people in one house simulate internet play. VPS / shared matchmaker
-  default port is **28080** (28090 may still be accepted as a legacy alias; point new `MatchUrl` at 28080).
+  home network, or isolate, when two people in one house simulate internet play. The public / VPS
+  matchmaker is on **TCP 28090**; each player's own card server and web page stay on **TCP 28080**.
+  Point new `MatchUrl` values at `http://<VPS_IP>:28090/match`. Using 28080 there causes an access
+  error at card load (the card server waits ~8 s on `/tag`).
   Friend requests (フレンド申請) are not supported yet — keep `PostMatchStubs` true. Online-tag partner names
   are stored at create/join; a rename/delete sync is not in a published package yet. Confirmed 2026-11-15:
   a second person's from-scratch build paired in Online Tag and completed a 4-human Mix Match through the

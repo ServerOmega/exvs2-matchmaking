@@ -28,6 +28,11 @@ Players can't match - read the server log (window or Logs\log-<date>.txt)
   No "NET register-pcb" line for the player
       -> their game isn't talking to this card server: wrong Server= address, port 28080 blocked/not forwarded,
          firewall, or (SnowLauncher) they need their own local card server ("2 = PLAY").
+  Access error when loading a card, or the card server hangs about 8 seconds
+      -> MatchUrl on the card server points at the wrong port (often :28080 on a VPS). The public
+         matchmaker is on TCP 28090; your own card server (and its web page) stays on 28080. Set
+         MatchUrl to http://<matchmaker-ip>:28090/match, then close and restart the card server.
+         The card server log shows a timeout talking to /tag.
   "NET register-pcb" but no "MMS IssueNodeId" / "NET entry"
       -> battleMode isn't 0 in the active entry of <game folder>\29\testmode_pcb.json, or "Enabled" is false on the card server
          that player uses.

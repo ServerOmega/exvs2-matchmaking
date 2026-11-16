@@ -24,7 +24,7 @@ addresses are not "private" — add the range to `Security.ExtraAllowedCidrs` (s
 `2-Configure.bat` / `linux/configure.sh` pick the mode from the address you give them (private or known VPN range →
 `LanOnly`, public → `PublicMatchmaker`) and add the VPN range for you.
 
-Ports a public matchmaker needs: **TCP 28080 (or your port) and UDP 3478–3479**. Nothing else.
+Ports a public matchmaker needs: **TCP 28090 and UDP 3478–3479**. Nothing else. Each player's own card server (and its web page at `http://<card-server>:28080/`) stays on **TCP 28080** and is not opened to the internet.
 
 ## 2. `/tag` shared secret (cross-server online tag)
 

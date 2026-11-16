@@ -155,8 +155,10 @@ sections 5–10. 150 matchmaker unit tests pass.
   flags) starts immediately instead of waiting ~15 s. Tested 2026-11-15 03:13 PT.
 * [x] Fill timers shipped at 3 s (`FillAfterSeconds` / `MaxFillWaitSeconds` / in-store overrides).
 * [x] VPS matchmaker (`<VPS_IP>:28090` at the time, built-in STUN): a Fes 1on1 completed 2026-11-15 04:24 PT
-  after local card servers pointed `MatchUrl` / `StunHost` at the VPS. The VPS later moved to **TCP 28080**
-  (28090 kept as a legacy alias). Point new `MatchUrl` values at `http://<VPS_IP>:28080/match`.
+  after local card servers pointed `MatchUrl` / `StunHost` at the VPS. The VPS matchmaker listens on
+  **TCP 28090**. Point `MatchUrl` at `http://<VPS_IP>:28090/match`. Each player's own card server (and
+  its web page) stays on **TCP 28080**. (A later docs pass recommended 28080 as a new default; that was
+  a mistake — the public matchmakers stay on 28090.)
 
 ## Cross-server online tag (2026-11-15)
 

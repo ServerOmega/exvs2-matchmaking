@@ -95,7 +95,8 @@ The listen address/port is in `Configurations/kestrel.json` (`"Url": "http://0.0
 ### A3. Ports
 | Where | Port | Why |
 |---|---|---|
-| Server | **TCP 28080** (or whatever `kestrel.json` says) | card server + matchmaker `/match` (HTTP). Use 28080 in new `MatchUrl` values. A host who used to publish on 28090 can keep a second Kestrel endpoint on 28090 as a legacy alias. |
+| Your card server (and its web page) | **TCP 28080** (or whatever that server's `kestrel.json` says) | the game talks to `127.0.0.1:28080`; the card website is `http://<card-server>:28080/` |
+| Public / VPS matchmaker | **TCP 28090** | players' card servers set `MatchUrl` to `http://<VPS_IP>:28090/match`. Do not use 28080 for the remote matchmaker. |
 | Server | **UDP 3478 and 3479** (`StunPort`, `StunPort+1`) | built-in STUN (NAT test) — only with `BuiltinStun: true` |
 | Each player's PC | **UDP 48000** (+ terminal offset) | the game's own P2P battle socket; the game has no UPnP, so behind a strict NAT forward it, or use an overlay VPN |
 | LM stores only | UDP 49000 | LM broadcast, local network only — never forward it |
@@ -106,7 +107,7 @@ More: [analysis/networking-issues.md](../analysis/networking-issues.md).
 
 ### A4. Firewall
 * **Windows Firewall:** the first start of `Server.exe` may show an "allow access" prompt — allow it on the profile
-  the players come in on (Private/Public), or add inbound rules for TCP 28080 and UDP 3478–3479. Check `wf.msc` for
+  the players come in on (Private/Public), or add inbound rules for TCP 28080 (local card server) or TCP 28090 (public / VPS matchmaker), and UDP 3478–3479. Check `wf.msc` for
   leftover **Block** rules on the exe.
 * **TinyWall** (or another allow-list firewall): add `Server.exe` (and on player PCs every copy of the game exe /
   launcher) to the allowed applications; each copied folder is a different exe path and needs its own entry.
@@ -134,7 +135,7 @@ Players can keep their own card server (cards stay local) and only match on the 
 ```json
 "OnlineMatching": {
   "Enabled": true,
-  "MatchUrl": "http://<matchmaker-ip>:28080/match",
+  "MatchUrl": "http://<matchmaker-ip>:28090/match",
   "StunHost": "<matchmaker-ip>",
   "StunPort": 3478,
   "BuiltinStun": false
@@ -144,9 +145,10 @@ The cabinet then registers on its own card server, but queues on (and gets STUN 
 The card server only hands the cabinet the `MatchUrl` at boot; it never talks to the matchmaker itself, and nothing
 goes between the two servers before, during or after a match (the cabinet calls `MatchUrl` directly).
 Results are still saved to the player's own card server. This was tested on 2026-11-13 (one cabinet on a second
-card-server instance, one directly on the matchmaker; they matched and played). Point `MatchUrl` at port **28080**
-(the default). If the host still accepts **28090** as a legacy alias, old configs keep working, but new ones should
-use 28080. For cross-server online tag, also set this card server's `OnlineTag.TagSecret` to the matchmaker's value
+card-server instance, one directly on the matchmaker; they matched and played). The matchmaker is on port **28090**; your own card server (and its web page) stays on **28080**.
+Point `MatchUrl` at `http://<matchmaker-ip>:28090/match`. Using 28080 in `MatchUrl` for a VPS is a common
+mistake: the card server waits about 8 seconds on `/tag` and the game shows an access error at card load.
+For cross-server online tag, also set this card server's `OnlineTag.TagSecret` to the matchmaker's value
 (A8) and give it a distinct `OnlineTag.ServerId`.
 
 ### A7. Security (access mode, logs)
@@ -264,11 +266,13 @@ mixed up.
   The first card insert on a new pair registers a new player on that card server.
 
 ### B3. Point the cabinet at the server
-* **Card server = the matchmaker:** set your POC client's card-server address to the matchmaker host and port
-  (28080). Nothing else is needed: RegisterPcb tells the cabinet the matchmaker URL and the STUN server.
-* **SnowLauncher users:** SnowLauncher ignores its `Server=` key — the client always talks to `127.0.0.1:28080`.
+* **Card server = a host that also serves cards (LAN/VPN, port 28080):** set your POC client's `Server=` to
+  that host. The game always talks to the card server on port **28080**, so this only works when that host's
+  card server listens on 28080 — not the usual public / VPS matchmaker (port **28090**). For a VPS, use the
+  split setup (A6).
+* **SnowLauncher users / VPS matchmaker:** SnowLauncher ignores its `Server=` key — the client always talks to `127.0.0.1:28080`.
   So run a **local** patched card server on port 28080 and use the split setup (A6): `MatchUrl` and `StunHost`
-  point at the remote matchmaker. (SnowLauncher once wiped the `AccessCode` in its ini during testing — keep a
+  point at the remote matchmaker (port **28090**). The card website stays at `http://127.0.0.1:28080/`. (SnowLauncher once wiped the `AccessCode` in its ini during testing — keep a
   backup of your launcher/card config.)
   SnowLauncher always starts the **stock** card server from the game's `server` folder (no ini setting turns
   that off). Start the patched server first (`3-Start-Server.bat`, wait until it listens), then SnowLauncher:
@@ -309,8 +313,9 @@ on 2026-11-15 at 5:57 AM Pacific Time (two cabinets, two card servers, one share
    and **Friend's Invitation Code**, and press **ADD**.
 
 **Different card servers** (each player keeps their own cards; both servers point `OnlineMatching.MatchUrl`
-and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28080/match`; use the port the
-matchmaker's `kestrel.json` listens on, 28080 by default — `2-Configure` "2 = PLAY" assumes 28080). Give each card server a
+and `StunHost` at the same matchmaker, for example `http://<VPS_IP>:28090/match`). The matchmaker is on **28090**;
+your own card server (and its web page at `http://<card server>:28080/`) stays on **28080**. `2-Configure`
+"2 = PLAY" assumes 28090. Give each card server a
 distinct `OnlineTag.ServerId` (for example 1 and 2) and the matchmaker's `OnlineTag.TagSecret` (A8). Leave
 `OnlineTag.InviteUrl` empty so it is derived as `/tag` on that matchmaker. Two cards on the **same** card server
 can also use a partner code (tested 2026-11-15 with four cabinets: one cross-server and one same-server pair).

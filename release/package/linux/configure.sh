@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # EXVS2 matchmaking server - Linux configure (step 2). Writes Configurations/server.json + kestrel.json.
 # Usage: ./linux/configure.sh                     (asks questions)
-#        ./linux/configure.sh --ip 203.0.113.10 [--http-port 28080] [--stun-port 3478] [--fill 3] [--yes]
+#        ./linux/configure.sh --ip 203.0.113.10 [--http-port 28090] [--stun-port 3478] [--fill 3] [--yes]
 #                             [--access-mode LanOnly|PublicMatchmaker|Open] [--tag-secret-file FILE]
 # Security (docs/SECURITY.md): a public IP defaults to PublicMatchmaker (internet reaches only /match, /mms, /tag);
 # private / VPN addresses default to LanOnly. OnlineTag.TagSecret is generated once if missing (or read from FILE).
@@ -11,7 +11,7 @@ ROOT="$(dirname "$HERE")"
 SERVER_DIR="${SERVER_DIR:-$ROOT/server-linux}"
 CFG="$SERVER_DIR/Configurations"
 
-IP=""; HTTP_PORT=28080; STUN_PORT=3478; FILL=3; YES=0; ACCESS=""; SECRET_FILE=""
+IP=""; HTTP_PORT=28090; STUN_PORT=3478; FILL=3; YES=0; ACCESS=""; SECRET_FILE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --ip) IP="$2"; shift 2 ;;
@@ -50,7 +50,8 @@ if [ -z "$IP" ]; then
     read -r -p "Server address (IPv4) [$default]: " IP; IP="${IP:-$default}"
     valid_ip "$IP" && break; echo "    That is not an IPv4 address like 203.0.113.10. Try again."
   done
-  read -r -p "HTTP port for the card server + matchmaker [$HTTP_PORT]: " a; HTTP_PORT="${a:-$HTTP_PORT}"
+  echo "The public/VPS matchmaker listens on 28090; a card server the game and its web page talk to stays on 28080."
+  read -r -p "Listen port for THIS server (28090 = public matchmaker) [$HTTP_PORT]: " a; HTTP_PORT="${a:-$HTTP_PORT}"
 fi
 valid_ip "$IP" || { echo "ERROR: --ip must be an IPv4 address" >&2; exit 1; }
 case "$IP" in 127.*) echo "WARNING: 127.x only works for games on this same machine." ;; esac
@@ -122,4 +123,5 @@ Open these ports (see Public-Server.txt):
 Players use:  card server address $IP  (see Connect-Your-Game.txt)
 Next: ./linux/start-server.sh
 MSG
-[ "$HTTP_PORT" = 28080 ] || echo "NOTE: the game connects to its card server on port 28080. Use another port only for a matchmaker that players reach through their own local card server (MatchUrl)."
+echo "The matchmaker is on 28090; your own card server (and its web page) is on 28080."
+[ "$HTTP_PORT" = 28080 ] && echo "NOTE: 28080 is the game's card-server port (and its web page). For a public/VPS matchmaker that players reach through MatchUrl, use 28090."
