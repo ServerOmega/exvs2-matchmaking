@@ -1,0 +1,766 @@
+From 38abaf88f19ed76e846bd966c2eef4f9e763f9ba Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 07:34:24 -0800
+Subject: [PATCH] Matchmaker: rematch cooldown for solo rooms, ROOM-END /
+ ROOM-SUMMARY log
+
+LA 2026-11-16: room 19 (mix) was an exact rematch of room 18 (same four node ids, same teams) made
+the second the 4th cab re-entered, and two cabs got 21-01 while loading; room 13 (class) repeated
+room 12 twenty seconds after its first re-entry, no result. Every other solo rematch in the VPS
+history formed 39 s or more after the first re-entry and played.
+
+OnlineMatching.RematchCooldownSeconds (default 30, 0 = off): nodes whose last room is the same
+humans-vs-humans room are kept out of a solo-entry room together until N s after that room's first
+re-entry. Rooms with a team entry, CPU / lone-team / pair rooms and pair worlds are unchanged, so
+continue-pair, after-CPU and the regroup rooms behave as before. Logs REMATCH-COOLDOWN defer/placed.
+
+OnlineMatching.LogRoomEnd (default on) + RoomEndTimeoutSeconds (900): ROOM-END per cab after a match
+(reentry / reentry-new-node / cancel-after-match / cancel / timeout, seconds since the match, when it
+fetched the room) and ROOM-SUMMARY once all cabs are accounted for. The MMS protocol carries no
+UDPHP / RTT result, so this is what the matchmaker can see.
+
+Tests: RematchCooldownTests (15). Matchmaking.Tests 435/435; with the production defaults forced on,
+every older scenario still passes.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  19 ++
+ Server-Infinite/Matchmaking/Matchmaker.cs     | 221 +++++++++++-
+ .../Config/OnlineMatchingConfigurations.cs    |  14 +
+ Server-Infinite/Program.cs                    |   8 +-
+ .../Matchmaking.Tests/RematchCooldownTests.cs | 318 ++++++++++++++++++
+ tools/vps/server.vps.json                     |   5 +-
+ 6 files changed, 579 insertions(+), 6 deletions(-)
+ create mode 100644 Tests/Matchmaking.Tests/RematchCooldownTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index d7599d4..957e1db 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -236,6 +236,25 @@ With `OnlineMatching.NoCpuPartner` (true by default in the config; the `Matchmak
+   `NOCPU-WARN` line) and waits for its own timeout.
+ * `false` = pre-v11 behaviour. Tests: `Tests/Matchmaking.Tests/NoCpuPartnerTests.cs`.
+ 
++## Rematch cooldown and ROOM-END log (2026-11-16)
++21-01 on four cabs on one LAN: room 19 (Mix) was an exact rematch of room 18 (same four node ids, same teams), made the
++second the 4th cab re-entered (0 s after that room's first re-entry, ~27 s after its results), and two cabs got 21-01 while
++loading. Room 13 (Class) was the same for room 12 (20 s after the first re-entry), no result saved. In the matchmaker's
++history every other solo rematch formed 39 s or more after the first re-entry and played.
++
++* `OnlineMatching.RematchCooldownSeconds` (default **30**, 0 = off): two nodes whose last room is the same
++  humans-vs-humans room are not placed in a room made only of solo entries until this many seconds after that room's
++  first re-entry (the first EntryMatching of any of its nodes). Other cabs still match at once; after the cooldown the
++  same group may meet again. Rooms with a team entry (continued duo regrouping with its former opponents, after-CPU duo,
++  cross-world), earlier humans-vs-CPU / lone-team / pair rooms, and pair worlds are unchanged.
++  Log: `REMATCH-COOLDOWN defer <world> nodes=[..] room=N pairs=[a+b,..] left=Ns`, then `REMATCH-COOLDOWN placed room=M`.
++* `OnlineMatching.LogRoomEnd` (default on), `RoomEndTimeoutSeconds` (900): per cab after a match,
++  `ROOM-END room=N <world> node=X serial=.. reason=reentry|reentry-new-node|cancel-after-match|cancel|timeout +Ns since
++  match fetched=+Ns|never order=k/n`, and once every cab is accounted for
++  `ROOM-SUMMARY room=N .. spread=Ns ends: node:reason@+Ns(fetch ..) ..` (earliest first). A cab that comes back ~100 s
++  after its match while the others come back ~180 s+ or never is the one that dropped. The MMS protocol carries no
++  UDPHP / RTT result (that goes to the card server's CheckCommunication), so these lines are what the matchmaker sees.
++
+ ## SoftWait and full 4-human rooms (v12, 2026-11-15)
+ `SoftAttributeWaitSeconds` (default 15) still keeps different Mix veteran flags / free-battle win-rate buckets apart at first, so a same-flag 4-human room can still form if more players arrive. A complete 4-human room no longer waits for SoftWait: if a same-flag 4 is not already waiting, a mixed 4 (for example a Teamplay duo + 2 solos with different veteran flags) starts immediately. SoftWait still applies to short-handed rooms (when `NoCpuPartner` is off). Tested 2026-11-15 03:13 PT: a duo + 2 solos used to wait ~14–16 s; they now match at once. 5 new tests (150 total).
+ 
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index cd2055c..d7e1ec7 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -126,6 +126,8 @@ public sealed class Matchmaker
+         /// <summary>PAIR-SEARCH: CheckMatching polls from this duo (any of its cabinets).</summary>
+         public int PairChecks;
+         public double LastPairCheck;
++        /// <summary>REMATCH-COOLDOWN: first time a room with this unit was held back by the rematch cooldown.</summary>
++        public double? CooldownDeferredAt;
+         /// <summary>A 2-slot entry whose partner is the game's CPU stand-in ("N").</summary>
+         public bool HasCpuPartner => Clients.Any(c => !IsHuman(c));
+ 
+@@ -476,6 +478,45 @@ public sealed class Matchmaker
+     /// <summary>Shop overrides: a shop on several public IPs / a range (see OnlineMatching.ShopKeys).</summary>
+     public IReadOnlyList<(string Name, System.Net.IPNetwork Net)> ShopKeys { get; set; } = Array.Empty<(string, System.Net.IPNetwork)>();
+ 
++    /// <summary>
++    /// rematch cooldown 2026-11-16 (LA, 4 cabs on one LAN): room 19 (mix) was an exact rematch of room 18 (same node ids
++    /// 1406/1400/1404/1402, same teams) made the second the 4th cab re-entered, 27 s after room 18's results, and two cabs
++    /// got 21-01 while loading; room 13 (class) was an exact rematch of room 12, ~46 s after, no result. Two human nodes
++    /// whose last room is the same room are not placed in a room together again until this many seconds after that room's
++    /// FIRST re-entry (the first EntryMatching of any of its nodes after it, i.e. about 27 s after its results).
++    /// Only humans-vs-humans rooms count as the earlier room (not humans-vs-CPU, lone-team or pair-world rooms), and only
++    /// rooms made of SOLO entries are held (2v2 4 solos / short-handed, 1on1, solo-pair CPU rooms): both failures
++    /// were 4 solo entries, while rooms with a team entry (a continued duo regrouping with its former opponents: 09:01:59Z
++    /// room 3 one second after all four re-entered, 10:17:28Z room 8) played, so continue-pair / after-CPU / cross-world
++    /// rooms are unchanged. Pair-world rooms are exempt. Pure-solo exact rematches that played (08:16:38Z, 08:59:02Z,
++    /// 00:25:21Z) had the first returner waiting 45-51 s; the two failures 0 s and 20 s. Rooms without such a pair still
++    /// form at once, and the held group may meet again once the cooldown has passed. Logs REMATCH-COOLDOWN defer /
++    /// placed. 0 = off (default here; the config default is 30).
++    /// </summary>
++    public double RematchCooldownSeconds { get; set; } = 0;
++    /// <summary>ROOM-END / ROOM-SUMMARY lines (logging only). Off by default here; config default on.</summary>
++    public bool RoomEndLog { get; set; } = false;
++    /// <summary>ROOM-END: no re-entry / cancel this many seconds after the match = timeout.</summary>
++    public double RoomEndTimeoutSeconds { get; set; } = 900;
++
++    // node -> (room, at): the node's first EntryMatching after its last room (rematch cooldown + ROOM-END)
++    private readonly Dictionary<uint, (uint Room, double At)> _reentryByNode = new();
++    private readonly HashSet<uint> _pvpRoomIds = new();   // rooms with humans on both sides and no CPU stand-ins
++    private readonly Dictionary<uint, double> _roomFirstReentry = new();   // room -> first EntryMatching of any of its nodes
++    private readonly List<(List<Unit> Units, string Why)> _cooldownDefers = new();
++    private readonly HashSet<string> _cooldownLogged = new();
++
++    private sealed class RoomTrack
++    {
++        public required Room Room;
++        public required string WorldName;
++        public required List<Client> Humans;
++        public readonly Dictionary<uint, double> Fetched = new();
++        public readonly Dictionary<uint, (double At, string Reason)> Ended = new();
++    }
++    private readonly Dictionary<uint, RoomTrack> _rooms = new();
++    private const int RoomTrackMax = 1024;
++
+     public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0,
+         FillTimerMode fillTimerMode = FillTimerMode.Rolling, double maxFillWait = 90)
+     {
+@@ -674,6 +715,7 @@ public sealed class Matchmaker
+                 Drop(old, now, reason: "replaced by re-entry");
+             }
+             foreach (var n in t.NodeIds) _ended.Remove(n);
++            NoteReentry(t, now);
+             // load test 2026-11-13: one queue slot per cabinet. A new entry (new node ids) from a cabinet that still
+             // has an older waiting unit (it left without CancelMatching) used to let both match -> two rooms at once.
+             // lm-mix test 2026-11-13: same cabinet = same serial + same global IP (serials repeat across stores).
+@@ -755,7 +797,11 @@ public sealed class Matchmaker
+                     ? ErrorCode.MatchCanceled : ErrorCode.ErrMatchNoentry, null, 0);
+             t.LastSeen = now;
+             if (t.Room == null) TryMatch(now);           // bands widen / fill timer runs with time
+-            if (t.Room != null) return (ErrorCode.Success, t.Room, t.ApplyId);
++            if (t.Room != null)
++            {
++                NoteFetch(t.Room.RoomId, nodeId, now);
++                return (ErrorCode.Success, t.Room, t.ApplyId);
++            }
+             if (!_byNode.ContainsKey(nodeId))            // TryMatch dropped it (continue pair, no stand-in id): say so now
+                 return (_ended.Remove(nodeId) ? ErrorCode.MatchCanceled : ErrorCode.ErrMatchNoentry, null, 0);
+             if (PartnerWaitLogAfter > 0 && !t.PartnerWaitLogged && t.Pair && t.World == OnlineTagWorld &&
+@@ -794,7 +840,13 @@ public sealed class Matchmaker
+         if (ForeignSource(nodeId, sourceIp, "cancel")) return;
+         lock (_gate)
+         {
+-            if (!_byNode.TryGetValue(nodeId, out var t) || t.Room != null) return;
++            if (!_byNode.TryGetValue(nodeId, out var t) || t.Room != null)
++            {
++                // ROOM-END: a CancelMatching from a node that is (or just was) in a room
++                if (t?.Room != null) RoomEnd(t.Room.RoomId, nodeId, now, $"cancel-after-match apply={applyId}");
++                else if (_lastSideByNode.TryGetValue(nodeId, out var last)) RoomEnd(last.Room, nodeId, now, $"cancel apply={applyId}");
++                return;
++            }
+             // disconnect test 2026-11-13: a late / reordered CancelMatching of an OLDER attempt (the leader already
+             // re-entered with a new apply_id) cancelled the current entry. The partner's cancel carries its own
+             // counter, so only the leader's apply_id is checked.
+@@ -961,6 +1013,11 @@ public sealed class Matchmaker
+                     for (var j = i + 1; j < units.Count && ok; j++)
+                         ok = Compatible(units[i], units[j], now, ignoreSoft);
+                 if (!ok) continue;
++                if (CooldownBlocks(units, now, out var why))
++                {
++                    _cooldownDefers.Add((units, why));
++                    continue;
++                }
+ 
+                 foreach (var sides in SideSplits(units))
+                 {
+@@ -996,7 +1053,8 @@ public sealed class Matchmaker
+                     // 1on1 worlds: first come, first matched; exactly 2 cabinets, one per side; no fill timer / CPU seats
+                     for (var i = 0; i < bucket.Count && !made; i++)
+                     {
+-                        var b = bucket.Skip(i + 1).FirstOrDefault(u => Compatible(bucket[i], u, now));
++                        var b = bucket.Skip(i + 1).FirstOrDefault(u => Compatible(bucket[i], u, now) &&
++                                                                       !CooldownDefer(new List<Unit> { bucket[i], u }, now));
+                         if (b == null) continue;
+                         MakeOneOnOneRoom(bucket[i], b, now);
+                         made = true;
+@@ -1130,6 +1188,160 @@ public sealed class Matchmaker
+                 if (made) break;
+             }
+         } while (made);
++        FlushCooldownDefers(now);
++    }
++
++    // ---- rematch cooldown + ROOM-END (lock held) ----
++
++    /// <summary>The room's first re-entry (any of its human nodes); "now" if none yet.</summary>
++    private double RoomReentryAt(uint room, double now) => _roomFirstReentry.TryGetValue(room, out var at) ? at : now;
++
++    /// <summary>True when two different units of <paramref name="units"/> hold nodes whose last room is the same room and
++    /// at least one of the two has re-entered less than <see cref="RematchCooldownSeconds"/> ago.</summary>
++    private bool CooldownBlocks(IReadOnlyList<Unit> units, double now, out string why)
++    {
++        why = "";
++        if (RematchCooldownSeconds <= 0) return false;
++        // solo rooms only: both LA failures (rooms 13 / 19) were 4 solo entries; a continued duo regrouping with its
++        // former opponents (09:01:59Z room 3 within 1 s, 10:17:28Z room 8 within 5 s, both played) keeps forming at once,
++        // so the continue-pair / after-CPU answers are unchanged
++        if (units.Any(u => u.IsTeam)) return false;
++        double worst = 0; uint room = 0;
++        var pairs = new List<string>();
++        for (var i = 0; i < units.Count; i++)
++            for (var j = i + 1; j < units.Count; j++)
++                foreach (var a in units[i].NodeIds)
++                    foreach (var b in units[j].NodeIds)
++                    {
++                        if (!_lastSideByNode.TryGetValue(a, out var la) || !_lastSideByNode.TryGetValue(b, out var lb) ||
++                            la.Room != lb.Room || !_pvpRoomIds.Contains(la.Room)) continue;
++                        var left = RematchCooldownSeconds - (now - RoomReentryAt(la.Room, now));
++                        if (left <= 0) continue;
++                        pairs.Add($"{a}+{b}");
++                        if (left > worst) { worst = left; room = la.Room; }
++                    }
++        if (pairs.Count == 0) return false;
++        why = $"room={room} pairs=[{string.Join(",", pairs)}] left={worst:0.#}s";
++        return true;
++    }
++
++    /// <summary>CooldownBlocks + remember the deferral for the REMATCH-COOLDOWN log.</summary>
++    private bool CooldownDefer(List<Unit> units, double now)
++    {
++        if (!CooldownBlocks(units, now, out var why)) return false;
++        _cooldownDefers.Add((units, why));
++        return true;
++    }
++
++    /// <summary>One REMATCH-COOLDOWN defer line per held group (only groups still waiting after this TryMatch).</summary>
++    private void FlushCooldownDefers(double now)
++    {
++        if (_cooldownDefers.Count == 0) return;
++        foreach (var (units, why) in _cooldownDefers)
++        {
++            if (units.Any(u => u.Room != null || !_queue.Contains(u))) continue;
++            foreach (var u in units) u.CooldownDeferredAt ??= now;
++            var nodes = units.SelectMany(u => u.NodeIds).OrderBy(n => n).ToList();
++            var key = $"{string.Join(",", nodes)}|{why.Split(' ')[0]}";
++            if (_cooldownLogged.Count > 4096) _cooldownLogged.Clear();
++            if (!_cooldownLogged.Add(key)) continue;
++            Log?.Invoke($"REMATCH-COOLDOWN defer {units[0].WorldName} nodes=[{string.Join(",", nodes)}] {why}: these cabinets " +
++                        $"were just in one room; not together again until {RematchCooldownSeconds:0.#}s after that room's first re-entry");
++        }
++        _cooldownDefers.Clear();
++    }
++
++    /// <summary>First EntryMatching of each node after its last room: cooldown anchor + ROOM-END reentry.</summary>
++    private void NoteReentry(Unit t, double now)
++    {
++        foreach (var c in t.Humans)
++        {
++            var n = c.NodeId;
++            if (!_lastSideByNode.TryGetValue(n, out var last) || now < last.At) continue;
++            if (_reentryByNode.TryGetValue(n, out var re) && re.Room == last.Room) continue;
++            _reentryByNode[n] = (last.Room, now);
++            _roomFirstReentry.TryAdd(last.Room, now);
++            RoomEnd(last.Room, n, now, $"reentry {t.WorldName} apply={t.ApplyId}{(t.IsTeam ? $" team=[{string.Join(",", t.NodeIds)}]" : "")}");
++        }
++        if (_reentryByNode.Count > LastRoomMax)
++            foreach (var k in _reentryByNode.OrderBy(kv => kv.Value.At).Take(_reentryByNode.Count - LastRoomMax).Select(kv => kv.Key).ToList())
++                _reentryByNode.Remove(k);
++        if (_roomFirstReentry.Count > LastRoomMax)
++            foreach (var k in _roomFirstReentry.OrderBy(kv => kv.Value).Take(_roomFirstReentry.Count - LastRoomMax).Select(kv => kv.Key).ToList())
++                _roomFirstReentry.Remove(k);
++        if (!RoomEndLog) return;
++        // the same cabinet back on a NEW node id (IssueNodeId after a restart / new credit)
++        foreach (var tr in _rooms.Values.ToList())
++            foreach (var h in tr.Humans)
++                if (!tr.Ended.ContainsKey(h.NodeId) && !t.NodeIds.Contains(h.NodeId) &&
++                    t.Humans.Any(c => NetDiag.SameCabinet(c, h)))
++                    RoomEnd(tr.Room.RoomId, h.NodeId, now,
++                        $"reentry-new-node new={string.Join(",", t.Humans.Where(c => NetDiag.SameCabinet(c, h)).Select(c => c.NodeId))} {t.WorldName}");
++    }
++
++    private void TrackRoom(Unit u, Room room)
++    {
++        // rematch cooldown counts only humans-vs-humans rooms (both failures were 4-human P2P rooms): not humans-vs-CPU,
++        // lone-team or pair rooms (all group 0), so CPU-room teammates regroup with the waiting solos as before
++        if (_pvpRoomIds.Count > LastRoomMax) _pvpRoomIds.Clear();
++        if (room.Clients.All(rc => Unit.IsHuman(rc.Client)) && room.Clients.Any(rc => rc.GroupId == 0) &&
++            room.Clients.Any(rc => rc.GroupId != 0))
++            _pvpRoomIds.Add(room.RoomId);
++        if (!RoomEndLog && RematchCooldownSeconds <= 0) return;
++        if (_rooms.ContainsKey(room.RoomId)) return;
++        // first unit of a new room: every unit of the room is still mapped in _byNode
++        var deferred = room.Clients.Where(rc => Unit.IsHuman(rc.Client))
++            .Select(rc => _byNode.TryGetValue(rc.Client.NodeId, out var x) ? x : null)
++            .Where(x => x?.CooldownDeferredAt != null).Distinct().ToList();
++        if (deferred.Count > 0)
++            Log?.Invoke($"REMATCH-COOLDOWN placed room={room.RoomId} nodes=[{string.Join(",", deferred.SelectMany(x => x!.NodeIds))}] " +
++                        $"after {room.At - deferred.Min(x => x!.CooldownDeferredAt!.Value):0.#}s held");
++        if (!RoomEndLog) return;
++        _rooms[room.RoomId] = new RoomTrack
++        {
++            Room = room, WorldName = u.WorldName,
++            Humans = room.Clients.Where(rc => Unit.IsHuman(rc.Client)).Select(rc => rc.Client).ToList(),
++        };
++        if (_rooms.Count > RoomTrackMax)
++            foreach (var k in _rooms.OrderBy(kv => kv.Value.Room.At).Take(_rooms.Count - RoomTrackMax).Select(kv => kv.Key).ToList())
++                _rooms.Remove(k);
++    }
++
++    private void NoteFetch(uint roomId, uint node, double now)
++    {
++        if (!RoomEndLog || !_rooms.TryGetValue(roomId, out var tr) || tr.Fetched.ContainsKey(node)) return;
++        if (tr.Humans.Any(h => h.NodeId == node)) tr.Fetched[node] = now;
++    }
++
++    private string FetchText(RoomTrack tr, uint node) =>
++        tr.Fetched.TryGetValue(node, out var f) ? $"+{f - tr.Room.At:0.#}s" : "never";
++
++    /// <summary>ROOM-END for one node; ROOM-SUMMARY once every human node of the room has ended.</summary>
++    private void RoomEnd(uint roomId, uint node, double now, string reason)
++    {
++        if (!RoomEndLog || !_rooms.TryGetValue(roomId, out var tr) || tr.Ended.ContainsKey(node)) return;
++        if (!tr.Humans.Any(h => h.NodeId == node)) return;
++        tr.Ended[node] = (now, reason);
++        var serial = tr.Humans.First(h => h.NodeId == node).PcbSerial;
++        Log?.Invoke($"ROOM-END room={roomId} {tr.WorldName} node={node} serial={serial} reason={reason} " +
++                    $"+{now - tr.Room.At:0.#}s since match fetched={FetchText(tr, node)} order={tr.Ended.Count}/{tr.Humans.Count}");
++        if (tr.Ended.Count < tr.Humans.Count) return;
++        var ends = tr.Humans.OrderBy(h => tr.Ended[h.NodeId].At).ThenBy(h => h.NodeId)
++            .Select(h => $"{h.NodeId}:{tr.Ended[h.NodeId].Reason.Split(' ')[0]}@+{tr.Ended[h.NodeId].At - tr.Room.At:0.#}s" +
++                         $"(fetch {FetchText(tr, h.NodeId)})");
++        var times = tr.Humans.Select(h => tr.Ended[h.NodeId].At).ToList();
++        Log?.Invoke($"ROOM-SUMMARY room={roomId} {tr.WorldName} humans={tr.Humans.Count} spread={times.Max() - times.Min():0.#}s " +
++                    $"ends: {string.Join(" ", ends)}");
++        _rooms.Remove(roomId);
++    }
++
++    private void SweepRooms(double now)
++    {
++        if (!RoomEndLog || RoomEndTimeoutSeconds <= 0) return;
++        foreach (var tr in _rooms.Values.Where(r => now - r.Room.At > RoomEndTimeoutSeconds).ToList())
++            foreach (var h in tr.Humans.ToList())
++                if (!tr.Ended.ContainsKey(h.NodeId))
++                    RoomEnd(tr.Room.RoomId, h.NodeId, now, $"timeout (no re-entry or cancel within {RoomEndTimeoutSeconds:0}s)");
+     }
+ 
+     /// <summary>SoloPairVsCpu: exactly two all-human solos in the world's queue, both waiting long enough -> teammates
+@@ -1179,6 +1391,7 @@ public sealed class Matchmaker
+                 return false;
+             }
+         }
++        if (CooldownDefer(new List<Unit> { first, second }, now)) return false;
+         Log?.Invoke($"solo pair: nodes=[{first.Clients[0].NodeId},{second.Clients[0].NodeId}] the only 2 humans after " +
+                     $"{now - second.Created:0}s/{now - first.Created:0}s, teammates vs 2 CPU stand-ins (no human gets a CPU partner)");
+         return MakeHumansVsCpuRoom(new List<Unit> { first, second }, now);
+@@ -1419,6 +1632,7 @@ public sealed class Matchmaker
+ 
+     private void RememberRoom(Unit u, Room room)
+     {
++        TrackRoom(u, room);
+         foreach (var rc in room.Clients)
+             if (Unit.IsHuman(rc.Client)) _lastSideByNode[rc.Client.NodeId] = (room.RoomId, rc.GroupId, room.At);
+         if (_lastSideByNode.Count > LastRoomMax)
+@@ -1656,6 +1870,7 @@ public sealed class Matchmaker
+     private void Sweep(double now)
+     {
+         ExpireQuarantine(now);
++        SweepRooms(now);
+         foreach (var t in _byNode.Values.Distinct().ToList())
+         {
+             // load test 2026-11-13: was LastSeen > StaleAfter + Timeout, so a cabinet that stopped polling stayed
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 363256d..4216a9d 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -152,6 +152,20 @@ public class OnlineMatchingConfigurations
+     /// with others; its own matching timeout still ends the search with MATCH_CANCELED.
+     /// </summary>
+     public double PairCancelQuarantineSeconds { get; set; } = 180;
++    /// <summary>rematch cooldown 2026-11-16 (21-01 on LA, rooms 13 and 19 were exact rematches of rooms 12 and 18, same four
++    /// node ids, 46 s / 27 s after the results): two cabinet nodes that were in the same room (their last room) are not put
++    /// in a room together again until this many seconds after that room's first re-entry (the first EntryMatching of any of
++    /// its nodes after it, ~27 s after the results; the failures formed 0 s / 20 s after it, pure-solo rematches that
++    /// played 45-51 s after it). Only a humans-vs-humans earlier room counts (not a CPU / lone-team / pair room), and only
++    /// rooms made of solo entries are held (both failures were 4 solos); a room with a team entry
++    /// (continued duo regrouping, after-CPU duo, cross-world) forms as before, and pair worlds are exempt. Other players
++    /// are matched as usual meanwhile; once the cooldown has passed the same group may meet again. 0 = off.</summary>
++    public double RematchCooldownSeconds { get; set; } = 30;
++    /// <summary>Log ROOM-END (one line per cabinet node: re-entry / cancel / timeout, seconds since the match and when it
++    /// first fetched the room) and ROOM-SUMMARY (once every node of the room is accounted for). Logging only.</summary>
++    public bool LogRoomEnd { get; set; } = true;
++    /// <summary>ROOM-END: a node with no re-entry or cancel this many seconds after its match is logged as timeout.</summary>
++    public double RoomEndTimeoutSeconds { get; set; } = 900;
+     /// <summary>Seconds during which a "soft" mode attribute (win-rate bucket, veteran flag) must match.</summary>
+     public double SoftAttributeWaitSeconds { get; set; } = 15;
+     /// <summary>Seconds without a CheckMatching poll before a waiting cabinet is dropped (no ghost matches).</summary>
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 8b3bd2e..723f586 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -183,6 +183,9 @@ try
+             PairCpuFallbackSeconds = mm.PairCpuFallbackSeconds,
+             PairSearchLog = mm.PairSearchLog || mm.PairNeverCpu || mm.PairCpuFallbackSeconds == 0,
+             PairCancelQuarantineSeconds = mm.PairCancelQuarantineSeconds,
++            RematchCooldownSeconds = mm.RematchCooldownSeconds,
++            RoomEndLog = mm.LogRoomEnd,
++            RoomEndTimeoutSeconds = mm.RoomEndTimeoutSeconds,
+             Realms = ServerInfinite.Matchmaking.NetDiag.ParseRealms(mm.NetworkRealms),
+             InStoreScope = mm.InStoreScope,
+             ShopKeys = ServerInfinite.Matchmaking.NetDiag.ParseShopKeys(mm.ShopKeys),
+@@ -210,13 +213,14 @@ try
+     var config = app.Services.GetRequiredService<IOptions<CardServerConfig>>().Value;
+     Log.Information("Card server config: {@Config}", config.ToString());
+     Log.Information("Matchmaker policy: NoCpuPartner={NoCpuPartner} AllowPartialRooms={AllowPartial} OneOnOneWorlds={OneOnOne} " +
+-                    "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns} ContinuePair={ContinuePair}/{ContinuePairSeconds}s/{ContinuePairScope}/after-cpu {ContinuePairAfterCpu}s CpuPartnerCancel={CpuPartnerCancel}s PlaceCpuPartnerTeams={PlaceCpuTeams} SoloPairVsCpu={SoloPair}s/wait-return {SoloPairReturn}s/regroup {SoloPairRegroup}s CrossWorldTeamRooms={CrossWorld} PairNeverCpu={PairNeverCpu} PairCpuFallback={PairCpuFallback}s PairSearchLog={PairSearchLog} PairCancelQuarantine={PairCancelQuarantine}s",
++                    "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns} ContinuePair={ContinuePair}/{ContinuePairSeconds}s/{ContinuePairScope}/after-cpu {ContinuePairAfterCpu}s CpuPartnerCancel={CpuPartnerCancel}s PlaceCpuPartnerTeams={PlaceCpuTeams} SoloPairVsCpu={SoloPair}s/wait-return {SoloPairReturn}s/regroup {SoloPairRegroup}s CrossWorldTeamRooms={CrossWorld} PairNeverCpu={PairNeverCpu} PairCpuFallback={PairCpuFallback}s PairSearchLog={PairSearchLog} PairCancelQuarantine={PairCancelQuarantine}s RematchCooldown={RematchCooldown}s RoomEndLog={RoomEndLog}/{RoomEndTimeout}s",
+         config.OnlineMatching.NoCpuPartner, config.OnlineMatching.AllowPartialRooms, config.OnlineMatching.OneOnOneWorlds,
+         config.OnlineMatching.LoneTeamVsCpu, config.OnlineMatching.HumansTeamVsCpu, config.OnlineMatching.CpuStandInSeats,
+         config.OnlineMatching.ContinuePairMode, config.OnlineMatching.ContinuePairSeconds, config.OnlineMatching.ContinuePairScope, config.OnlineMatching.ContinuePairAfterCpuSeconds, config.OnlineMatching.CpuPartnerCancelSeconds, config.OnlineMatching.PlaceCpuPartnerTeams, config.OnlineMatching.SoloPairVsCpuSeconds, config.OnlineMatching.SoloPairReturnWaitSeconds, config.OnlineMatching.SoloPairRegroupSeconds, config.OnlineMatching.CrossWorldTeamRooms,
+         config.OnlineMatching.PairNeverCpu, config.OnlineMatching.PairCpuFallbackSeconds,
+         config.OnlineMatching.PairSearchLog || config.OnlineMatching.PairNeverCpu || config.OnlineMatching.PairCpuFallbackSeconds == 0,
+-        config.OnlineMatching.PairCancelQuarantineSeconds);
++        config.OnlineMatching.PairCancelQuarantineSeconds, config.OnlineMatching.RematchCooldownSeconds,
++        config.OnlineMatching.LogRoomEnd, config.OnlineMatching.RoomEndTimeoutSeconds);
+     var serverIdFile = string.IsNullOrWhiteSpace(config.OnlineTag.ServerIdFile) ? "tag_server_id.txt" : config.OnlineTag.ServerIdFile;
+     ServerInfinite.Matchmaking.PilotId.Initialize(config.OnlineTag.ServerId, serverIdFile, s => Log.Information("{Message}", s));
+     var inviteUrl = ServerInfinite.Matchmaking.TagInviteUrl.Resolve(config.OnlineTag.InviteUrl, config.OnlineMatching.MatchUrl);
+diff --git a/Tests/Matchmaking.Tests/RematchCooldownTests.cs b/Tests/Matchmaking.Tests/RematchCooldownTests.cs
+new file mode 100644
+index 0000000..af28583
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/RematchCooldownTests.cs
+@@ -0,0 +1,318 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// LA 2026-11-16 (cdd7bf8): room 19 (mix, 15:15:55Z) was an EXACT rematch of room 18 (nodes 1406/1400/1404/1402, same
++// teams) formed the second the 4th cab re-entered, 27 s after room 18's results; two cabs got 21-01 while loading.
++// Room 13 (class, 14:49:38Z) was the same for room 12 (nodes 1372-1378, entries 14:49:18/18/37/38), no result saved.
++// RematchCooldownSeconds keeps nodes of one room apart until N s after both re-entered. ROOM-END logs each node's end.
++public class RematchCooldownTests
++{
++    private const uint Mix = 23, ClassSolo = 13, ClassTeam = 14, Recruit = 21, Fes1on1 = 20;
++
++    private static Client Cl(uint node)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = $"PCB{node}", LocId = "JPN0JPN1", PrefCode = 1, GlobalIpaddress = "203.0.113.8",
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        return c;
++    }
++
++    private static Request.EntryMatching Entry(uint node, uint apply, uint world, uint? member = null)
++    {
++        var e = new Request.EntryMatching
++        {
++            ApplyId = apply, Myclient = Cl(node), MatchingTimeout = 150, SeqNum = 1, CreateRoomFlag = 1,
++            Myplayer = new Player { BanapassportAmId = node },
++            World = new World { MuchaGameId = "GIB1", Version = 106547, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = world == Mix ? 0 : 1 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = 3 });
++        if (member != null)
++            e.Groups.Add(new Request.EntryMatching.Group { Client = Cl(member.Value), Player = new Player { BanapassportAmId = member.Value } });
++        return e;
++    }
++
++    /// <summary>The LA policy (cdd7bf8 server.json) plus the new settings.</summary>
++    private static Matchmaker New(double cooldown, List<string>? log = null, bool roomEnd = true) =>
++        new(fillAfter: 3, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, MaxFillWait = 3, InStoreFillAfter = 3, InStoreMaxFillWait = 3,
++            NoCpuPartner = true,
++            ContinuePairMode = Matchmaker.ContinuePairPolicy.VsCpu,
++            ContinuePairSeconds = 12,
++            ContinuePairScope = Matchmaker.ContinuePairScopeKind.AnyDuo,
++            ContinuePairAfterCpuSeconds = 2,
++            CpuPartnerCancelSeconds = 5,
++            PlaceCpuPartnerTeams = true,
++            RematchCooldownSeconds = cooldown,
++            RoomEndLog = roomEnd,
++            Log = log == null ? null : log.Add,
++        };
++
++    private static readonly uint[] Room18 = { 1406, 1400, 1402, 1404 };
++
++    /// <summary>15:12:41-47Z: the four cabs enter mix and get room 18 (t = 0 is the room).</summary>
++    private static Matchmaker.Room FirstRoom(Matchmaker mm, uint world = Mix, uint[]? nodes = null, double at = 0)
++    {
++        nodes ??= Room18;
++        foreach (var n in nodes) Assert.Equal(ErrorCode.Success, mm.Entry(Entry(n, 1, world), at));
++        var r = mm.Check(nodes[0], at + 0.5);
++        Assert.NotNull(r.Room);
++        Assert.Equal(4, r.Room!.Humans);
++        return r.Room;
++    }
++
++    private static Matchmaker.Room? Poll(Matchmaker mm, uint node, double t) => mm.Check(node, t).Room;
++
++    [Fact]
++    public void Defaults_matchmaker_off_config_30s_and_room_end_log_on()
++    {
++        var mm = new Matchmaker(3, true, 15, 1);
++        Assert.Equal(0, mm.RematchCooldownSeconds);
++        Assert.False(mm.RoomEndLog);
++        var cfg = new OnlineMatchingConfigurations();
++        Assert.Equal(30, cfg.RematchCooldownSeconds);
++        Assert.True(cfg.LogRoomEnd);
++        Assert.Equal(900, cfg.RoomEndTimeoutSeconds);
++    }
++
++    [Fact]
++    public void Off_keeps_old_behaviour_exact_rematch_at_once()
++    {
++        var mm = New(0);
++        var r18 = FirstRoom(mm);
++        foreach (var n in Room18) mm.Entry(Entry(n, 2, Mix), 188);
++        var r19 = Poll(mm, 1406, 188.2);
++        Assert.NotNull(r19);
++        Assert.NotEqual(r18.RoomId, r19!.RoomId);
++    }
++
++    [Fact]
++    public void Room19_replay_exact_rematch_waits_30s_after_the_first_reentry_then_forms()
++    {
++        var log = new List<string>();
++        var mm = New(30, log);
++        FirstRoom(mm);
++        foreach (var n in Room18) mm.Entry(Entry(n, 2, Mix), 188);   // all four within one second
++        foreach (var t in new[] { 188.5, 191.0, 194.0, 200.0, 210.0, 217.9 })
++            foreach (var n in Room18) Assert.Null(Poll(mm, n, t));
++        Assert.Single(log, l => l.StartsWith("REMATCH-COOLDOWN defer mix-match nodes=[1400,1402,1404,1406] room=1 "));
++        var r = Poll(mm, 1406, 218.1);
++        Assert.NotNull(r);
++        Assert.Equal(4, r!.Humans);
++        Assert.Contains(log, l => l.StartsWith($"REMATCH-COOLDOWN placed room={r.RoomId} ") && l.Contains("after 30"));
++        foreach (var n in Room18) Assert.Same(r, Poll(mm, n, 218.5));
++    }
++
++    [Fact]
++    public void Room13_replay_staggered_reentries_wait_30s_from_the_first_one()
++    {
++        var mm = New(30);
++        var nodes = new uint[] { 1374, 1376, 1372, 1378 };
++        FirstRoom(mm, ClassSolo, nodes);
++        mm.Entry(Entry(1378, 2, ClassSolo), 161);    // 14:49:18
++        mm.Entry(Entry(1374, 2, ClassSolo), 161);
++        mm.Entry(Entry(1372, 2, ClassSolo), 180);    // 14:49:37
++        mm.Entry(Entry(1376, 2, ClassSolo), 181);    // 14:49:38: room 13 formed here (20 s after the first)
++        Assert.Null(Poll(mm, 1376, 181.2));
++        Assert.Null(Poll(mm, 1378, 190.9));
++        Assert.NotNull(Poll(mm, 1376, 191.1));
++    }
++
++    [Fact]
++    public void Pure_solo_rematch_like_0859Z_that_played_is_not_delayed()
++    {
++        // 08:58:13 three back, 08:59:02 the 4th (49 s after the first): room 2 at once, played (+176 s)
++        var log = new List<string>();
++        var mm = New(30, log);
++        var nodes = new uint[] { 1296, 1298, 1300, 1302 };
++        FirstRoom(mm, Mix, nodes);
++        foreach (var n in nodes.Take(3)) mm.Entry(Entry(n, 2, Mix), 187);
++        mm.Entry(Entry(1302, 2, Mix), 236);
++        Assert.NotNull(Poll(mm, 1302, 236.2));
++        Assert.DoesNotContain(log, l => l.StartsWith("REMATCH-COOLDOWN"));
++    }
++
++    [Fact]
++    public void Fresh_cabs_match_at_once_while_the_rematch_group_waits()
++    {
++        var mm = New(30);
++        FirstRoom(mm);
++        foreach (var n in Room18) mm.Entry(Entry(n, 2, Mix), 188);
++        var fresh = new uint[] { 2000, 2002, 2004, 2006 };
++        foreach (var n in fresh) mm.Entry(Entry(n, 1, Mix), 189);
++        var rf = Poll(mm, 2000, 189.5);
++        Assert.NotNull(rf);                               // formed at once, never with two cabs of the old room
++        Assert.True(rf!.Clients.Count(c => Room18.Contains(c.Client.NodeId)) <= 1);
++        var held = Room18.Where(n => !rf.Clients.Any(c => c.Client.NodeId == n)).ToList();
++        Assert.True(held.Count >= 3);
++        Assert.Null(Poll(mm, held[0], 190));
++        Assert.NotNull(Poll(mm, held[0], 218.5));
++    }
++
++    [Fact]
++    public void Two_from_the_room_plus_two_fresh_is_still_held_but_unrelated_pairs_are_fine()
++    {
++        var mm = New(30);
++        FirstRoom(mm);
++        mm.Entry(Entry(1406, 2, Mix), 188);
++        mm.Entry(Entry(1400, 2, Mix), 188);
++        mm.Entry(Entry(3000, 1, Mix), 188);
++        mm.Entry(Entry(3002, 1, Mix), 188);
++        Assert.Null(Poll(mm, 3000, 190));                  // 1406 + 1400 were in room 1
++        Assert.NotNull(Poll(mm, 3000, 218.1));
++
++        // only ONE node of the old room among fresh players: no pair, no wait
++        var mm2 = New(30);
++        FirstRoom(mm2);
++        mm2.Entry(Entry(1406, 2, Mix), 188);
++        foreach (var n in new uint[] { 3000, 3002, 3004 }) mm2.Entry(Entry(n, 1, Mix), 188);
++        Assert.NotNull(Poll(mm2, 1406, 188.5));
++    }
++
++    [Fact]
++    public void Continue_pair_winners_still_get_their_cpu_room_and_losers_hold()
++    {
++        var log = new List<string>();
++        var mm = New(30, log);
++        var room = FirstRoom(mm, ClassSolo, Room18);
++        var side0 = room.Clients.Where(c => c.GroupId == 0).Select(c => c.Client.NodeId).ToList();
++        var side1 = room.Clients.Where(c => c.GroupId == 1).Select(c => c.Client.NodeId).ToList();
++        // winners continue as a duo in class-team, losers come back solo in class-solo (different buckets: unchanged)
++        mm.Entry(Entry(side0[0], 2, ClassTeam, side0[1]), 180);
++        mm.Entry(Entry(side1[0], 2, ClassSolo), 181);
++        mm.Entry(Entry(side1[1], 2, ClassSolo), 181);
++        Assert.Null(Poll(mm, side0[0], 183));
++        var cpu = Poll(mm, side0[0], 192.1);                // ContinuePairSeconds 12
++        Assert.NotNull(cpu);
++        Assert.Equal(2, cpu!.Humans);
++        Assert.Equal(2, cpu.Clients.Count(c => c.Client.Properties.Any(p => p.PropertyValue == "N")));
++
++        // same world (mix): the continued duo + the two losers regroup into a 4-human room at once (rooms with a team
++        // entry are not held: 09:01:59Z room 3 formed 1 s after all four re-entered and played)
++        var log2 = new List<string>();
++        var mm2 = New(30, log2);
++        var r2 = FirstRoom(mm2);
++        var a = r2.Clients.Where(c => c.GroupId == 0).Select(c => c.Client.NodeId).ToList();
++        var b = r2.Clients.Where(c => c.GroupId == 1).Select(c => c.Client.NodeId).ToList();
++        mm2.Entry(Entry(a[0], 2, Mix, a[1]), 180);
++        mm2.Entry(Entry(b[0], 2, Mix), 181);
++        mm2.Entry(Entry(b[1], 2, Mix), 181);
++        var four = Poll(mm2, a[0], 181.5);
++        Assert.NotNull(four);
++        Assert.Equal(4, four!.Humans);
++        Assert.DoesNotContain(log2, l => l.StartsWith("REMATCH-COOLDOWN"));
++    }
++
++    [Fact]
++    public void After_cpu_duo_reentry_is_not_held_by_its_own_cpu_room()
++    {
++        var mm = New(30);
++        mm.Entry(Entry(1312, 3, ClassTeam, 1320), 0);
++        var cpu = Poll(mm, 1312, 12.1);
++        Assert.NotNull(cpu);
++        mm.Entry(Entry(1312, 4, ClassTeam, 1320), 170);
++        var again = Poll(mm, 1312, 173);                    // ContinuePairAfterCpuSeconds 2: first poll
++        Assert.NotNull(again);
++        Assert.NotEqual(cpu!.RoomId, again!.RoomId);
++    }
++
++    [Fact]
++    public void Pair_world_partners_re_pair_at_once()
++    {
++        var mm = New(30);
++        mm.Entry(Entry(1500, 1, Recruit), 0);
++        mm.Entry(Entry(1502, 1, Recruit), 0);
++        var p1 = Poll(mm, 1500, 0.5);
++        Assert.NotNull(p1);
++        mm.Entry(Entry(1500, 2, Recruit), 60);
++        mm.Entry(Entry(1502, 2, Recruit), 60);
++        var p2 = Poll(mm, 1500, 60.5);
++        Assert.NotNull(p2);
++        Assert.NotEqual(p1!.RoomId, p2!.RoomId);
++    }
++
++    [Fact]
++    public void Teammates_of_a_humans_vs_cpu_room_back_as_solos_are_not_held()
++    {
++        // a continued duo's CPU room (no human opponents) is not a P2P rematch: the two may meet again at once
++        var log = new List<string>();
++        var mm = New(30, log);
++        mm.Entry(Entry(1312, 3, Mix, 1320), 0);
++        Assert.NotNull(Poll(mm, 1312, 12.1));               // ContinuePair CPU room
++        mm.Entry(Entry(1312, 4, Mix), 170);
++        mm.Entry(Entry(1320, 4, Mix), 170);
++        mm.Entry(Entry(4000, 1, Mix), 170);
++        mm.Entry(Entry(4002, 1, Mix), 170);
++        var r = Poll(mm, 1312, 170.2);
++        Assert.NotNull(r);
++        Assert.Equal(4, r!.Humans);
++        Assert.DoesNotContain(log, l => l.StartsWith("REMATCH-COOLDOWN"));
++    }
++
++    [Fact]
++    public void OneOnOne_exact_rematch_is_held_too()
++    {
++        var mm = New(30);
++        mm.Entry(Entry(1600, 1, Fes1on1), 0);
++        mm.Entry(Entry(1602, 1, Fes1on1), 0);
++        Assert.NotNull(Poll(mm, 1600, 0.5));
++        mm.Entry(Entry(1600, 2, Fes1on1), 120);
++        mm.Entry(Entry(1602, 2, Fes1on1), 121);
++        Assert.Null(Poll(mm, 1600, 149.9));
++        Assert.NotNull(Poll(mm, 1600, 150.1));
++    }
++
++    [Fact]
++    public void Room_end_lines_reentry_cancel_timeout_and_summary()
++    {
++        var log = new List<string>();
++        var mm = New(30, log);
++        var room = FirstRoom(mm);                         // 1406 fetched at +0.5
++        Poll(mm, 1400, 1.0);                              // 1400 fetched at +1, 1402/1404 never fetch
++        mm.Cancel(1402, 40, applyId: 1);                  // still in the room: cancel after match
++        mm.Entry(Entry(1406, 2, Mix), 101);               // first re-entry
++        mm.Entry(Entry(1400, 2, Mix), 101);
++        Assert.Contains(log, l => l.StartsWith($"ROOM-END room={room.RoomId} mix-match node=1402 serial=PCB1402 reason=cancel-after-match apply=1 +40s since match fetched=never order=1/4"));
++        Assert.Contains(log, l => l.StartsWith($"ROOM-END room={room.RoomId} mix-match node=1406 serial=PCB1406 reason=reentry mix-match apply=2 +101s since match fetched=+0.5s order=2/4"));
++        Assert.Contains(log, l => l.Contains("node=1400") && l.Contains("fetched=+1s") && l.Contains("order=3/4"));
++        Assert.DoesNotContain(log, l => l.StartsWith("ROOM-SUMMARY"));
++        Poll(mm, 1406, 902);                              // sweep after RoomEndTimeoutSeconds
++        Assert.Contains(log, l => l.Contains("node=1404") && l.Contains("reason=timeout") && l.Contains("order=4/4"));
++        var sum = Assert.Single(log, l => l.StartsWith("ROOM-SUMMARY"));
++        Assert.Equal($"ROOM-SUMMARY room={room.RoomId} mix-match humans=4 spread=862s ends: 1402:cancel-after-match@+40s(fetch never) " +
++                     "1400:reentry@+101s(fetch +1s) 1406:reentry@+101s(fetch +0.5s) 1404:timeout@+902s(fetch never)", sum);
++    }
++
++    [Fact]
++    public void Room_end_same_cabinet_on_a_new_node_id()
++    {
++        var log = new List<string>();
++        var mm = New(30, log);
++        var room = FirstRoom(mm);
++        var e = Entry(5000, 1, Mix);
++        e.Myclient.PcbSerial = "PCB1404";                 // cab 1404 restarted: IssueNodeId gave it 5000
++        mm.Entry(e, 120);
++        Assert.Contains(log, l => l.StartsWith($"ROOM-END room={room.RoomId} mix-match node=1404 serial=PCB1404 reason=reentry-new-node new=5000 "));
++    }
++
++    [Fact]
++    public void Room_end_log_off_logs_nothing()
++    {
++        var log = new List<string>();
++        var mm = New(30, log, roomEnd: false);
++        FirstRoom(mm);
++        foreach (var n in Room18) mm.Entry(Entry(n, 2, Mix), 188);
++        Poll(mm, 1406, 1000);
++        Assert.DoesNotContain(log, l => l.StartsWith("ROOM-"));
++        Assert.Contains(log, l => l.StartsWith("REMATCH-COOLDOWN defer"));
++    }
++}
+diff --git a/tools/vps/server.vps.json b/tools/vps/server.vps.json
+index f011582..6a245a2 100644
+--- a/tools/vps/server.vps.json
++++ b/tools/vps/server.vps.json
+@@ -64,7 +64,10 @@
+             "CrossWorldTeamRooms":  false,
+             "PairNeverCpu":  false,
+             "PairCpuFallbackSeconds":  -1,
+-            "PairSearchLog":  false
++            "PairSearchLog":  false,
++            "RematchCooldownSeconds":  30,
++            "LogRoomEnd":  true,
++            "RoomEndTimeoutSeconds":  900
+         },
+         "OnlineTag":  {
+             "OpenCodeExpiryDays":  7,
+-- 
+2.47.3
+

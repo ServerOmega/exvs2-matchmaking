@@ -145,3 +145,25 @@ the duo then queued Mix Match and waited for two more humans (`NoCpuPartner`).
   servers, shared `/tag` partner code, world-5 pair). A completed 4-human 2v2 after the duo forms is
   still untested. Same-server WebUI invite (User ID + Invitation Code) and partner recruit still need a
   real-game pass.
+
+## Rematch cooldown and ROOM-END log (branch `rematch-cooldown`)
+[`rematch-cooldown.patch`](rematch-cooldown.patch) is one commit (`git am`) on top of the v0.5.0 series (matchmaker at
+`cdd7bf8`); it also applies on top of `online-results-save.patch`. Running on the LA matchmaker since 2026-11-16 7:47 AM PT.
+
+Two 21-01 failures on four cabs were exact rematches of the room before (same four node ids), made 0 s and 20 s after that
+room's first re-entry (~27 s after its results); every other solo rematch in the matchmaker's history formed 39 s or more
+after it and played. The cause is not confirmed; the cooldown keeps such rooms out of that window.
+
+| Setting (`OnlineMatching`) | Default | Effect |
+|---|---|---|
+| `RematchCooldownSeconds` | `30` | Nodes whose last room is the same humans-vs-humans room are not put together again in a room made only of solo entries until this many seconds after that room's first re-entry. Other cabs still match at once; rooms with a team entry (continued duo, after-CPU duo), earlier CPU / lone-team / pair rooms and pair worlds are unchanged. `0` = off. |
+| `LogRoomEnd` | `true` | `ROOM-END` per cab after a match (`reentry`, `reentry-new-node`, `cancel-after-match`, `cancel`, `timeout`; seconds since the match; when it fetched the room) and `ROOM-SUMMARY` once every cab is accounted for. Logging only. |
+| `RoomEndTimeoutSeconds` | `900` | A cab with no re-entry or cancel this long after its match is logged as `timeout`. |
+
+Log lines: `REMATCH-COOLDOWN defer <world> nodes=[..] room=N pairs=[a+b,..] left=Ns`, `REMATCH-COOLDOWN placed room=M ..`,
+`ROOM-END room=N <world> node=X serial=.. reason=.. +Ns since match fetched=+Ns|never order=k/n`,
+`ROOM-SUMMARY room=N <world> humans=4 spread=Ns ends: node:reason@+Ns(fetch ..) ..`. The MMS protocol carries no UDPHP / RTT
+result (that goes to the card server's CheckCommunication), so these lines are what the matchmaker can see.
+
+Tests: `Matchmaking.Tests` 435/435 (15 new; every older scenario also passes with the new defaults on), cross-server e2e
+108/108 (fake cabinets), and a replay of the LA matchmaker history: only the two failed rooms would have been held.
