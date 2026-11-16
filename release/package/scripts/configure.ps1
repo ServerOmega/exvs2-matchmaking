@@ -12,7 +12,7 @@
 param(
     [ValidateSet("", "Host", "Player")] [string]$Role = "",
     [string]$Ip = "",                 # Host: the address players use to reach this PC
-    [string]$MatchServer = "",        # Player: the matchmaking server, "IP" or "IP:port" (port default 28080)
+    [string]$MatchServer = "",        # Player: the matchmaking server, "IP" or "IP:port" (port default 28090)
     [int]$HttpPort = 0,
     [int]$StunPort = 3478,
     [double]$FillAfterSeconds = 3,
@@ -131,7 +131,7 @@ if ($Role -eq "Host") {
     }
     if (-not (IsIPv4 $Ip)) { Fail "'$Ip' is not an IPv4 address." }
     if ($Ip -like "127.*") { Write-Host "WARNING: 127.x.x.x only works for a game on this same PC." -ForegroundColor Yellow }
-    if ($HttpPort -le 0) { $HttpPort = [int](Ask "Port for the card server + matchmaker (keep 28080 unless you know why)" "28080") }
+    if ($HttpPort -le 0) { $HttpPort = [int](Ask "Listen port (28080 if the game talks to this card server and its web page directly; 28090 for a public/VPS matchmaker that players reach only through MatchUrl)" "28080") }
     if (-not $NoPrompt) { $FillAfterSeconds = [double](Ask "Fill timer in seconds (2v2 matches still need 4 human players; Fes 1on1 needs 2)" "$FillAfterSeconds") }
 
     SetProp $om "Enabled" $true
@@ -150,16 +150,20 @@ if ($Role -eq "Host") {
     if (-not $MatchServer) {
         Write-Host ""
         Write-Host "Type the matchmaking server's address that its host gave you." -ForegroundColor Yellow
-        Write-Host "Example: 203.0.113.10   or   100.101.102.103 (VPN)   or   203.0.113.10:28080"
+        Write-Host "Example: 203.0.113.10   or   100.101.102.103 (VPN)   or   203.0.113.10:28090"
+        Write-Host "The matchmaker is on 28090; your own card server (and its web page) is on 28080."
         while (-not $MatchServer) { $MatchServer = (Read-Host "Matchmaking server").Trim() }
     }
     $MatchServer = $MatchServer -replace '^https?://', '' -replace '/.*$', ''
     $parts = $MatchServer.Split(':')
     $mHost = $parts[0]
-    $mPort = 28080
+    $mPort = 28090
     if ($parts.Count -gt 1) { $mPort = [int]$parts[1] }
     if (-not (IsIPv4 $mHost)) { Fail "'$mHost' is not an IPv4 address (the STUN address must be an IP, not a name)." }
     if ($HttpPort -le 0) { $HttpPort = 28080 }   # the game always talks to its card server on 28080
+    if ($mPort -eq 28080) {
+        Write-Host "  WARNING: port 28080 is your local card server (and its web page). The public matchmaker is on 28090. If this address is a VPS, use :28090." -ForegroundColor Yellow
+    }
 
     SetProp $om "Enabled" $true
     SetProp $om "MatchUrl" "http://${mHost}:$mPort/match"
@@ -226,8 +230,9 @@ if ($Role -eq "Host") {
     }
     if ($HttpPort -ne 28080) { Write-Host "  NOTE: the game itself only talks to port 28080. Another port only works for players who use their own local card server (option 2)." -ForegroundColor Yellow }
 } else {
-    Write-Host "  This PC's card server:          port $HttpPort (your game connects here, Server = 127.0.0.1)"
+    Write-Host "  This PC's card server:          port $HttpPort (your game and its web page; Server = 127.0.0.1)"
     Write-Host "  Matchmaking + STUN:             $($om.MatchUrl)   STUN $mHost`:$StunPort"
+    Write-Host "  The matchmaker is on 28090; your own card server (and its web page) is on 28080."
 }
 
 if ($Role -eq "Host" -and $OnWindows -and -not $NoFirewall -and -not $NoPrompt) {

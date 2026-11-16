@@ -45,6 +45,9 @@ Build the zip: `release/make-release.sh v0.5.0` → `release/dist/` (not committ
   3.1 s with no prompt (2:06 AM). Long waits: the server matches instantly once four compatible humans are
   in the same queue; delays come from mixed modes, staggered search, the 150 s game timeout, the pair-cancel
   hold, and NoCpuPartner waiting for a 4th.
+  Docs clarification (same day): the public / VPS matchmaker is on **TCP 28090**; each player's own
+  card server and web page stay on **TCP 28080**. Point `MatchUrl` at `http://<VPS_IP>:28090/match`.
+  Using 28080 there causes an access error at card load (the card server waits ~8 s on `/tag`).
 * **v0.4.1-pre (2026-11-15)** — docs only, same `online-matchmaking.patch` as v0.4.0-pre (rebuild not needed).
   `testmode_pcb.json` is in `<game folder>\29\`; how to set `battleMode` to 0 by hand in Notepad (only `value`,
   leave `type`, every `group` of the active `settingFile`, game closed, back up first). Every cabinet needs its

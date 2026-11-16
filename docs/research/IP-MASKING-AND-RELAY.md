@@ -20,7 +20,7 @@ Rough effort: **about 4–6 days** for an in-process MVP plus tests, then a real
 
 The matchmaker does not carry battle traffic. It only **relays addresses**. The game then plays **UDP P2P**.
 
-1. `RegisterPcb` gives the cabinet `SRV_MATCH` (the `/match` URL) and `SRV_STUN` (`StunHost`:`StunPort`). On the VPS that is `<VPS_IP>`, TCP 28080 and UDP 3478/3479 (built-in STUN).
+1. `RegisterPcb` gives the cabinet `SRV_MATCH` (the `/match` URL) and `SRV_STUN` (`StunHost`:`StunPort`). On the VPS that is `<VPS_IP>`, TCP 28090 and UDP 3478/3479 (built-in STUN).
 2. The cabinet runs STUN from its **game UDP socket** (bound to `0.0.0.0:48000` plus a terminal offset; a twin port block starts at 49000 for LM / broadcast). There is no UPnP.
 3. `EntryMatching` sends a `Client` with:
    - `global_ipaddress` / `global_port` — XOR-MAPPED-ADDRESS from STUN
@@ -107,7 +107,7 @@ A 1 GB box already runs the matchmaker and STUN; relay state is a few kilobytes 
 
 ### 3.5 Ports
 
-Reuse the public IPv4. Pick a dedicated UDP range (for example `40000–40999`), not 3478/3479 (STUN) and not 28080 (HTTP). Four humans → four ports. A /16-sized range is far more than a hobby host needs. Document the firewall: TCP 28080, UDP 3478–3479, plus the relay range.
+Reuse the public IPv4. Pick a dedicated UDP range (for example `40000–40999`), not 3478/3479 (STUN) and not 28090 (matchmaker HTTP). Four humans → four ports. A /16-sized range is far more than a hobby host needs. Document the firewall: TCP 28090, UDP 3478–3479, plus the relay range. Each player's card server and web page stay on TCP 28080.
 
 ## 4. Relay modes
 

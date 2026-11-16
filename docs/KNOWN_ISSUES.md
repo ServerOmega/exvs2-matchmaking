@@ -113,6 +113,24 @@ script and confirm the LM window comes up *after* the card servers are already l
 
 **Status.** Understood. This is a game / startup-order issue, not a matchmaker bug.
 
+## Access error at card load when MatchUrl uses the wrong port
+
+**Symptoms.** After pointing a new card server at a VPS matchmaker, loading a card shows an access
+error. The card server sits for about eight seconds first. The matchmaker log may show no requests
+from that card server at all.
+
+**Cause.** `OnlineMatching.MatchUrl` used the card-server port **28080** on the VPS, but the public
+matchmaker listens on **TCP 28090**. The card server then waits on `/tag` and times out, and the
+game shows the access error.
+
+**Workaround.** Set `MatchUrl` to `http://<VPS_IP>:28090/match`, keep `StunHost` as the VPS IP,
+`StunPort` 3478 and `BuiltinStun` false. Each player's own card server (and its web page at
+`http://127.0.0.1:28080/`) stays on **28080**. Then close and restart that card server. For online
+tag and friends, also paste that region's `TagSecret`.
+
+**Status.** Configuration mistake; documented 16 November 2026 after a card server was pointed at
+port 28080 on a new EU matchmaker.
+
 ## Restarting the matchmaker (VPS) disconnects every cabinet (21-01)
 
 **Symptoms.** Every cabinet shows Live Monitor error **21-01** at the same moment. Play stops until the
