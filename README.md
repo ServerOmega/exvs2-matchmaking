@@ -34,6 +34,18 @@ This project builds on ideas from [asesidaa/EXVS2-POC](https://github.com/asesid
 (community card/game server). It is **not affiliated with Bandai Namco**. No game files are
 included. You must already have a copy of the game; this repo is notes, analysis, and server sketches only.
 
+## Card website: Friends and Teams
+
+The card server's web pages (screenshots use sample data).
+
+| Friends | Teams | Edit team |
+|---|---|---|
+| [![Friends page](docs/images/friends.png)](docs/images/friends.png) | [![Teams page](docs/images/teams-list.png)](docs/images/teams-list.png) | [![Edit team page](docs/images/team-edit.png)](docs/images/team-edit.png) |
+
+- **Friends**: friend list with the team you share with each friend, requests, and block list.
+- **Teams**: your online tag teams, plus adding a team and cross-server partner codes.
+- **Edit team**: rename a team, change its look, or remove it.
+
 ## Current status
 
 | Area | What's here | Works? |
