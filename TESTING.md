@@ -38,6 +38,12 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 - [x] Split setup: cabinet's own card server ≠ matchmaker (`MatchUrl` → main server); the two cabinets matched (2026-11-13)
 - [x] Built-in STUN on a multi-homed Windows server PC: replies must leave from `StunHost` (fixed: bind to it), 2026-11-13
 
+## Online battle results (branch `online-results-save`, 2026-11-16)
+- [x] Box: `Tests/Server.Tests` 15/15 (in-memory SQLite, all migrations): Class solo / team, Mix, Fes, other modes, retry de-duplication (also after a restart), flags off, failure rollback; `Matchmaking.Tests` 423/423; cross-server e2e 103/103 (fake cards)
+- [ ] Real game: back up `ServerInfinite.db`, swap in the test build, play one online **Class** match and one **Mix** match; View Card → battle history shows both (mode, suit, partner, foes, damage), win/loss totals and Mix (Free) wins/losses go up by one, the class rate changes exactly once
+- [ ] Real game: GP and player level / exp after an online match match what the results screen showed (`PersistOnlineProgress`); if not, set it to `false` and report
+- [ ] Real game: a result the cabinet re-sends (slow card server) logs `SaveVsmOnResult duplicate ignored` and adds no second history row
+
 ## Casual / shuffle
 - [ ] 4 solo cabinets start a 2v2 using the server-assigned teams (`group_id`)
 - [x] 1v1 / 2v1 rooms: the game plays them; the CPU partner is added by each cabinet locally (2026-11-13). `CpuStandInSeats` (server lists CPU seats) also accepted but changes nothing visible; off by default

@@ -1,0 +1,1107 @@
+From 131000f7937793a31473e86d175e4f1656704105 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 05:02:59 -0800
+Subject: [PATCH] SaveVsmOnResult: store online battle results like offline
+ ones
+
+Online battles (Class, Mix, Fes) only stored the badge and the class
+rate / class / grade, so internet games never reached the card's battle
+history or statistics. With OnlineMatching.PersistOnlineBattleResults
+(default true) the result now goes through the offline save commands:
+battle history, win/loss (total + class / Free (Mix) / Fes), player
+statistics, per-suit statistics, burst-type statistics and challenge
+counters. PersistOnlineProgress (default true) also applies GP, level
+exp, navigator, mastery and team points; each battle sends one save
+only (online: SaveVsmOnResult, in-store: SaveVsmResult), so nothing is
+applied twice. Class win/loss stays counted once by the class
+persistence.
+
+Retries of the same result (card + room_id + played_at + suit + mode)
+are ignored: in-memory for 2 h, and after a restart via the stored
+history row. Saves are serialised and run in one transaction; on a
+failure only the old badge + class part is kept. Flag off = previous
+behaviour. No schema change.
+
+New Tests/Server.Tests (15, in-memory SQLite with all migrations):
+Class solo/team, Mix, Fes, other modes, retry dedupe, flags off,
+failure rollback. Matchmaking.Tests 423/423, cross-server e2e 103/103.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  42 +-
+ .../PvP/SaveOnlineWinLossRecordCommand.cs     |  64 +++
+ Server-Infinite/Configurations/server.json    |   4 +-
+ .../Game/Online/OnlineBattleResults.cs        |  78 ++++
+ .../Online/SaveVsmOnResultCommandHandler.cs   | 134 +++++-
+ .../Mapper/Context/VsmOnResultMapper.cs       | 132 ++++++
+ .../Config/OnlineMatchingConfigurations.cs    |  12 +
+ Tests/Server.Tests/OnlineResultSaveTests.cs   | 397 ++++++++++++++++++
+ Tests/Server.Tests/Server.Tests.csproj        |  23 +
+ .../Shared/Dto/Enum/BattleModeConstant.cs     |   3 +
+ 10 files changed, 874 insertions(+), 15 deletions(-)
+ create mode 100644 Server-Infinite/Commands/SaveBattle/PvP/SaveOnlineWinLossRecordCommand.cs
+ create mode 100644 Server-Infinite/Handlers/Game/Online/OnlineBattleResults.cs
+ create mode 100644 Server-Infinite/Mapper/Context/VsmOnResultMapper.cs
+ create mode 100644 Tests/Server.Tests/OnlineResultSaveTests.cs
+ create mode 100644 Tests/Server.Tests/Server.Tests.csproj
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 34955a1..54a1d8b 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -20,7 +20,7 @@
+ | Online tag (world 5) / partner recruit (21/22) | ordinary 4-seat worlds, pair key ignored | **pair** rooms: exactly 2 cabinets, same pair key (5) / class (22), both group 0; see "Online tag" below |
+ | LoadCard `tag_teams` (36) | never filled → empty online-tag list | the card's tag teams, `partner_id` = partner's pilot id |
+ | WebUI Teams tab | hidden; invite code checked only by the browser | re-enabled; the server checks the partner's invitation code, one-time by default |
+-| SaveVsmOnResult | badge only | also stores Class Match `after_rate`, class, grade and class win/lose (OMM_CLASS) |
++| SaveVsmOnResult | badge only | also stores Class Match `after_rate`, class, grade and class win/lose (OMM_CLASS); since 2026-11-16 (`PersistOnlineBattleResults`) the whole result like an offline battle: history, win/loss, stats, per-suit stats, GP/level (see "Online battle results") |
+ | PreLoadCard | `grade_solo/team` always 0 | returns the stored grade |
+ | DB | — | migration `AddClassMatchGrade` (adds `Grade` to both class-record tables) |
+ | Build | Windows only | optional Linux build: `-p:LinuxHost=true` (drops the WinForms disclaimer dialog) |
+@@ -31,6 +31,7 @@
+ # Linux host:                      dotnet build Server-Infinite -p:LinuxHost=true -o out && cd out && dotnet Server-Infinite.dll
+ # Cross-check Windows build on Linux: dotnet build Server-Infinite -p:EnableWindowsTargeting=true -r win-x64
+ # Matchmaker unit tests:           dotnet test Tests/Matchmaking.Tests
++# Card-server DB tests (Linux):    dotnet test Tests/Server.Tests -p:LinuxHost=true   (Windows: without -p:LinuxHost)
+ # Online tag end to end (fake cabinets + fake cards): server-sketch/loadtest/online_tag_e2e.py (exvs2-lobbies repo)
+ ```
+ .NET 9 SDK required. Note `.gitignore` excludes `wwwroot/` image resources (needed only for the web UI).
+@@ -66,6 +67,9 @@
+   "PairCancelQuarantineSeconds": 180, // after a pair cancel, hold those cabs out of human rooms until a clean restart or this many seconds
+   "StaleAfterSeconds": 20,     // drop a waiting cabinet that stopped polling (min 3 x poll interval)
+   "ClassMatchScheduleMode": "Both",  // Both | Hours | UnixTime
++  "PersistClassMatchResult": true,   // store class rate / class / grade / class win-lose from SaveVsmOnResult
++  "PersistOnlineBattleResults": true,// store the whole online result like an offline one (history, W/L, stats), once per battle
++  "PersistOnlineProgress": true,     // with the above: also apply the result's GP, level exp, navi, mastery, team points
+   "VerboseLog": false,         // true = also one line per CheckMatching poll (debugging only)
+   "LogPostMatchTraffic": true, // MMS-POST / STUN-POST / MMS-UNHANDLED lines (logging only, no card data)
+   "NetworkRealms": "",         // "" = default realms, "off" = none, or "name=cidr,name=cidr"
+@@ -502,6 +506,40 @@ Waits come from the cabinets, not from a server delay:
+ Tips: everyone pick the same mode; wait until all four are on the search screen; use Mix Match for a
+ pair plus solos.
+ 
++## Online battle results (2026-11-16, branch `online-results-save`) — DB tests only, not yet tried in-game
++Before this, an online battle (`SaveVsmOnResult`) stored only the badge and, for Class Match, rate / class / grade /
++class win-lose. Internet games never reached the card's battle history or stats. Now, with
++`OnlineMatching.PersistOnlineBattleResults` (default `true`), the result goes through the same save commands as an
++offline `SaveVsmResult`:
++
++| Stored | Detail |
++|---|---|
++| Battle history (View Card → battle history) | one row per battle: mode, win/lose, stage, time, score, damage, burst, suit, partner and human foes (CPU stand-ins are not listed), action log |
++| Win / loss record | `TotalWin/Lose` for every online battle, plus Class solo / team (`ClassSoloWin`... counted once, by the class persistence when `PersistClassMatchResult` is on), Mix → `FreeWin/Lose`, Fes → `FesWin/Lose`; other online modes count in the totals only |
++| Player statistics | total given damage, enemies defeated, no-damage battles, EX burst damage, class 10-win streaks |
++| Per-suit statistics | `MobileSuitPvPStatistic`: battles, wins, damage, defeats per suit (the VS Mobile style tracker data) |
++| Burst-type statistics, daily challenge counters | as offline |
++| GP, player level / exp, navigator familiarity, suit mastery (use count), team skill points | `PersistOnlineProgress` (default `true`); the cabinet reports these deltas in `SaveVsmOnResult` like it does in the offline save, and each battle sends one save only (checked in the 2026-11-13..16 card-server logs: Mix / Class / Fes battles send `SaveVsmOnResult`, in-store worlds 15/16 send the offline `SaveVsmResult`, which was already stored in full), so nothing is applied twice; the captured online payloads carry the same per-battle deltas as offline ones (`level_exp` 10 after a loss in both) |
++
++Battle modes in the history: `online_matching_mode` + `shuffle_flag` → `ClassMatchSolo` / `ClassMatchTeam`
++(OMM_CLASS), `FreeSolo` / `FreeTeam` (OMM_FREE = Mix Match), `FesSolo` / `FesTeam` (OMM_FES), `OnlineOtherSolo` /
++`OnlineOtherTeam` (OMM_LOCAL, LOCATION, PRIVATE, PUB, EVENT).
++
++**Retries.** A result already stored for the same card (room id + `played_at` + suit + mode) is ignored completely
++(no second history row, no second win, GP or class-rate change): an in-memory key for 2 hours, and after a restart
++the stored history row (same card, `played_at`, mode, suit). A result with `played_at` = 0 is only de-duplicated in
++memory. Saves run one at a time (a retry that arrives while the first save still runs waits, then is recognised).
++**Failure.** The battle part runs in one DB transaction; if it fails (for example a damaged card without its stats
++row), it is rolled back and only the old badge + class part is stored; the cabinet still gets Success.
++**Switch off:** `"PersistOnlineBattleResults": false` → exactly the previous behaviour. No DB schema change (no
++migration); backing up `ServerInfinite.db` before swapping builds is still recommended.
++Only battles played with this build are recorded; earlier online games cannot be recovered. Partners / foes on
++other card servers show as "Player N" in the history (the result carries no names). Quick-start info in the online
++result is not saved (offline saves keep doing that).
++Tests: `Tests/Server.Tests` (15, in-memory SQLite with all migrations): Class solo, Class team, class W/L with the
++class persistence off, Mix solo / team, Fes, other modes, retry de-duplication (also after a restart), retry without
++timestamp, two battles in one room, two cards in one battle, flag off, progress off, unknown session, failure rollback.
++
+ ## Known gaps / risks
+ * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
+   (`BindMatchNodesToSourceIp` limits Check/Cancel to the IP that entered, but is not a login.)
+@@ -514,7 +552,7 @@ pair plus solos.
+   and running cabinets can show Live Monitor 21-01 while the process is down.
+ * A room is never refilled or torn down when a member drops after the match: the protocol has no message for it.
+   Rooms are also final once sent (no later 1v1-to-2v2 merge).
+-* Ranked results are saved per card (`SaveVsmOnResult`); a side that never reports simply records nothing.
++* Ranked and other online results are saved per card (`SaveVsmOnResult`); a side that never reports simply records nothing.
+ * A pair that loses to CPUs and searches again could still get the in-game partner-lost prompt and a black
+   screen. Mitigated in this build by `ContinuePairAfterCpuSeconds` (default 2): that pair is sent a CPU room
+   on the first poll (~3 s). Confirmed on real cabinets 16 November 2026, 2:06:46 AM PT (`after-cpu=1
+diff --git a/Server-Infinite/Commands/SaveBattle/PvP/SaveOnlineWinLossRecordCommand.cs b/Server-Infinite/Commands/SaveBattle/PvP/SaveOnlineWinLossRecordCommand.cs
+new file mode 100644
+index 0000000..d7ee110
+--- /dev/null
++++ b/Server-Infinite/Commands/SaveBattle/PvP/SaveOnlineWinLossRecordCommand.cs
+@@ -0,0 +1,64 @@
++using ServerInfinite.Context.Battle;
++using ServerInfinite.Models.Cards;
++using ServerInfinite.Persistence;
++using WebUIInfinite.Shared.Dto.Enum;
++
++namespace ServerInfinite.Commands.SaveBattle.PvP;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: win/loss record for online battles (SaveVsmOnResult).
++/// Unlike <see cref="SaveWinLossRecordCommand"/> (offline: skips Free), this counts every online battle in
++/// TotalWin/TotalLose and in its mode's counter: Mix (Free) -> FreeWin/FreeLose, Fes -> FesWin/FesLose,
++/// Class -> ClassSoloWin/ClassTeamWin... Other online modes only count in the totals.
++/// Class win/loss is skipped when <paramref name="classAlreadyCounted"/> is set: the class-match persistence
++/// (OnlineMatching.PersistClassMatchResult) has already counted it, so it is never counted twice.
++/// </summary>
++public class SaveOnlineWinLossRecordCommand : ISaveBattleDataCommand
++{
++    private readonly ServerDbContext _context;
++    private readonly bool _classAlreadyCounted;
++
++    public SaveOnlineWinLossRecordCommand(ServerDbContext context, bool classAlreadyCounted)
++    {
++        _context = context;
++        _classAlreadyCounted = classAlreadyCounted;
++    }
++
++    public void Save(CardProfile cardProfile, BattleResultContext battleResultContext)
++    {
++        var winLossRecord = _context.WinLossRecordDbSet.Local.FirstOrDefault(x => x.CardId == cardProfile.Id)
++                            ?? _context.WinLossRecordDbSet.FirstOrDefault(x => x.CardProfile == cardProfile);
++        if (winLossRecord is null)
++        {
++            return;
++        }
++
++        var mode = battleResultContext.CommonDomain.BattleMode;
++        var win = battleResultContext.CommonDomain.IsWin ? 1u : 0u;
++        var lose = 1u - win;
++
++        winLossRecord.TotalWin += win;
++        winLossRecord.TotalLose += lose;
++
++        if (mode == BattleModeConstant.FreeSolo || mode == BattleModeConstant.FreeTeam)
++        {
++            winLossRecord.FreeWin += win;
++            winLossRecord.FreeLose += lose;
++        }
++        else if (mode == BattleModeConstant.FesSolo || mode == BattleModeConstant.FesTeam)
++        {
++            winLossRecord.FesWin += win;
++            winLossRecord.FesLose += lose;
++        }
++        else if (mode == BattleModeConstant.ClassMatchSolo && !_classAlreadyCounted)
++        {
++            winLossRecord.ClassSoloWin += win;
++            winLossRecord.ClassSoloLose += lose;
++        }
++        else if (mode == BattleModeConstant.ClassMatchTeam && !_classAlreadyCounted)
++        {
++            winLossRecord.ClassTeamWin += win;
++            winLossRecord.ClassTeamLose += lose;
++        }
++    }
++}
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 4c15911..3e04276 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -70,7 +70,9 @@
+       "NodeIdStateFile": "mms_nodeids.json",
+       "FirstNodeId": 1000,
+       "ClassMatchScheduleMode": "Both",
+-      "PersistClassMatchResult": true
++      "PersistClassMatchResult": true,
++      "PersistOnlineBattleResults": true,
++      "PersistOnlineProgress": true
+     },
+     "OnlineTag": {
+       "SendTagTeams": true,
+diff --git a/Server-Infinite/Handlers/Game/Online/OnlineBattleResults.cs b/Server-Infinite/Handlers/Game/Online/OnlineBattleResults.cs
+new file mode 100644
+index 0000000..0ba8648
+--- /dev/null
++++ b/Server-Infinite/Handlers/Game/Online/OnlineBattleResults.cs
+@@ -0,0 +1,78 @@
++using System.Collections.Concurrent;
++using nue.protocol.exvs;
++using ServerInfinite.Context.Battle;
++using ServerInfinite.Mapper.Context;
++using WebUIInfinite.Shared.Dto.Enum;
++
++namespace ServerInfinite.Handlers.Game.Online;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: helpers for saving online battle results (SaveVsmOnResult) through the same
++/// save commands as offline results: battle-mode mapping, context building and retry de-duplication.
++/// </summary>
++public static class OnlineBattleResults
++{
++    /// <summary>History / W-L battle mode for an online result. shuffle_flag = solo queue, otherwise team (pair).</summary>
++    public static string BattleModeFor(OnlineMatchingMode mode, bool shuffle) => mode switch
++    {
++        OnlineMatchingMode.OmmClass => shuffle ? BattleModeConstant.ClassMatchSolo : BattleModeConstant.ClassMatchTeam,
++        OnlineMatchingMode.OmmFree => shuffle ? BattleModeConstant.FreeSolo : BattleModeConstant.FreeTeam,
++        OnlineMatchingMode.OmmFes => shuffle ? BattleModeConstant.FesSolo : BattleModeConstant.FesTeam,
++        _ => shuffle ? BattleModeConstant.OnlineOtherSolo : BattleModeConstant.OnlineOtherTeam,
++    };
++
++    /// <summary>Builds the battle context exactly like the offline SaveVsmResult handler does.</summary>
++    public static BattleResultContext ToContext(Request.SaveVsmOnResult save)
++    {
++        var result = save.Result;
++        var context = result.ToBattleResultContext();
++        context.CommonDomain.BattleMode = BattleModeFor(result.OnlineMatchingMode, save.ShuffleFlag);
++        context.OnlineBattleDomain.OnlineMatchingMode = result.OnlineMatchingMode;
++        context.OnlineBattleDomain.IsShuffle = save.ShuffleFlag;
++
++        var ally = result.Partner;
++        if (ally is not null && ally.CpuFlag == 0)
++        {
++            context.BattleHistoryDomain.Ally = ally;
++        }
++
++        context.BattleHistoryDomain.PlayerActions = result.PlayerBattleLogs;
++        context.BattleHistoryDomain.FilteredTargets = result.Foes.Where(foe => foe.CpuFlag == 0).ToList();
++        foreach (var foe in context.BattleHistoryDomain.FilteredTargets)
++        {
++            context.BattleStatisticDomain.TotalEnemyDefeatedCount += foe.DownNum;
++        }
++        return context;
++    }
++
++    /// <summary>Process-wide gate: a retry that arrives while the first save is still running (for example after
++    /// the post-match watchdog answered early) waits and is then recognised as a duplicate.</summary>
++    public static readonly object Gate = new();
++
++    private static readonly ConcurrentDictionary<string, DateTime> Recent = new();
++    private static readonly TimeSpan RecentTtl = TimeSpan.FromHours(2);
++    private const int RecentMax = 20000;
++
++    /// <summary>Identity of one battle result of one card. room_id + played_at + suit pin down one battle.</summary>
++    public static string Key(int cardId, Request.SaveVsmOnResult.PlayResultGroup r) =>
++        $"{cardId}|{r.RoomId}|{r.PlayedAt}|{r.MstMobileSuitId}|{(int)r.OnlineMatchingMode}";
++
++    public static bool SeenRecently(string key, DateTime nowUtc) =>
++        Recent.TryGetValue(key, out var until) && until > nowUtc;
++
++    public static void Remember(string key, DateTime nowUtc)
++    {
++        if (Recent.Count >= RecentMax)
++        {
++            foreach (var kv in Recent)
++            {
++                if (kv.Value <= nowUtc) Recent.TryRemove(kv.Key, out _);
++            }
++            if (Recent.Count >= RecentMax) Recent.Clear();
++        }
++        Recent[key] = nowUtc + RecentTtl;
++    }
++
++    /// <summary>Tests only.</summary>
++    public static void ResetForTests() => Recent.Clear();
++}
+diff --git a/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs b/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs
+index ef9f115..c11fa0c 100644
+--- a/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs
++++ b/Server-Infinite/Handlers/Game/Online/SaveVsmOnResultCommandHandler.cs
+@@ -5,15 +5,19 @@ using ServerInfinite.Persistence;
+ using MediatR;
+ using Microsoft.Extensions.Options;
+ using ServerInfinite.Models.Config;
++using ServerInfinite.Commands.SaveBattle;
+ using ServerInfinite.Commands.SaveBattle.Common;
++using ServerInfinite.Commands.SaveBattle.PvP;
+ 
+ namespace ServerInfinite.Handlers.Game.Online;
+ 
+ public record SaveVsmOnResultCommand(Request Request) : IRequest<Response>;
+ 
+ /// <summary>
+-/// Online battle result. Only the badge part is stored (the rest was never implemented):
+-/// result.badge_id (tag 19) -> PlayerLevel.BadgeId, result.obtained_badge_point (tag 69) -> BadgeExp +=.
++/// Online battle result. Always: result.badge_id (tag 19) -> PlayerLevel.BadgeId, result.obtained_badge_point
++/// (tag 69) -> BadgeExp +=, and class rate / class / grade (PersistClassMatchResult).
++/// exvs2-lobbies 2026-11-16: with OnlineMatching.PersistOnlineBattleResults (default on) the rest of the result is
++/// stored like an offline SaveVsmResult (history, win/loss, stats, per-suit stats, GP/level...), once per battle.
+ /// </summary>
+ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultCommand, Response>
+ {
+@@ -47,15 +51,18 @@ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultComm
+             if (cardProfile != null)
+             {
+                 _logger.LogInformation("SaveVsmOnResult CardId={CardId} badge_id={BadgeId} badge_point={Point}", cardProfile.Id, save.Result.BadgeId, save.Result.ObtainedBadgePoint);
+-                // exp delta first, then the reported badge (a badge change may reset exp, see SaveBadgeCommand).
+-                SaveBadgeCommand badge = new SaveBadgeCommand(_context, _config, _logger);
+-                badge.Save(cardProfile, save.Result.ObtainedBadgePoint);
+-                badge.ApplyReportedBadge(cardProfile, save.Result.BadgeId, "SaveVsmOnResult");
+-                if (_config.OnlineMatching.PersistClassMatchResult)
++                if (_config.OnlineMatching.PersistOnlineBattleResults)
+                 {
+-                    SaveClassMatchResult(cardProfile, save);
++                    lock (OnlineBattleResults.Gate)
++                    {
++                        SaveFullResult(cardProfile, save);
++                    }
++                }
++                else
++                {
++                    SaveBadgeAndClass(cardProfile, save);
++                    _context.SaveChanges();
+                 }
+-                _context.SaveChanges();
+                 // exvs2-lobbies 2026-11-15: friends' last played (partner + foes; background, after this reply)
+                 _played?.Report(ServerInfinite.Matchmaking.PilotId.Wire(cardProfile.Id), save.Result.Partner, save.Result.Foes, "SaveVsmOnResult");
+             }
+@@ -69,18 +76,118 @@ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultComm
+         });
+     }
+ 
++    /// <summary>Previous behaviour (and the fallback): badge exp / badge, then the class-match rate / class / grade.
++    /// Returns true when the class persistence counted this battle in the class win/loss record.</summary>
++    private bool SaveBadgeAndClass(CardProfile cardProfile, Request.SaveVsmOnResult save)
++    {
++        // exp delta first, then the reported badge (a badge change may reset exp, see SaveBadgeCommand).
++        SaveBadgeCommand badge = new SaveBadgeCommand(_context, _config, _logger);
++        badge.Save(cardProfile, save.Result.ObtainedBadgePoint);
++        badge.ApplyReportedBadge(cardProfile, save.Result.BadgeId, "SaveVsmOnResult");
++        return _config.OnlineMatching.PersistClassMatchResult && SaveClassMatchResult(cardProfile, save);
++    }
++
++    /// <summary>
++    /// exvs2-lobbies 2026-11-16 (OnlineMatching.PersistOnlineBattleResults): store the online result like the offline
++    /// SaveVsmResult does: battle history, win/loss, player statistics, per-suit statistics, burst-type statistics,
++    /// challenge counters, and (PersistOnlineProgress) GP / level / navigator / mastery / team points.
++    /// A retry of a result already stored (same card, room_id, played_at, suit, mode) changes nothing.
++    /// Runs in one transaction; if the battle part fails, only the badge + class part is kept (old behaviour).
++    /// </summary>
++    private void SaveFullResult(CardProfile cardProfile, Request.SaveVsmOnResult save)
++    {
++        var result = save.Result;
++        var now = DateTime.UtcNow;
++        var key = OnlineBattleResults.Key(cardProfile.Id, result);
++        var mode = OnlineBattleResults.BattleModeFor(result.OnlineMatchingMode, save.ShuffleFlag);
++        if (IsDuplicate(cardProfile, result, key, mode, now))
++        {
++            _logger.LogInformation("SaveVsmOnResult duplicate ignored CardId={CardId} room={RoomId} played_at={PlayedAt} mode={Mode}",
++                cardProfile.Id, result.RoomId, result.PlayedAt, mode);
++            return;
++        }
++
++        var cardId = cardProfile.Id;
++        using (var tx = _context.Database.BeginTransaction())
++        {
++            try
++            {
++                var classCounted = SaveBadgeAndClass(cardProfile, save);
++                SaveBattle(cardProfile, save, classCounted);
++                _context.SaveChanges();
++                tx.Commit();
++                OnlineBattleResults.Remember(key, now);
++                _logger.LogInformation("SaveVsmOnResult stored CardId={CardId} mode={Mode} room={RoomId} win={Win} suit={Suit} progress={Progress}",
++                    cardId, mode, result.RoomId, result.WinFlag, result.MstMobileSuitId, _config.OnlineMatching.PersistOnlineProgress);
++                return;
++            }
++            catch (Exception e)
++            {
++                tx.Rollback();
++                _context.ChangeTracker.Clear();
++                _logger.LogWarning("SaveVsmOnResult battle save failed for CardId={CardId} mode={Mode} ({Error}); keeping badge + class only",
++                    cardId, mode, e.GetType().Name + ": " + e.Message);
++            }
++        }
++
++        var reloaded = _context.CardProfiles.FirstOrDefault(x => x.Id == cardId);
++        if (reloaded != null)
++        {
++            SaveBadgeAndClass(reloaded, save);
++            _context.SaveChanges();
++        }
++    }
++
++    private bool IsDuplicate(CardProfile cardProfile, Request.SaveVsmOnResult.PlayResultGroup result, string key, string mode, DateTime now)
++    {
++        if (OnlineBattleResults.SeenRecently(key, now))
++        {
++            return true;
++        }
++        if (result.PlayedAt == 0)
++        {
++            return false; // no timestamp: only the in-memory key can tell a retry from a new battle
++        }
++        var playedAt = result.PlayedAt;
++        var suit = result.MstMobileSuitId;
++        return _context.BattleHistoryDbSet.Any(x => x.CardId == cardProfile.Id && x.PlayedAt == playedAt
++                                                    && x.BattleMode == mode && x.BattleSelf.MobileSuitId == suit);
++    }
++
++    private void SaveBattle(CardProfile cardProfile, Request.SaveVsmOnResult save, bool classCounted)
++    {
++        var battleResultContext = OnlineBattleResults.ToContext(save);
++        var commands = new List<ISaveBattleDataCommand>();
++        if (_config.OnlineMatching.PersistOnlineProgress)
++        {
++            commands.Add(new SaveGpCommand(_context));
++            commands.Add(new SavePlayerLevelCommand(_context));
++            commands.Add(new SaveNaviCommand(_context));
++            commands.Add(new SaveMobileSuitMasteryCommand(_context));
++            commands.Add(new SaveTeamCommand(_context));
++        }
++        commands.Add(new SaveOnlineWinLossRecordCommand(_context, classCounted));
++        commands.Add(new SavePlayerStatisticCommand(_context));
++        commands.Add(new SaveChallengeMissionDataCommand(_context));
++        commands.Add(new SaveMobileSuitTrackerStatCommand(_context));
++        commands.Add(new SaveBurstTypeCommand(_context));
++        commands.Add(new SaveBattleHistoryCommand(_context));
++        commands.Add(new RemovePreBattleHistoryCommand(_context));
++        commands.ForEach(command => command.Save(cardProfile, battleResultContext));
++    }
++
+     /// <summary>
+     /// exvs2-lobbies / EXPERIMENTAL (untested with the real game): Class Match G (OMM_CLASS) results.
+     /// The cabinet computes the new rate/grade/class itself and uploads them; the server only stores them and
+     /// returns them in the next PreLoadCard (rate_*, class_id_*, grade_*, class_*_win/lose).
+     /// shuffle_flag = solo (shuffle) class record, otherwise the team record.
+     /// </summary>
+-    private void SaveClassMatchResult(CardProfile cardProfile, Request.SaveVsmOnResult save)
++    private bool SaveClassMatchResult(CardProfile cardProfile, Request.SaveVsmOnResult save)
+     {
+         var result = save.Result;
+         if (result.OnlineMatchingMode != OnlineMatchingMode.OmmClass || result.class_match_result == null)
+         {
+-            return;
++            return false;
+         }
+         var cmr = result.class_match_result;
+         var solo = save.ShuffleFlag;
+@@ -90,7 +197,7 @@ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultComm
+         if (record == null)
+         {
+             _logger.LogWarning("SaveVsmOnResult class match: no {Kind} class record for card {CardId}", solo ? "solo" : "team", cardProfile.Id);
+-            return;
++            return false;
+         }
+ 
+         var newClass = solo ? cmr.ClassIdSolo : cmr.ClassIdTeam;
+@@ -117,9 +224,11 @@ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultComm
+             record.WeeklyTotalWinCount++;
+         }
+ 
++        var counted = false;
+         var winLoss = _context.WinLossRecordDbSet.FirstOrDefault(x => x.CardProfile == cardProfile);
+         if (winLoss != null)
+         {
++            counted = true;
+             if (solo)
+             {
+                 if (result.WinFlag) winLoss.ClassSoloWin++; else winLoss.ClassSoloLose++;
+@@ -134,6 +243,7 @@ public class SaveVsmOnResultCommandHandler : IRequestHandler<SaveVsmOnResultComm
+             "SaveVsmOnResult class match card={CardId} {Kind} room={RoomId} win={Win} class={Class} grade={Grade} rate {Before}->{After} ({Obtained:+0.##;-0.##})",
+             cardProfile.Id, solo ? "solo" : "team", result.RoomId, result.WinFlag, record.ClassId, cmr.GradeId,
+             cmr.BeforeRate, record.Rate, cmr.ObtainedRate);
++        return counted;
+     }
+ 
+     /// <summary>exvs2-lobbies: one log line per SaveVsmOnResult.network_report (no card data in it).</summary>
+diff --git a/Server-Infinite/Mapper/Context/VsmOnResultMapper.cs b/Server-Infinite/Mapper/Context/VsmOnResultMapper.cs
+new file mode 100644
+index 0000000..861b5ca
+--- /dev/null
++++ b/Server-Infinite/Mapper/Context/VsmOnResultMapper.cs
+@@ -0,0 +1,132 @@
++using nue.protocol.exvs;
++using Riok.Mapperly.Abstractions;
++using ServerInfinite.Context.Battle;
++
++namespace ServerInfinite.Mapper.Context;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: online battle results (SaveVsmOnResult) mapped into the same context as the offline
++/// SaveVsmResult so the shared save commands (history, W/L, stats, per-suit tracker, GP/level...) can be reused.
++/// The field mapping is the offline mapper's, field for field (the online proto uses the same names).
++/// </summary>
++[Mapper]
++public static partial class VsmOnResultMapper
++{
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.Gp) },
++        new[] { nameof(BattleResultContext.CommonDomain), nameof(BattleResultContext.CommonDomain.GpIncrement) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.WinFlag) },
++        new[] { nameof(BattleResultContext.CommonDomain), nameof(BattleResultContext.CommonDomain.IsWin) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.LevelId) },
++        new[] { nameof(BattleResultContext.PlayerLevelDomain), nameof(BattleResultContext.PlayerLevelDomain.LevelIdBefore) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.PlayerLevelId) },
++        new[] { nameof(BattleResultContext.PlayerLevelDomain), nameof(BattleResultContext.PlayerLevelDomain.LevelIdAfter) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.LevelExp) },
++        new[] { nameof(BattleResultContext.PlayerLevelDomain), nameof(BattleResultContext.PlayerLevelDomain.ExpIncrement) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.PrestigeId) },
++        new[] { nameof(BattleResultContext.PlayerLevelDomain), nameof(BattleResultContext.PlayerLevelDomain.PrestigeId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.GuestNavId) },
++        new[] { nameof(BattleResultContext.NaviDomain), nameof(BattleResultContext.NaviDomain.GuestNavId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.GuestNavFamiliarity) },
++        new[] { nameof(BattleResultContext.NaviDomain), nameof(BattleResultContext.NaviDomain.GuestNavFamiliarityIncrement) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.BattleNavId) },
++        new[] { nameof(BattleResultContext.NaviDomain), nameof(BattleResultContext.NaviDomain.BattleNavId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.BattleNavFamiliarity) },
++        new[] { nameof(BattleResultContext.NaviDomain), nameof(BattleResultContext.NaviDomain.BattleNavFamiliarityIncrement) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.SkillPointMobileSuitId) },
++        new[] { nameof(BattleResultContext.MobileSuitMasteryDomain), nameof(BattleResultContext.MobileSuitMasteryDomain.MasteryMobileSuitId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.MstMobileSuitId) },
++        new[] { nameof(BattleResultContext.MobileSuitMasteryDomain), nameof(BattleResultContext.MobileSuitMasteryDomain.ActualMobileSuitId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.TagTeamId) },
++        new[] { nameof(BattleResultContext.TeamDomain), nameof(BattleResultContext.TeamDomain.TeamId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.TagSkillPoint) },
++        new[] { nameof(BattleResultContext.TeamDomain), nameof(BattleResultContext.TeamDomain.TeamExp) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.PlayedAt) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.PlayedAt) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.VsElapsedTime) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.ElapsedSeconds) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.StageId) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.StageId) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.ResultScore) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.Score) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.ResultOrder) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.ScoreRank) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.GivenDamage) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.TotalGivenDamage) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.TakenDamage) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.TotalTakenDamage) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.ConsecutiveWin) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.ConsecutiveWinCount) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.NoDamageFlag) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.NoDamageFlag) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.BurstGivenDamage) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.TotalExBurstDamage) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.BurstType) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.BurstType) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.Burst) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.BurstCount) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.Overheat) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.OverheatCount) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.ComboGivenDamage) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.ComboGivenDamage) }
++    )]
++    [MapProperty(
++        new[] { nameof(Request.SaveVsmOnResult.PlayResultGroup.SkinId) },
++        new[] { nameof(BattleResultContext.BattleStatisticDomain), nameof(BattleResultContext.BattleStatisticDomain.SkinId) }
++    )]
++    public static partial BattleResultContext ToBattleResultContext(this Request.SaveVsmOnResult.PlayResultGroup resultGroup);
++}
+\ No newline at end of file
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index 5250cb1..bc2cbd1 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -198,4 +198,16 @@ public class OnlineMatchingConfigurations
+ 
+     /// <summary>Store rate / class / grade reported in SaveVsmOnResult.class_match_result (ranked).</summary>
+     public bool PersistClassMatchResult { get; set; } = true;
++
++    /// <summary>exvs2-lobbies 2026-11-16: save online battle results (SaveVsmOnResult) like offline ones: battle
++    /// history, win/loss (total + class / Mix (Free) / Fes), player statistics, per-suit statistics, burst-type stats,
++    /// daily challenge counters. Retries of the same result are ignored. <c>false</c> = previous behaviour (badge +
++    /// class rate only).</summary>
++    public bool PersistOnlineBattleResults { get; set; } = true;
++
++    /// <summary>exvs2-lobbies 2026-11-16: with <see cref="PersistOnlineBattleResults"/>, also apply the GP, player
++    /// level / exp, navigator familiarity, suit mastery (use count) and team skill points that the cabinet reports
++    /// in SaveVsmOnResult (the same fields the offline SaveVsmResult applies). Online battles send no other save that
++    /// carries these, so nothing is applied twice.</summary>
++    public bool PersistOnlineProgress { get; set; } = true;
+ }
+diff --git a/Tests/Server.Tests/OnlineResultSaveTests.cs b/Tests/Server.Tests/OnlineResultSaveTests.cs
+new file mode 100644
+index 0000000..f1ce767
+--- /dev/null
++++ b/Tests/Server.Tests/OnlineResultSaveTests.cs
+@@ -0,0 +1,397 @@
++using Microsoft.Data.Sqlite;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Options;
++using nue.protocol.exvs;
++using ServerInfinite.Handlers.Game.Online;
++using ServerInfinite.Models.Cards;
++using ServerInfinite.Models.Config;
++using ServerInfinite.Persistence;
++using WebUIInfinite.Shared.Dto.Enum;
++using Xunit;
++
++[assembly: CollectionBehavior(DisableTestParallelization = true)]
++
++namespace Server.Tests;
++
++/// <summary>
++/// exvs2-lobbies 2026-11-16: SaveVsmOnResult (online battle result) is stored like an offline SaveVsmResult:
++/// battle history, win/loss, player and per-suit statistics, GP/level; once per battle; behind config flags.
++/// </summary>
++public sealed class OnlineResultSaveTests : IDisposable
++{
++    private static readonly uint StartGp = new CardProfile().Gp;
++    private static readonly float StartRate = new ServerInfinite.Models.Cards.Battle.SoloClassMatchRecord().Rate;
++    private readonly SqliteConnection _connection;
++    private readonly ServerDbContext _db;
++
++    public OnlineResultSaveTests()
++    {
++        OnlineBattleResults.ResetForTests();
++        _connection = new SqliteConnection("DataSource=:memory:");
++        _connection.Open();
++        _db = NewContext();
++        _db.Database.Migrate();
++    }
++
++    public void Dispose()
++    {
++        _db.Dispose();
++        _connection.Dispose();
++    }
++
++    private ServerDbContext NewContext() =>
++        new(new DbContextOptionsBuilder<ServerDbContext>().UseSqlite(_connection).Options);
++
++    private CardProfile NewCard(string session = "sess-a", string name = "PILOT-A")
++    {
++        var card = new CardProfile
++        {
++            AccessCode = "test-" + session,
++            ChipId = "test-" + session,
++            SessionId = session,
++            UserName = name,
++            IsNewCard = false,
++            DistinctTeamFormationToken = Guid.NewGuid().ToString("n")[..16],
++        };
++        _db.CardProfiles.Add(card);
++        // like PreLoadCard: SaveChangesAsync (the sync SaveChanges override stamps BaseEntity times and does not
++        // accept the non-BaseEntity rows a new card creates)
++        _db.SaveChangesAsync().GetAwaiter().GetResult();
++        return card;
++    }
++
++    private static CardServerConfig Config(bool online = true, bool progress = true, bool classPersist = true)
++    {
++        var c = new CardServerConfig { LogNetworkReport = false };
++        c.OnlineMatching.PersistOnlineBattleResults = online;
++        c.OnlineMatching.PersistOnlineProgress = progress;
++        c.OnlineMatching.PersistClassMatchResult = classPersist;
++        return c;
++    }
++
++    private static Request SaveRequest(CardProfile card, OnlineMatchingMode mode, bool shuffle, bool win,
++        uint roomId = 7, ulong playedAt = 1794730125, uint suit = 313, bool humanPartner = true, bool withClass = false)
++    {
++        var result = new Request.SaveVsmOnResult.PlayResultGroup
++        {
++            PlayedAt = playedAt,
++            WinFlag = win,
++            VsElapsedTime = 108,
++            StageId = 5,
++            MstMobileSuitId = suit,
++            SkillPointMobileSuitId = suit,
++            ResultScore = 1200,
++            ResultOrder = 1,
++            LevelId = 3,
++            PlayerLevelId = 3,
++            LevelExp = 10,
++            Gp = 150,
++            GivenDamage = 900,
++            TakenDamage = 1540,
++            Burst = 1,
++            BurstType = 1,
++            BurstGivenDamage = 200,
++            ComboGivenDamage = 300,
++            ConsecutiveWin = win ? 2u : 0u,
++            RoomId = roomId,
++            OnlineMatchingMode = mode,
++            BadgeId = 1,
++        };
++        if (humanPartner)
++            result.Partner = new AdversaryManGroup { PilotId = 2_000_123, CpuFlag = 0, MstMobileSuitId = 401, PlayerLevelId = 5 };
++        else
++            result.Partner = new AdversaryManGroup { PilotId = 0, CpuFlag = 1, MstMobileSuitId = 402 };
++        result.Foes.Add(new AdversaryManGroup { PilotId = 3_000_456, CpuFlag = 0, MstMobileSuitId = 332, DownNum = 1 });
++        result.Foes.Add(new AdversaryManGroup { PilotId = 0, CpuFlag = 1, MstMobileSuitId = 333, DownNum = 1 });
++        result.PlayerBattleLogs.Add(new WarSituationGroup { Frame = 3679, Status = 1 });
++        if (withClass || mode == OnlineMatchingMode.OmmClass)
++        {
++            result.class_match_result = new Request.SaveVsmOnResult.PlayResultGroup.ClassMatchResult
++            {
++                ClassIdSolo = 2, ClassIdTeam = 2, BeforeRate = 1500f, AfterRate = win ? 1520f : 1485f,
++                ObtainedRate = win ? 20f : -15f, GradeId = 3,
++            };
++        }
++        return new Request
++        {
++            Type = MethodType.MthdSaveVsmOnResult,
++            RequestId = "test",
++            save_vsm_on_result = new Request.SaveVsmOnResult
++            {
++                PilotId = (uint)card.Id,
++                SessionId = card.SessionId,
++                ShuffleFlag = shuffle,
++                Result = result,
++            },
++        };
++    }
++
++    private void Send(Request request, CardServerConfig config)
++    {
++        // a fresh DbContext per request, like the per-request scope in the server
++        using var db = NewContext();
++        var handler = new SaveVsmOnResultCommandHandler(NullLogger<SaveVsmOnResultCommandHandler>.Instance, db,
++            Options.Create(config));
++        var response = handler.Handle(new SaveVsmOnResultCommand(request), CancellationToken.None).GetAwaiter().GetResult();
++        Assert.Equal(Error.Success, response.Error);
++        Assert.NotNull(response.save_vsm_on_result);
++    }
++
++    private (int history, uint totalWin, uint totalLose) Totals(CardProfile card)
++    {
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        return (db.BattleHistoryDbSet.Count(x => x.CardId == card.Id), wl.TotalWin, wl.TotalLose);
++    }
++
++    [Fact]
++    public void BattleModeMapping()
++    {
++        Assert.Equal(BattleModeConstant.ClassMatchSolo, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmClass, true));
++        Assert.Equal(BattleModeConstant.ClassMatchTeam, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmClass, false));
++        Assert.Equal(BattleModeConstant.FreeSolo, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmFree, true));
++        Assert.Equal(BattleModeConstant.FreeTeam, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmFree, false));
++        Assert.Equal(BattleModeConstant.FesSolo, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmFes, true));
++        Assert.Equal(BattleModeConstant.FesTeam, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmFes, false));
++        Assert.Equal(BattleModeConstant.OnlineOtherSolo, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmPrivate, true));
++        Assert.Equal(BattleModeConstant.OnlineOtherTeam, OnlineBattleResults.BattleModeFor(OnlineMatchingMode.OmmLocal, false));
++    }
++
++    [Fact]
++    public void ClassSoloWinIsStoredOnceWithRateAndHistory()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), Config());
++
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1u, wl.TotalWin);
++        Assert.Equal(0u, wl.TotalLose);
++        Assert.Equal(1u, wl.ClassSoloWin); // counted once (class persistence), not again by the online W/L command
++        Assert.Equal(0u, wl.ClassTeamWin);
++        var solo = db.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1520f, solo.Rate);
++        Assert.Equal(2u, solo.ClassId);
++        Assert.Equal(3u, solo.Grade);
++        Assert.Equal(1u, solo.WeeklyTotalBattleCount);
++
++        var h = db.BattleHistoryDbSet.Include(x => x.BattleSelf).Include(x => x.Ally).Include(x => x.Targets)
++            .Single(x => x.CardId == card.Id);
++        Assert.Equal(BattleModeConstant.ClassMatchSolo, h.BattleMode);
++        Assert.True(h.IsWin);
++        Assert.Equal(1794730125ul, h.PlayedAt);
++        Assert.Equal(108u, h.ElapsedSeconds);
++        Assert.Equal(900u, h.GivenDamage);
++        Assert.Equal(1540u, h.TakenDamage);
++        Assert.Equal(313u, h.BattleSelf.MobileSuitId);
++        Assert.Equal("PILOT-A", h.BattleSelf.PlayerName);
++        Assert.NotNull(h.Ally);
++        Assert.Equal(401u, h.Ally!.MobileSuitId);
++        Assert.Single(h.Targets); // the CPU foe is not listed, as offline
++
++        var suit = db.MobileSuitPvPStatisticDbSet.Single(x => x.CardId == card.Id && x.MstMobileSuitId == 313);
++        Assert.Equal(1u, suit.TotalBattleCount);
++        Assert.Equal(1u, suit.TotalWinCount);
++        Assert.Equal(900u, suit.TotalGivenDamage);
++        var stats = db.PlayerBattleStatisticDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(900u, stats.TotalGivenDamage);
++        Assert.Equal(1u, stats.TotalEnemyDefeatedCount);
++
++        var profile = db.CardProfiles.Single(x => x.Id == card.Id);
++        Assert.Equal(StartGp + 150u, profile.Gp);
++        Assert.Equal(10u, db.PlayerLevelDbSet.Single(x => x.CardId == card.Id).PlayerExp);
++        Assert.Equal(1u, db.MobileSuitUsageDbSet.Single(x => x.CardId == card.Id && x.MstMobileSuitId == 313).MsUsedNum);
++    }
++
++    [Fact]
++    public void ClassTeamLossGoesToTheTeamRecord()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: false, win: false), Config());
++
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(0u, wl.TotalWin);
++        Assert.Equal(1u, wl.TotalLose);
++        Assert.Equal(1u, wl.ClassTeamLose);
++        Assert.Equal(0u, wl.ClassSoloLose);
++        Assert.Equal(1485f, db.TeamClassMatchRecordDbSet.Single(x => x.CardId == card.Id).Rate);
++        Assert.Equal(0u, db.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).WeeklyTotalBattleCount);
++        Assert.Equal(BattleModeConstant.ClassMatchTeam, db.BattleHistoryDbSet.Single(x => x.CardId == card.Id).BattleMode);
++    }
++
++    [Fact]
++    public void ClassWinLossIsCountedByTheOnlineSaveWhenClassPersistenceIsOff()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), Config(classPersist: false));
++
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1u, wl.ClassSoloWin);
++        Assert.Equal(1u, wl.TotalWin);
++        Assert.Equal(StartRate, db.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).Rate); // rate untouched
++    }
++
++    [Fact]
++    public void MixMatchCountsAsFree()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true), Config());
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: false, win: false, playedAt: 1794730400, humanPartner: false), Config());
++
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1u, wl.FreeWin);
++        Assert.Equal(1u, wl.FreeLose);
++        Assert.Equal(1u, wl.TotalWin);
++        Assert.Equal(1u, wl.TotalLose);
++        Assert.Equal(0u, wl.ClassSoloWin + wl.ClassTeamWin + wl.ShuffleWin + wl.TeamWin);
++        var modes = db.BattleHistoryDbSet.Where(x => x.CardId == card.Id).OrderBy(x => x.Id).Select(x => x.BattleMode).ToList();
++        Assert.Equal(new[] { BattleModeConstant.FreeSolo, BattleModeConstant.FreeTeam }, modes);
++        var second = db.BattleHistoryDbSet.Include(x => x.Ally).OrderBy(x => x.Id).Last(x => x.CardId == card.Id);
++        Assert.Null(second.Ally); // CPU partner is not stored as an ally
++        Assert.Equal(StartRate, db.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).Rate); // no class data
++        Assert.Equal(2u, db.MobileSuitPvPStatisticDbSet.Single(x => x.CardId == card.Id && x.MstMobileSuitId == 313).TotalBattleCount);
++    }
++
++    [Fact]
++    public void FesCountsAsFes()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFes, shuffle: true, win: true, humanPartner: false), Config());
++
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1u, wl.FesWin);
++        Assert.Equal(1u, wl.TotalWin);
++        Assert.Equal(BattleModeConstant.FesSolo, db.BattleHistoryDbSet.Single(x => x.CardId == card.Id).BattleMode);
++    }
++
++    [Fact]
++    public void OtherOnlineModesOnlyCountInTotals()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmPrivate, shuffle: false, win: true), Config());
++
++        using var db = NewContext();
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1u, wl.TotalWin);
++        Assert.Equal(0u, wl.FreeWin + wl.FesWin + wl.ClassSoloWin + wl.ClassTeamWin + wl.ShuffleWin + wl.TeamWin);
++        Assert.Equal(BattleModeConstant.OnlineOtherTeam, db.BattleHistoryDbSet.Single(x => x.CardId == card.Id).BattleMode);
++    }
++
++    [Fact]
++    public void RetryOfTheSameResultIsIgnored()
++    {
++        var card = NewCard();
++        var config = Config();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), config);
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), config);
++        // after a card-server restart the in-memory key is gone; the stored history still identifies the battle
++        OnlineBattleResults.ResetForTests();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), config);
++
++        Assert.Equal((1, 1u, 0u), Totals(card));
++        using var db = NewContext();
++        Assert.Equal(1u, db.WinLossRecordDbSet.Single(x => x.CardId == card.Id).ClassSoloWin);
++        Assert.Equal(1u, db.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).WeeklyTotalBattleCount);
++        Assert.Equal(StartGp + 150u, db.CardProfiles.Single(x => x.Id == card.Id).Gp);
++        Assert.Equal(1u, db.MobileSuitPvPStatisticDbSet.Single(x => x.CardId == card.Id).TotalBattleCount);
++    }
++
++    [Fact]
++    public void RetryWithoutTimestampIsIgnoredWhileTheServerRuns()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true, playedAt: 0), Config());
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true, playedAt: 0), Config());
++        Assert.Equal((1, 1u, 0u), Totals(card));
++    }
++
++    [Fact]
++    public void DifferentBattlesInTheSameRoomAreBothStored()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true, playedAt: 1794730125), Config());
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: false, playedAt: 1794730460), Config());
++        Assert.Equal((2, 1u, 1u), Totals(card));
++    }
++
++    [Fact]
++    public void TwoCardsInTheSameBattleAreStoredSeparately()
++    {
++        var a = NewCard("sess-a", "PILOT-A");
++        var b = NewCard("sess-b", "PILOT-B");
++        Send(SaveRequest(a, OnlineMatchingMode.OmmFree, shuffle: false, win: true), Config());
++        Send(SaveRequest(b, OnlineMatchingMode.OmmFree, shuffle: false, win: true), Config());
++        Assert.Equal((1, 1u, 0u), Totals(a));
++        Assert.Equal((1, 1u, 0u), Totals(b));
++    }
++
++    [Fact]
++    public void FlagOffKeepsThePreviousBehaviour()
++    {
++        var card = NewCard();
++        var config = Config(online: false);
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), config);
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true, playedAt: 1794730400), config);
++
++        using var db = NewContext();
++        Assert.Equal(0, db.BattleHistoryDbSet.Count(x => x.CardId == card.Id));
++        var wl = db.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(1u, wl.ClassSoloWin); // class persistence as before
++        Assert.Equal(0u, wl.TotalWin);
++        Assert.Equal(0u, wl.FreeWin);
++        Assert.Equal(1520f, db.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).Rate);
++        Assert.Equal(StartGp, db.CardProfiles.Single(x => x.Id == card.Id).Gp);
++        Assert.Empty(db.MobileSuitPvPStatisticDbSet.Where(x => x.CardId == card.Id));
++    }
++
++    [Fact]
++    public void ProgressFlagOffStoresStatsButNoGpOrExp()
++    {
++        var card = NewCard();
++        Send(SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true), Config(progress: false));
++
++        using var db = NewContext();
++        Assert.Equal(1, db.BattleHistoryDbSet.Count(x => x.CardId == card.Id));
++        Assert.Equal(StartGp, db.CardProfiles.Single(x => x.Id == card.Id).Gp);
++        Assert.Equal(0u, db.PlayerLevelDbSet.Single(x => x.CardId == card.Id).PlayerExp);
++        Assert.Empty(db.MobileSuitUsageDbSet.Where(x => x.CardId == card.Id));
++        Assert.Equal(1u, db.WinLossRecordDbSet.Single(x => x.CardId == card.Id).FreeWin);
++    }
++
++    [Fact]
++    public void UnknownSessionChangesNothing()
++    {
++        var card = NewCard();
++        var request = SaveRequest(card, OnlineMatchingMode.OmmFree, shuffle: true, win: true);
++        request.save_vsm_on_result.SessionId = "someone-else";
++        Send(request, Config());
++        Assert.Equal((0, 0u, 0u), Totals(card));
++    }
++
++    [Fact]
++    public void BattleSaveFailureRollsBackAndKeepsBadgeAndClassOnly()
++    {
++        var card = NewCard();
++        using (var db = NewContext())
++        {
++            // a damaged card without its statistics row: SavePlayerStatisticCommand throws
++            db.PlayerBattleStatisticDbSet.RemoveRange(db.PlayerBattleStatisticDbSet.Where(x => x.CardId == card.Id));
++            db.SaveChangesAsync().GetAwaiter().GetResult();
++        }
++        Send(SaveRequest(card, OnlineMatchingMode.OmmClass, shuffle: true, win: true), Config());
++
++        using var check = NewContext();
++        Assert.Equal(0, check.BattleHistoryDbSet.Count(x => x.CardId == card.Id));
++        Assert.Equal(StartGp, check.CardProfiles.Single(x => x.Id == card.Id).Gp); // GP rolled back
++        var wl = check.WinLossRecordDbSet.Single(x => x.CardId == card.Id);
++        Assert.Equal(0u, wl.TotalWin);
++        Assert.Equal(1u, wl.ClassSoloWin); // the class part (old behaviour) is still stored, once
++        Assert.Equal(1520f, check.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).Rate);
++        Assert.Equal(1u, check.SoloClassMatchRecordDbSet.Single(x => x.CardId == card.Id).WeeklyTotalBattleCount);
++    }
++}
+diff --git a/Tests/Server.Tests/Server.Tests.csproj b/Tests/Server.Tests/Server.Tests.csproj
+new file mode 100644
+index 0000000..bf96832
+--- /dev/null
++++ b/Tests/Server.Tests/Server.Tests.csproj
+@@ -0,0 +1,23 @@
++<Project Sdk="Microsoft.NET.Sdk">
++  <!-- exvs2-lobbies 2026-11-16: card-server handler tests against a real (in-memory SQLite) database with all
++       migrations applied. Needs the Server-Infinite build: on Linux run
++       `dotnet test Tests/Server.Tests -p:LinuxHost=true`; on Windows `dotnet test Tests/Server.Tests`. -->
++  <PropertyGroup>
++    <TargetFramework>net9.0-windows</TargetFramework>
++    <Nullable>enable</Nullable>
++    <ImplicitUsings>enable</ImplicitUsings>
++    <IsPackable>false</IsPackable>
++    <NoWarn>$(NoWarn);CS8618</NoWarn>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(LinuxHost)' == 'true'">
++    <TargetFramework>net9.0</TargetFramework>
++  </PropertyGroup>
++  <ItemGroup>
++    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
++    <PackageReference Include="xunit" Version="2.9.2" />
++    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="..\..\Server-Infinite\Server-Infinite.csproj" />
++  </ItemGroup>
++</Project>
+diff --git a/WebUIInfinite/Shared/Dto/Enum/BattleModeConstant.cs b/WebUIInfinite/Shared/Dto/Enum/BattleModeConstant.cs
+index f0e7bee..2ec895c 100644
+--- a/WebUIInfinite/Shared/Dto/Enum/BattleModeConstant.cs
++++ b/WebUIInfinite/Shared/Dto/Enum/BattleModeConstant.cs
+@@ -11,4 +11,7 @@ public static class BattleModeConstant
+     public static readonly string FesTeam = "FesTeam";
+     public static readonly string FreeSolo = "FreeSolo";
+     public static readonly string FreeTeam = "FreeTeam";
++    // exvs2-lobbies 2026-11-16: other online modes (OMM_LOCAL / LOCATION / PRIVATE / PUB / EVENT, custom rooms)
++    public static readonly string OnlineOtherSolo = "OnlineOtherSolo";
++    public static readonly string OnlineOtherTeam = "OnlineOtherTeam";
+ }
+\ No newline at end of file
+-- 
+2.47.3
+
