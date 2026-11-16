@@ -215,20 +215,20 @@ the shared VPS matchmaker, and played with the Test cabinets already on that mat
   `LM_IpAddress` to this PC's LAN IP. Close SnowLauncher before editing its ini (it keeps the file in memory).
 * [x] LM discovery is a LAN broadcast (UDP 49000): two LMs on the same home network can claim each other's
   cabinets. When two people in one house simulate "internet players", run one LM or isolate the PCs.
-* [x] Online-tag partner names sync on card insert, and either member can delete a team, in this pre-release
+* [x] Online-tag partner names sync on card insert, and either member can delete a team, in this release
   (patch commits after v0.4.1-pre). Every card server and the matchmaker need this build; mixed old/new
   servers can still show a stale name or a reappearing deleted team.
 * [x] Friend requests (results-screen OPTION → フレンド申請, partner only, both on cards), block lists, and
-  the Friends web page are in this pre-release. Keep mixed old card servers off this matchmaker, or they
+  the Friends web page are in this release. Keep mixed old card servers off this matchmaker, or they
   can still log `Unhandled case` for RegisterOption (those should keep `PostMatchStubs` true).
 
 ## Pair search, class match, and the pair-cancel guard (2026-11-16)
 
 Docs: [docs/MATCHMAKING-BEHAVIOUR.md](docs/MATCHMAKING-BEHAVIOUR.md), [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
-Matchmaker unit tests: **413** passing (includes ContinuePair, PairNeverCpu, pair-cancel quarantine, class-linked
-worlds, friends, Teams pages). This pre-release ships `ContinuePairMode=VsCpu` at **18 s** (the original value;
-not 30, which races the game's ~30 s pair timer) and `PairCancelQuarantineSeconds=180`. `PairNeverCpu` and
-`SoloPairVsCpu` are off. Times below are Pacific Time.
+Matchmaker unit tests: **423** passing (includes ContinuePair, ContinuePairAfterCpu, PairNeverCpu, pair-cancel
+quarantine, class-linked worlds, friends, Teams pages). This release ships `ContinuePairMode=VsCpu` at **18 s**
+(the original value; not 30, which races the game's ~30 s pair timer), `ContinuePairAfterCpuSeconds=2`, and
+`PairCancelQuarantineSeconds=180`. `PairNeverCpu` and `SoloPairVsCpu` are off. Times below are Pacific Time.
 
 * [x] **Solo-first Mix Match, then a continuing pair:** 12:59 AM, room of four solos. 1:02 AM, PCB 03 + PCB 15
   (solos) versus PCB 14 + PCB 02 (a pair that had stayed together) — a Mix Match pair and two solos in one
@@ -257,7 +257,14 @@ not 30, which races the game's ~30 s pair timer) and `PairCancelQuarantineSecond
   and requeued. A four-solo class room formed at 1:42:40. Takeaway: everyone pick the same mode, wait for
   all four to be on the search screen, use Mix for pair+solos. A "3 humans + 1 CPU after a delay" option
   is not implemented.
-* [ ] Pair loses to CPUs, requeues, and avoids the partner-lost prompt / black screen (under investigation).
+* [x] **Fast CPU room after a CPU loss (`ContinuePairAfterCpuSeconds=2`), 2:04–2:06 AM PT:** a class-team
+  pair got its first humans-vs-CPU room at 2:04:21 (18.4 s, the normal ContinuePair wait), lost, and
+  re-queued at 2:06:46. The log shows `after-cpu=1 cpu-wait=2s`; a new CPU room was sent on the first
+  check at 3.1 s, with no partner-lost prompt and no black screen. Class solos searching at the same
+  time stayed in class-solo and did not join the pair (the known class solo/team split, still open).
+* [x] **Instant human rooms, 1:54 and 1:57 AM PT:** four solos matched as soon as the last cab entered.
+  At 1:57 a pair plus two solos formed a 2v2 on the pair's first check (about 3 s), with no prompt and
+  no disconnects.
 * [ ] `CrossWorldTeamRooms` (class pair vs two class solos) tested with the real game (off by default).
-* [ ] Optional game-side change to raise the in-game pair timer (last resort; not in this pre-release).
+* [ ] Optional game-side change to raise the in-game pair timer (last resort; not in this release).
 * [ ] Two-location NAT test (different homes / VPN) still pending.

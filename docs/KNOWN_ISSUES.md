@@ -32,7 +32,7 @@ test on 16 November 2026, 1:31–1:43 AM Pacific Time:
   Class Match even if they all search at once.
 
 A possible later option is to start three humans plus one CPU after a delay (for example 60 seconds).
-That is **not implemented** in this pre-release.
+That is **not implemented** in this release.
 
 **Workaround.** Everyone pick the **same mode**. For a pair plus two solos, use **Mix Match**. Wait until
 all four cabinets are on the search screen before anyone starts searching, when you can. After a pair
@@ -50,18 +50,34 @@ prompt about sticking with a CPU or that the partner was lost. If the two cabine
 
 **Cause.** The game, not the server, cancels a pair's search after about **30 seconds** on a bare
 "finding opponents" screen and then shows that prompt. A pair that has just come out of a CPU match and
-queues again can hit the same path. Splitting the pair (different answers, or only one cabinet letting go)
-leaves the cabinets in a bad state. This is still **under investigation**: we do not yet have a server
-reply that reliably avoids the prompt on this requeue.
+queues again can hit the same path before the usual 18-second CPU send. In a class test at 1:30 AM
+Pacific Time on 16 November 2026, the leader cancelled at 11.7 seconds (the partner had started
+searching about 10 seconds earlier). Splitting the pair (different answers, or only one cabinet letting
+go) leaves the cabinets in a bad state.
 
-**Workaround.** After a black screen, have the other cabinet release the partner, or wait about two
-minutes. A clean path back through the title screen and a card swipe clears it faster. For pair nights,
-**Mix Match** is the safer mode (see the class-match issue below). If a pair does cancel, this build's
-pair-cancel quarantine holds those cabinets out of new human rooms until they come back through a clean
-restart, or for up to three minutes, so they are not placed in a half-reset state.
+**Mitigation.** This release ships `ContinuePairAfterCpuSeconds` (default **2**, negative = off). A lone
+all-human pair whose two humans were in a humans-vs-CPU room within the last 15 minutes
+(`ContinuePairWindow`, default 900 s) is sent its CPU room after
+`min(ContinuePairAfterCpuSeconds, ContinuePairSeconds)`, so the answer is ready on the leader's first
+poll at about **3 seconds**. First-time searches still wait the full 18 seconds. A 4-human room still
+wins if one is ready.
 
-**Status.** Open / under investigation. The quarantine (default 180 s, `PairCancelQuarantineSeconds`) is
-in this pre-release and stops the follow-up 21-01 from a dirty re-entry. It does not remove the prompt.
+Confirmed on real cabinets the same morning: at **2:04:21 AM Pacific Time** a class-team pair got its
+first humans-vs-CPU room at 18.4 seconds (the normal ContinuePair wait). They lost and re-queued at
+**2:06:46 AM PT**; the log shows `after-cpu=1 cpu-wait=2s`, and a new CPU room was sent on the first
+check at 3.1 seconds, with no partner-lost prompt and no black screen. Class solos searching at the
+same time stayed in class-solo and did not join the pair (the class solo/team split below, still open).
+
+**Workaround.** If a prompt or black screen still appears, have the other cabinet release the partner,
+or wait about two minutes. A clean path back through the title screen and a card swipe clears it
+faster. For a pair plus two solos, **Mix Match** is the safer mode (see the class-match issue below).
+If a pair does cancel, this build's pair-cancel quarantine holds those cabinets out of new human rooms
+until they come back through a clean restart, or for up to three minutes, so they are not placed in a
+half-reset state.
+
+**Status.** Mitigated and **confirmed** on real cabinets (16 November 2026, 2:06 AM Pacific Time).
+Default `ContinuePairAfterCpuSeconds=2`. The class pair versus class solos split is unchanged and
+still open.
 
 ## A class-match pair cannot match two class-match solos
 
@@ -124,7 +140,7 @@ dropped during loading.
 **Workaround.** After a pair cancel or black screen, send those cabinets back through the title screen
 (card swipe) before they search again.
 
-**Status.** Mitigated in this pre-release by the pair-cancel quarantine (see the first issue). After a
+**Status.** Mitigated in this release by the pair-cancel quarantine (see the long-wait and 21-01 issues). After a
 pair cancel, those cabinets are held out of human rooms until a new node id or three minutes have
 passed.
 
@@ -152,7 +168,7 @@ during matches that completed normally, including successful 4-player rooms, so 
 the 21-01s above.
 
 **Workaround.** None required for play. A tighter rate limit on this noise is a possible later hardening
-step; it is not in this pre-release as a running change. Existing `/match` and `/tag` rate limits still
+step; it is not in this release as a running change. Existing `/match` and `/tag` rate limits still
 apply to those HTTP APIs.
 
 **Status.** Observed, not blamed for disconnects.

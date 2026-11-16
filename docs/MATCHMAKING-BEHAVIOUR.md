@@ -70,6 +70,26 @@ waited with only one other cabinet searching did get the CPU room at 18 seconds,
 This is a workaround, not official behaviour. Official waiting Practice is still a search; our CPU
 room **ends** the search.
 
+## ContinuePairAfterCpuSeconds (default 2)
+
+A pair that has just lost a ContinuePair CPU match and searches again can still hit the in-game
+partner-lost prompt before the usual 18-second send (class test 16 November 2026, 1:30 AM Pacific
+Time: the leader cancelled at 11.7 seconds; the partner had started searching about 10 seconds
+earlier).
+
+`ContinuePairAfterCpuSeconds` (default **2**, negative = off) shortens the wait for a lone all-human
+pair whose two humans were in a humans-vs-CPU room within `ContinuePairWindow` (default 900 seconds).
+That pair is sent its VsCpu room after `min(this, ContinuePairSeconds)`, so the answer is ready on
+the leader's first CheckMatching poll at about 3 seconds. First-time searches still wait the full 18
+seconds. A 4-human room still wins if one is ready. `PAIR-SEARCH` entry logs show `after-cpu=0/1`
+and `cpu-wait`.
+
+Confirmed on real cabinets the same morning: at 2:04:21 AM PT a class-team pair got its first
+humans-vs-CPU room at 18.4 seconds. They lost and re-queued at 2:06:46 AM PT; the log shows
+`after-cpu=1 cpu-wait=2s`, and a new CPU room was sent on the first check at 3.1 seconds, with no
+prompt and no black screen. Class solos searching at the same time stayed in class-solo (the known
+Class Match split, still open).
+
 ## Solo pair versus CPU (off)
 
 An experiment (`SoloPairVsCpuSeconds`) sent two leftover solos versus CPUs after a short wait, so
@@ -97,7 +117,7 @@ CPU room, and keep them in the queue, hoping later humans could still be matched
 the search and showed the partner-lost prompt. Because the two cabinets answered differently, both
 went to a black screen.
 
-**The unpatched game does not practice-and-keep-search.** The flag is off in this pre-release.
+**The unpatched game does not practice-and-keep-search.** The flag is off in this release.
 Official cabinets get a similar "occupy the cabinet while waiting" effect by starting waiting
 Practice without leaving the queue. This server cannot do that by itself.
 
@@ -153,14 +173,14 @@ Tips: everyone pick the same mode; wait for all four to be on the search screen;
 pair and solos should play together.
 
 A possible later option is to start three humans plus one CPU after a delay. That is not in this
-pre-release.
+release.
 
 ## Optional game-side change (last resort)
 
 There is research into a small change on the game side that would raise the in-game pair-search
 timeout (about 30 seconds) toward the general matching timeout (about 150 seconds). The aim would be
 to let a pair stay in search longer, closer to official waiting Practice, without the partner-lost
-prompt. That work is a **last resort**, is not part of this pre-release, and this document does not
+prompt. That work is a **last resort**, is not part of this release, and this document does not
 include patch bytes, file offsets, or reproduction steps.
 
 ## Official Japanese cabinets

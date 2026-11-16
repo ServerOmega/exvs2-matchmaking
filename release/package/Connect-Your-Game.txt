@@ -164,7 +164,7 @@ partners on different card servers that share one matchmaker:
   3. If one of you searches alone, the matchmaker log says "TAG-WAIT ... waiting for partner N:
      partner not searching" - the partner's cabinet hasn't started an Online Tag search.
   4. Partner display names update when a card is inserted, and either member can delete a team
-     (this pre-release). Every card server and the matchmaker need this build; mixed old/new servers
+     (this release). Every card server and the matchmaker need this build; mixed old/new servers
      can still show a stale name or a reappearing deleted team.
 
 Friend requests (results-screen OPTION, hold Start, pick フレンド申請) and block lists are in this

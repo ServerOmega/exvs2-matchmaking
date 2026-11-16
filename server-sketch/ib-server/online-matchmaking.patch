@@ -1,7 +1,7 @@
 From 46f2cf5f59c4858078e5c4d44e3d60923d7e15c1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/43] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/46] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2324,10 +2324,11 @@ index 0000000..3b81d9a
 -- 
 2.47.3
 
+
 From 59a8ceaba76b4a9c00743b17e00ecb7abdc89ed3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/43] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/46] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2361,10 +2362,11 @@ index da8f5ea..3029cb0 100644
 -- 
 2.47.3
 
+
 From c10e1826eccd88272306b1f2f71b16126626baba Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/43] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/46] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2592,10 +2594,11 @@ index bda49e2..a9c56ab 100644
 -- 
 2.47.3
 
+
 From 9295ed8babeb0d6e6651d2c6790f26f1b85b6061 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/43] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/46] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2650,10 +2653,11 @@ index 872d2b3..4ef4c22 100644
 -- 
 2.47.3
 
+
 From 060e241c15c6a6ede6d3c0a9e267f1122e06afdd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/43] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/46] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2677,10 +2681,11 @@ index 90e35a8..5fad533 100644
 -- 
 2.47.3
 
+
 From a6cdb59e736f93bbb922a85b637ee0b9888254fc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/43] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/46] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3027,10 +3032,11 @@ index 3b81d9a..b5b7cbb 100644
 -- 
 2.47.3
 
+
 From 679ae7d833acb2a84183f4844568c34134ac5adf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/43] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/46] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3100,10 +3106,11 @@ index 2a72884..65ee897 100644
 -- 
 2.47.3
 
+
 From 4ecdd01d345a51c3a5560a882691a6e492be2c03 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/43] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/46] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3590,10 +3597,11 @@ index 0000000..f7c4beb
 -- 
 2.47.3
 
+
 From e460603df7dd164e85b3ed5cd456994a819a2601 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/43] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/46] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4031,10 +4039,11 @@ index 27c6cb7..94b83aa 100644
 -- 
 2.47.3
 
+
 From dcf1e9cf9fddc8862ad034846ebf1a1fb167a3d5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/43] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/46] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4126,10 +4135,11 @@ index 3709ff7..f37e4f8 100644
 -- 
 2.47.3
 
+
 From 0e7ec86f35d24461efb049eb1ae6b3eae7015728 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/43] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/46] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4205,10 +4215,11 @@ index 65ee897..81e88cd 100644
 -- 
 2.47.3
 
+
 From bb1f1c02bf7ac969890bdb686027ca10f450e7c8 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/43] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/46] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4734,10 +4745,11 @@ index 0000000..a4934f4
 -- 
 2.47.3
 
+
 From 581a1ce4c65e127e280234709143633cc1c9b7ee Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/43] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/46] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5382,10 +5394,11 @@ index b5b7cbb..74e757b 100644
 -- 
 2.47.3
 
+
 From 79b9fb419883b19d6a806e5b0bd07ca083e36acc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/43] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/46] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5867,10 +5880,11 @@ index 0000000..310cbdf
 -- 
 2.47.3
 
+
 From ec8d34912e9d29c0f3cb6f1c28a633a253ef3183 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 10:09:10 -0800
-Subject: [PATCH 15/43] Results-hang timing (logging only, default on):
+Subject: [PATCH 15/46] Results-hang timing (logging only, default on):
  RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
  to its next request; LogResultGap config; 5 tests
 
@@ -6109,10 +6123,11 @@ index 0000000..e276bd6
 -- 
 2.47.3
 
+
 From b7e15687277c064d7887ce58aa004d4889e9f9a4 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 22:31:13 -0800
-Subject: [PATCH 16/43] Rolling fill timer: FillAfter restarts on each new
+Subject: [PATCH 16/46] Rolling fill timer: FillAfter restarts on each new
  compatible joiner
 
 FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
@@ -6532,10 +6547,11 @@ index 9942148..f189356 100644
 -- 
 2.47.3
 
+
 From 9642bf9ad22bed7f80aaad1cbbca27fa6795fef2 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:10:30 -0800
-Subject: [PATCH 17/43] In-store fill override: InStoreFillAfterSeconds (60) /
+Subject: [PATCH 17/46] In-store fill override: InStoreFillAfterSeconds (60) /
  InStoreMaxFillWaitSeconds (120) for worlds 15/16
 
 2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
@@ -6748,10 +6764,11 @@ index 0000000..1eb99cd
 -- 
 2.47.3
 
+
 From 51506e165a1d171e22997f4701ea432ae134e9c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:17:43 -0800
-Subject: [PATCH 18/43] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+Subject: [PATCH 18/46] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
  2-client rooms, group 0 vs 1, matched at once
 
 Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
@@ -7046,10 +7063,11 @@ index 0000000..d09631a
 -- 
 2.47.3
 
+
 From c4b215d7c66e8b483ec14dbff820408bf865ec66 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 01:51:07 -0800
-Subject: [PATCH 19/43] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
+Subject: [PATCH 19/46] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
  own room after the fill timer
 
 After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
@@ -7188,10 +7206,11 @@ index a4934f4..f4c137c 100644
 -- 
 2.47.3
 
+
 From 693f911920c2dddb364016c35dc7cb79e0166b60 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 02:22:56 -0800
-Subject: [PATCH 20/43] NoCpuPartner: 2v2 worlds only form full 4-human rooms
+Subject: [PATCH 20/46] NoCpuPartner: 2v2 worlds only form full 4-human rooms
  (no solo ever gets a CPU partner)
 
 3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
@@ -7599,10 +7618,11 @@ index 0000000..dc76a5d
 -- 
 2.47.3
 
+
 From 6a14d730bbf0b85d5cfa78ca382a3c596ec48a3b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:45 -0800
-Subject: [PATCH 21/43] SoftWait no longer delays a complete 4-human room
+Subject: [PATCH 21/46] SoftWait no longer delays a complete 4-human room
  (v12-softfull)
 
 Same-flag (veteran / win-rate) 4-human rooms are still preferred. If none
@@ -7911,10 +7931,11 @@ index dc76a5d..43a422b 100644
 -- 
 2.47.3
 
+
 From 89312727284e25d7aded05c668fefafd54ddf52f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:50 -0800
-Subject: [PATCH 22/43] Ship 3-second fill timers as the default (NoCpuPartner
+Subject: [PATCH 22/46] Ship 3-second fill timers as the default (NoCpuPartner
  stays on)
 
 FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
@@ -7977,10 +7998,11 @@ index 545589a..04d3865 100644
 -- 
 2.47.3
 
+
 From 905b051e1058ad4967bedd178e8ede04df7d7889 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:55 -0800
-Subject: [PATCH 23/43] Add tools/vps: deploy the matchmaker to a Linux VPS
+Subject: [PATCH 23/46] Add tools/vps: deploy the matchmaker to a Linux VPS
 
 deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
 worktree) and installs it as systemd service exvs2-mm. Existing VPS
@@ -8291,10 +8313,11 @@ index 0000000..294f8aa
 -- 
 2.47.3
 
+
 From ecdccc9195516a7a604ef7a7e374512f23dc9d17 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:32:01 -0800
-Subject: [PATCH 24/43] Disclaimer: 2v2 matches only form with at least 4 human
+Subject: [PATCH 24/46] Disclaimer: 2v2 matches only form with at least 4 human
  players
 
 In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
@@ -8340,10 +8363,11 @@ index 0b51d79..5aa47c4 100644
 -- 
 2.47.3
 
+
 From f683cd36ee6ce7bee58d6f0b32ba7c31d2620fea Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:41:12 -0800
-Subject: [PATCH 25/43] Redact the VPS public IP from tools/vps
+Subject: [PATCH 25/46] Redact the VPS public IP from tools/vps
 
 Replace <VPS_IP> with the <VPS_IP> placeholder in the VPS README.
 deploy.sh no longer defaults to a public address; pass --host <VPS_IP>.
@@ -8354,6 +8378,41 @@ Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
  tools/vps/deploy.sh |  8 ++++++--
  2 files changed, 11 insertions(+), 7 deletions(-)
 
+diff --git a/tools/vps/README.md b/tools/vps/README.md
+index 4f24274..d133927 100644
+--- a/tools/vps/README.md
++++ b/tools/vps/README.md
+@@ -3,7 +3,7 @@
+ Runs Server-Infinite on a VPS as the internet matchmaker (`/match` on TCP 28090, built-in STUN on UDP 3478/3479).
+ Cabinets keep using their own local card server; only matching and STUN move to the VPS.
+ 
+-Current host: Vultr Los Angeles, `<VPS_IP>`, service `exvs2-mm`, install dir `/opt/exvs2-mm`, user `exvs2mm`.
++Current host: Vultr Los Angeles, `<VPS_IP>`, service `exvs2-mm`, install dir `/opt/exvs2-mm`, user `exvs2mm`.
+ 
+ ## Files
+ - `deploy.sh` - builds a **committed** ref for linux-x64 (self-contained, in a throwaway worktree, so uncommitted
+@@ -19,17 +19,17 @@ Never copy a PC database (card ChipId/AccessCode) or the game to the VPS.
+ ## Use
+     tools/vps/deploy.sh --bootstrap          # first time
+     tools/vps/deploy.sh --ref <commit>       # update
+-    ssh -i ~/.ssh/exvs2_vps root@<VPS_IP> journalctl -u exvs2-mm -f
++    ssh -i ~/.ssh/exvs2_vps root@<VPS_IP> journalctl -u exvs2-mm -f
+ 
+ ## Pointing a local card server at it
+ In that card server's `Configurations/server.json` -> `CardServerConfig.OnlineMatching`:
+ 
+     "Enabled": true,
+-    "MatchUrl": "http://<VPS_IP>:28090/match",
+-    "StunHost": "<VPS_IP>",
++    "MatchUrl": "http://<VPS_IP>:28090/match",
++    "StunHost": "<VPS_IP>",
+     "StunPort": 3478,
+     "BuiltinStun": false
+ 
+ then restart that card server. The cabinet's `config.ini` `Server=` keeps pointing at its local card server.
+-(Pointing `Server=` straight at `<VPS_IP>:28090` also matches, but then the cabinet's cards are created on the
++(Pointing `Server=` straight at `<VPS_IP>:28090` also matches, but then the cabinet's cards are created on the
+ VPS instead of the PC.)
 diff --git a/tools/vps/deploy.sh b/tools/vps/deploy.sh
 index e453372..365c1cc 100755
 --- a/tools/vps/deploy.sh
@@ -8390,10 +8449,11 @@ index e453372..365c1cc 100755
 -- 
 2.47.3
 
+
 From e64c1ed0f1424c4b322cbd4e7023e0f77b399049 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 26/43] Add cross-server online tag with shared partner codes
+Subject: [PATCH 26/46] Add cross-server online tag with shared partner codes
  and settings sync
 
 Players on different card servers can form an online-tag team by exchanging
@@ -11437,10 +11497,11 @@ index b6da67c..7a7a67f 100644
 -- 
 2.47.3
 
+
 From b368843e325e0442b605002e7e821f9f19f60fe7 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 27/43] Default OnlineTag.TagStatus to 1 so the in-game list is
+Subject: [PATCH 27/46] Default OnlineTag.TagStatus to 1 so the in-game list is
  selectable
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11542,10 +11603,11 @@ index 0000000..8d2841f
 -- 
 2.47.3
 
+
 From fc5eb57f5ec924c26a85a662646eef4a84f92414 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 07:36:31 -0800
-Subject: [PATCH 28/43] Security hardening: public allowlist, /tag shared
+Subject: [PATCH 28/46] Security hardening: public allowlist, /tag shared
  secret, source binding, expiry, rate limits, masking
 
 - SecurityGuardMiddleware (Security.AccessMode): PublicMatchmaker answers
@@ -13550,10 +13612,11 @@ index 294f8aa..b2ab9da 100644
 -- 
 2.47.3
 
+
 From e11c91c17e0a35943dd16fa3c8a3b2b48be8a332 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 07:36:40 -0800
-Subject: [PATCH 29/43] WebUI single-card login, card secrets masked in request
+Subject: [PATCH 29/46] WebUI single-card login, card secrets masked in request
  paths, TAG-WAIT partner log
 
 - WebUI saves the access code together with its chip id (one card at a
@@ -14222,10 +14285,11 @@ index 574e323..e460e11 100644
 -- 
 2.47.3
 
+
 From 12ce6d80d04455aa6f3e97a318192dcb33688a49 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 10:09:15 -0800
-Subject: [PATCH 30/43] Online tag: renames reach the partner's server,
+Subject: [PATCH 30/46] Online tag: renames reach the partner's server,
  cross-server team delete, last-team delete
 
 Renames: every tag-team sync (LoadCard / card insert and the WebUI Teams
@@ -15033,10 +15097,11 @@ index a231388..46243aa 100644
 -- 
 2.47.3
 
+
 From 5e4c85cb9bf6751ae98c22e9681f2fa56a129135 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 11:27:25 -0800
-Subject: [PATCH 31/43] Friends: results-screen friend requests, block (NG)
+Subject: [PATCH 31/46] Friends: results-screen friend requests, block (NG)
  lists, Friends page
 
 RegisterOption (306) is now always answered (empty success) when
@@ -19156,10 +19221,11 @@ index fa24352..cc69dd6 100755
 -- 
 2.47.3
 
+
 From 16d6002ead5945c5d67c968398e484780751f8d3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 11:50:57 -0800
-Subject: [PATCH 32/43] Friends: last played from real match results; WebUI
+Subject: [PATCH 32/46] Friends: last played from real match results; WebUI
  survives a dropped startup fetch
 
 Last played: when a card server saves a versus result (SaveVsmOnResult
@@ -19766,10 +19832,11 @@ index 0000000..2d64ab7
 -- 
 2.47.3
 
+
 From 1c64b1cbce54b7a03b85aae290fb5db6221d7543 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 13:44:53 -0800
-Subject: [PATCH 33/43] WebUI: Teams tab next to Friends, friend rows link to
+Subject: [PATCH 33/46] WebUI: Teams tab next to Friends, friend rows link to
  their tag team, clickable Teams list
 
 - Card menu: Teams button next to Friends -> new /Cards/Teams/{chip} page
@@ -20775,10 +20842,11 @@ index 87af860..c9c4ce6 100644
 -- 
 2.47.3
 
+
 From 1500aecb51d0e8b992186b48604e76f5a9dce1e5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 13:57:34 -0800
-Subject: [PATCH 34/43] Matchmaker: continue-pair fix (VsCpu, 18 s) and fast
+Subject: [PATCH 34/46] Matchmaker: continue-pair fix (VsCpu, 18 s) and fast
  cancel for CPU-partner entries under NoCpuPartner
 
 4-cab tests 12:45 / 13:19 / 13:49 PT: two idle teammates are auto-continued by the game as a pair after the
@@ -21298,10 +21366,11 @@ index b2ab9da..d56992b 100644
 -- 
 2.47.3
 
+
 From 1f4de54715b5b36de3aa8f6b5e51425f0399f9b3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 14:24:06 -0800
-Subject: [PATCH 35/43] Matchmaker: duo vs 2 CPU stand-ins after 12s (AnyDuo
+Subject: [PATCH 35/46] Matchmaker: duo vs 2 CPU stand-ins after 12s (AnyDuo
  scope), place CPU-partner teams in full rooms
 
 - ContinuePairScope AnyDuo (default): any 2-human team entry gets the VsCpu room, not only recent
@@ -21839,10 +21908,11 @@ index d56992b..179a2d7 100644
 -- 
 2.47.3
 
+
 From ff9ec8bde4553afb8b34b8efee1e4e0b47e5e047 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 14:54:56 -0800
-Subject: [PATCH 36/43] Matchmaker: two lone solos vs 2 CPU stand-ins after
+Subject: [PATCH 36/46] Matchmaker: two lone solos vs 2 CPU stand-ins after
  12s, waiting first for a running CPU room's players
 
 22:32-22:47Z retest: after each 4-human room the winners continue as a duo (CPU room via ContinuePair), while
@@ -22265,10 +22335,11 @@ index 179a2d7..ba8286d 100644
 -- 
 2.47.3
 
+
 From 018be4deebf140dbae8eacaa1e15d17e1cd5e698 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 15:08:22 -0800
-Subject: [PATCH 37/43] WebUI: Friends show team names; Teams list and
+Subject: [PATCH 37/46] WebUI: Friends show team names; Teams list and
  dedicated Edit Team page
 
 - Friends table: Team column (was empty "Online tag") and the team name
@@ -23617,10 +23688,11 @@ index c9c4ce6..3260de7 100644
 -- 
 2.47.3
 
+
 From cee1645f881f543311b7724b22b45b7a48978665 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 15:45:17 -0800
-Subject: [PATCH 38/43] Matchmaker: class/free solo-team world links for the
+Subject: [PATCH 38/46] Matchmaker: class/free solo-team world links for the
  regroup wait, experimental cross-world team room
 
 Class match test 15:34-15:41 PT: the winners continued as a class-team duo (world 14) and got the
@@ -23942,10 +24014,11 @@ index ba8286d..bb13f61 100644
 -- 
 2.47.3
 
+
 From ddf3726226ae9965a141805deb7fd22e3d62a633 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 16:02:56 -0800
-Subject: [PATCH 39/43] Solo pair vs CPU: off by default (cabs stuck after it),
+Subject: [PATCH 39/46] Solo pair vs CPU: off by default (cabs stuck after it),
  add a 4-human regroup guard
 
 Mix test 15:44-15:58 PT on ff9ec8b: room 7 (cabs 2+4, two solo entries teamed vs 2 CPU
@@ -24204,10 +24277,11 @@ index bb13f61..30c20c1 100644
 -- 
 2.47.3
 
+
 From 49612e9403e308f984b8862f8be5329a31afb618 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 17:08:24 -0800
-Subject: [PATCH 40/43] Matchmaker: pair-keep-searching test (no CPU room for
+Subject: [PATCH 40/46] Matchmaker: pair-keep-searching test (no CPU room for
  waiting duos)
 
 Official cabinets keep a searching pair queued and let the game start a
@@ -25066,10 +25140,11 @@ index 0000000..fd1729d
 -- 
 2.47.3
 
+
 From 54cc909206bcb52f1f91d0b317dddb6f4988d6ac Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 00:44:07 -0800
-Subject: [PATCH 41/43] Matchmaker: quarantine cancelled pair nodes until a
+Subject: [PATCH 41/46] Matchmaker: quarantine cancelled pair nodes until a
  clean restart
 
 12:19-12:23 AM PT Nov 16: a searching duo (PCB_03 node 1258, partner 1260)
@@ -25630,10 +25705,11 @@ index 0000000..3d2aeb5
 -- 
 2.47.3
 
+
 From 058f09c3f2fa0bfe7dbb4bea69b6bda0dc8c6b44 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:42:30 -0800
-Subject: [PATCH 42/43] Matchmaker: restore ContinuePairSeconds to 18; document
+Subject: [PATCH 42/46] Matchmaker: restore ContinuePairSeconds to 18; document
  2026-11-16 findings
 
 18 s is the original continue-pair value and stays under the game's ~30 s
@@ -25870,11 +25946,12 @@ index fd1729d..fefda2b 100644
 -- 
 2.47.3
 
+
 From 8d951cb363df50b656722e51ebca733cb99395c9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:47:00 -0800
-Subject: [PATCH 43/43] ONLINE_MATCHMAKING.md: long waits are queue timing, not a
- slow matchmaker
+Subject: [PATCH 43/46] ONLINE_MATCHMAKING.md: long waits are queue timing, not
+ a slow matchmaker
 
 16 Nov 2026 1:31-1:43 AM PT class test: rooms formed instantly once four
 compatible humans were in the same world. Delays came from mixed modes
@@ -25917,6 +25994,604 @@ index 3b930aa..2ed09c7 100644
  ## Known gaps / risks
  * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
    (`BindMatchNodesToSourceIp` limits Check/Cancel to the IP that entered, but is not a login.)
+-- 
+2.47.3
+
+
+From cff6cccf1548e27e07974ffcd72fa75b84f39f1a Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 01:44:05 -0800
+Subject: [PATCH 44/46] Matchmaker: CPU room on the first poll for a pair back
+ from its CPU room
+
+Class match test 2026-11-16 1:27-1:31 AM PT (VPS 54cc909, ContinuePairSeconds 18):
+duo PCB_03 (node 1312) + PCB_14 (node 1320) got the ContinuePair CPU room at
+18.5 s (room 8), lost, and re-entered as the same pair at 1:30:27 (apply=4).
+The server replies were identical to the first search (WAIT), but the leader
+cancelled at 11.7 s (found_player=false, UDPHP_FAIL_CANCELED_MYSELF), the cabs
+showed the CPU-partner prompt and went black. The partner cab had started its
+search 10 s before the leader's entry.
+
+New OnlineMatching.ContinuePairAfterCpuSeconds (config default 2, negative =
+off, Matchmaker default off): a lone all-human duo whose two humans were the
+humans of a recent (ContinuePairWindow) humans-vs-CPU room gets its VsCpu room
+(or Cancel) after min(this, ContinuePairSeconds), i.e. on the leader's first
+poll. First searches still wait ContinuePairSeconds; a 4-human room still wins.
+PAIR-SEARCH entry log shows after-cpu=0/1 and cpu-wait.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Configurations/server.json    |   1 +
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  44 +++-
+ .../Config/OnlineMatchingConfigurations.cs    |   5 +
+ Server-Infinite/Program.cs                    |   5 +-
+ .../Matchmaking.Tests.csproj                  |   1 +
+ Tests/Matchmaking.Tests/PairAfterCpuTests.cs  | 205 ++++++++++++++++++
+ tools/vps/server.vps.json                     |   1 +
+ 7 files changed, 256 insertions(+), 6 deletions(-)
+ create mode 100644 Tests/Matchmaking.Tests/PairAfterCpuTests.cs
+
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 6894916..4c15911 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -54,6 +54,7 @@
+       "ContinuePairMode": "VsCpu",
+       "ContinuePairSeconds": 18,
+       "ContinuePairScope": "AnyDuo",
++      "ContinuePairAfterCpuSeconds": 2,
+       "CpuPartnerCancelSeconds": 5,
+       "PlaceCpuPartnerTeams": true,
+       "SoloPairVsCpuSeconds": 0,
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index f61d997..cd2055c 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -114,6 +114,9 @@ public sealed class Matchmaker
+         public bool ContinuePair;
+         /// <summary>Both humans were on the same side of a recent room (log only under scope AnyDuo).</summary>
+         public bool RecentTeammates;
++        /// <summary>Both humans were the two humans of a recent humans-vs-CPU room (same side): the pair is re-entering
++        /// after a CPU match (see <see cref="ContinuePairAfterCpuSeconds"/>).</summary>
++        public bool AfterCpuRoom;
+         /// <summary>Online tag: the "waiting for partner … not searching" line was logged for this search.</summary>
+         public bool PartnerWaitLogged;
+         /// <summary>PairNeverCpu: the "kept queued, no CPU room" line was logged for this duo.</summary>
+@@ -305,6 +308,25 @@ public sealed class Matchmaker
+     public double ContinuePairWindow { get; set; } = 900;
+     public enum ContinuePairPolicy { Off, Cancel, VsCpu }
+ 
++    /// <summary>
++    /// Class match test 2026-11-16 1:27-1:31 AM PT: a duo (PCB_03 node 1312 + PCB_14 node 1320) got the ContinuePair CPU
++    /// room at 18 s (room 8, 1:27:49), lost to the CPUs, and re-entered as the same pair at 1:30:27 (apply=4). With the
++    /// same WAIT replies that worked for its first search, the leader cancelled after only 11.7 s and both cabs showed the
++    /// "continue with a CPU partner?" prompt, then the pair-split black screen. The card-server CheckCommunication shows
++    /// the partner cab had started its search 10 s before the leader's entry (1:30:18 vs 1:30:28, found_player=false,
++    /// UDPHP_FAIL_CANCELED_MYSELF), so after a CPU match the cabinet's give-up comes much sooner than the ~30 s of a
++    /// first search. A lone all-human duo whose two humans were the humans of a recent humans-vs-CPU room therefore gets
++    /// its VsCpu room after this many seconds instead of <see cref="ContinuePairSeconds"/> (the leader's first poll comes
++    /// ~3 s after entry, so 2 = the room is on the first poll). A 4-human room still wins whenever one is possible.
++    /// Negative = off (use ContinuePairSeconds).
++    /// </summary>
++    public double ContinuePairAfterCpuSeconds { get; set; } = -1;
++    private readonly Dictionary<uint, double> _humansVsCpuRoomAt = new();   // room id -> made at (AfterCpuRoom)
++
++    /// <summary>Seconds this unit waits before the ContinuePair VsCpu room.</summary>
++    private double ContinuePairWait(Unit u) =>
++        u.AfterCpuRoom && ContinuePairAfterCpuSeconds >= 0 ? Math.Min(ContinuePairAfterCpuSeconds, ContinuePairSeconds) : ContinuePairSeconds;
++
+     /// <summary>
+     /// 4-cab test 13:40-13:46 PT: with <see cref="NoCpuPartner"/> a 2v2 entry whose partner is the game's CPU
+     /// stand-in ("N") is never placed, so it sat in the queue until the cabinet's own 150 s timeout (and kept the other
+@@ -591,6 +613,7 @@ public sealed class Matchmaker
+         lock (_gate)
+         {
+             t.RecentTeammates = IsContinuePair(t, now);
++            t.AfterCpuRoom = t.RecentTeammates && IsAfterCpuRoom(t, now);
+             t.ContinuePair = ContinuePairScope == ContinuePairScopeKind.AnyDuo ? IsLoneDuo(t) : t.RecentTeammates;
+         }
+         if (Realms != null)
+@@ -686,6 +709,7 @@ public sealed class Matchmaker
+             if (WantPairSearchLog(t))
+                 Log?.Invoke(PairSearchLine("entry", t, now, t.Room == null ? "WAIT" : PairAnswer(t.Room),
+                     extra: $"timeout={t.Timeout:0}s continue={(t.ContinuePair ? 1 : 0)} recent={(t.RecentTeammates ? 1 : 0)} " +
++                           $"after-cpu={(t.AfterCpuRoom ? 1 : 0)} cpu-wait={ContinuePairWait(t):0.#}s " +
+                            $"hold-cpu={(HoldPairsWithoutCpu ? 1 : 0)} queue={_queue.Count}"));
+             if (t.World == OnlineTagWorld && t.Attr2 == 0 && t.TagCodes.Length == 0 && t.Room == null)
+                 (Warn ?? Log)?.Invoke($"TAG-WARN node={e.Myclient.NodeId} online-tag entry with pair key 0 (no partner id from the card server?) - it will never pair");
+@@ -741,9 +765,9 @@ public sealed class Matchmaker
+                 LogPartnerWait(t, now);
+             }
+             if (!HoldPairsWithoutCpu && t.ContinuePair && NoCpuPartner && ContinuePairMode == ContinuePairPolicy.Cancel &&
+-                ContinuePairSeconds > 0 && now - t.Created >= ContinuePairSeconds)
++                ContinuePairSeconds > 0 && now - t.Created >= ContinuePairWait(t))
+             {
+-                Drop(t, now, reason: $"continue pair: no 4-human room within {ContinuePairSeconds:0}s " +
++                Drop(t, now, reason: $"continue pair: no 4-human room within {ContinuePairWait(t):0.#}s " +
+                                      "(the cabinet would cancel itself at ~30s and the pair would wait on each other)");
+                 return (ErrorCode.MatchCanceled, null, 0);
+             }
+@@ -1040,14 +1064,15 @@ public sealed class Matchmaker
+                         // fall through to the NoCpuPartner hold (or keep waiting)
+                     }
+                     else if (NoCpuPartner && a.ContinuePair && ContinuePairMode == ContinuePairPolicy.VsCpu &&
+-                        now - a.Created >= ContinuePairSeconds)
++                        now - a.Created >= ContinuePairWait(a))
+                     {
+                         // The bare lone-team room (both humans group 0, no other clients) is NOT played by the game:
+                         // 2026-11-15 02:00 PT test, the pair got rooms 1-3 and re-entered ~26 s after each. Two CPU
+                         // stand-in opponents in group 1 (the humans' own 2nd node ids) were played (01:23 PT room 1,
+                         // result saved 01:26). No human gets a CPU partner.
+                         Log?.Invoke($"continue pair: nodes=[{string.Join(",", a.NodeIds)}] " +
+-                                    $"({(a.RecentTeammates ? "recent teammates" : "duo")}) alone after {now - a.Created:0}s, " +
++                                    $"({(a.AfterCpuRoom ? "back from a CPU room" : a.RecentTeammates ? "recent teammates" : "duo")}) " +
++                                    $"alone after {now - a.Created:0.#}s, " +
+                                     "team vs 2 CPU stand-ins (no human gets a CPU partner)");
+                         if (!MakeHumansVsCpuRoom(new List<Unit> { a }, now))
+                             Drop(a, now, reason: "continue pair: no free 2nd node id for a CPU stand-in, MATCH_CANCELED " +
+@@ -1218,6 +1243,10 @@ public sealed class Matchmaker
+             RememberRoom(u, room);
+         }
+         _cpuRooms.Add(room);
++        _humansVsCpuRoomAt[room.RoomId] = now;
++        if (_humansVsCpuRoomAt.Count > LastRoomMax)
++            foreach (var k in _humansVsCpuRoomAt.OrderBy(kv => kv.Value).Take(_humansVsCpuRoomAt.Count - LastRoomMax).Select(kv => kv.Key).ToList())
++                _humansVsCpuRoomAt.Remove(k);
+         Log?.Invoke($"MATCH room={room.RoomId} {units[0].WorldName} humans-vs-cpu " +
+                     $"[{string.Join(",", humans.Select(c => c.NodeId))}] vs CPU [{string.Join(",", npcs.Select(n => n.Client.NodeId))}] " +
+                     $"(humans={humans.Count}/4, HumansVsCpu)");
+@@ -1381,6 +1410,13 @@ public sealed class Matchmaker
+         return a.Room == b.Room && a.Group == b.Group && now - a.At <= ContinuePairWindow && now >= a.At;
+     }
+ 
++    /// <summary>Both humans' last room is the same recent humans-vs-CPU room (call with RecentTeammates already true).</summary>
++    private bool IsAfterCpuRoom(Unit t, double now)
++    {
++        if (!_lastSideByNode.TryGetValue(t.Clients[0].NodeId, out var a)) return false;
++        return _humansVsCpuRoomAt.TryGetValue(a.Room, out var at) && now - at <= ContinuePairWindow && now >= at;
++    }
++
+     private void RememberRoom(Unit u, Room room)
+     {
+         foreach (var rc in room.Clients)
+diff --git a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+index c8e9a1e..5250cb1 100644
+--- a/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
++++ b/Server-Infinite/Models/Config/OnlineMatchingConfigurations.cs
+@@ -101,6 +101,11 @@ public class OnlineMatchingConfigurations
+     /// CPU room is sent before the partner-lost prompt. 30 s races that in-game timer and can black-screen the pair.
+     /// 12 s was tried later for more margin before the second CheckMatching poll (~3 s, then every ~15 s).</summary>
+     public string ContinuePairScope { get; set; } = "AnyDuo";
++    /// <summary>A pair re-entering right after its own humans-vs-CPU room (the ContinuePair CPU match) gets its CPU room
++    /// after this many seconds instead of ContinuePairSeconds (class test 2026-11-16 1:30 AM PT: after losing to the
++    /// CPUs the cab gave up at 11.7 s and showed the "continue with a CPU partner?" prompt). 2 = on the leader's first
++    /// poll (~3 s). Negative = off (use ContinuePairSeconds).</summary>
++    public double ContinuePairAfterCpuSeconds { get; set; } = 2;
+     /// <summary>With NoCpuPartner: seconds before a 2v2 entry with a CPU partner ("N"), which is never placed, gets
+     /// MATCH_CANCELED instead of waiting for the cabinet's own 150 s timeout. 0 = off.</summary>
+     public double CpuPartnerCancelSeconds { get; set; } = 5;
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index fe91509..8b3bd2e 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -171,6 +171,7 @@ try
+             NoCpuPartner = mm.NoCpuPartner,
+             ContinuePairMode = ServerInfinite.Matchmaking.Matchmaker.ParseContinuePairMode(mm.ContinuePairMode),
+             ContinuePairSeconds = mm.ContinuePairSeconds,
++            ContinuePairAfterCpuSeconds = mm.ContinuePairAfterCpuSeconds,
+             ContinuePairScope = ServerInfinite.Matchmaking.Matchmaker.ParseContinuePairScope(mm.ContinuePairScope),
+             CpuPartnerCancelSeconds = mm.CpuPartnerCancelSeconds,
+             PlaceCpuPartnerTeams = mm.PlaceCpuPartnerTeams,
+@@ -209,10 +210,10 @@ try
+     var config = app.Services.GetRequiredService<IOptions<CardServerConfig>>().Value;
+     Log.Information("Card server config: {@Config}", config.ToString());
+     Log.Information("Matchmaker policy: NoCpuPartner={NoCpuPartner} AllowPartialRooms={AllowPartial} OneOnOneWorlds={OneOnOne} " +
+-                    "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns} ContinuePair={ContinuePair}/{ContinuePairSeconds}s/{ContinuePairScope} CpuPartnerCancel={CpuPartnerCancel}s PlaceCpuPartnerTeams={PlaceCpuTeams} SoloPairVsCpu={SoloPair}s/wait-return {SoloPairReturn}s/regroup {SoloPairRegroup}s CrossWorldTeamRooms={CrossWorld} PairNeverCpu={PairNeverCpu} PairCpuFallback={PairCpuFallback}s PairSearchLog={PairSearchLog} PairCancelQuarantine={PairCancelQuarantine}s",
++                    "LoneTeamVsCpu={LoneTeam} HumansTeamVsCpu={HumansVsCpu} CpuStandInSeats={StandIns} ContinuePair={ContinuePair}/{ContinuePairSeconds}s/{ContinuePairScope}/after-cpu {ContinuePairAfterCpu}s CpuPartnerCancel={CpuPartnerCancel}s PlaceCpuPartnerTeams={PlaceCpuTeams} SoloPairVsCpu={SoloPair}s/wait-return {SoloPairReturn}s/regroup {SoloPairRegroup}s CrossWorldTeamRooms={CrossWorld} PairNeverCpu={PairNeverCpu} PairCpuFallback={PairCpuFallback}s PairSearchLog={PairSearchLog} PairCancelQuarantine={PairCancelQuarantine}s",
+         config.OnlineMatching.NoCpuPartner, config.OnlineMatching.AllowPartialRooms, config.OnlineMatching.OneOnOneWorlds,
+         config.OnlineMatching.LoneTeamVsCpu, config.OnlineMatching.HumansTeamVsCpu, config.OnlineMatching.CpuStandInSeats,
+-        config.OnlineMatching.ContinuePairMode, config.OnlineMatching.ContinuePairSeconds, config.OnlineMatching.ContinuePairScope, config.OnlineMatching.CpuPartnerCancelSeconds, config.OnlineMatching.PlaceCpuPartnerTeams, config.OnlineMatching.SoloPairVsCpuSeconds, config.OnlineMatching.SoloPairReturnWaitSeconds, config.OnlineMatching.SoloPairRegroupSeconds, config.OnlineMatching.CrossWorldTeamRooms,
++        config.OnlineMatching.ContinuePairMode, config.OnlineMatching.ContinuePairSeconds, config.OnlineMatching.ContinuePairScope, config.OnlineMatching.ContinuePairAfterCpuSeconds, config.OnlineMatching.CpuPartnerCancelSeconds, config.OnlineMatching.PlaceCpuPartnerTeams, config.OnlineMatching.SoloPairVsCpuSeconds, config.OnlineMatching.SoloPairReturnWaitSeconds, config.OnlineMatching.SoloPairRegroupSeconds, config.OnlineMatching.CrossWorldTeamRooms,
+         config.OnlineMatching.PairNeverCpu, config.OnlineMatching.PairCpuFallbackSeconds,
+         config.OnlineMatching.PairSearchLog || config.OnlineMatching.PairNeverCpu || config.OnlineMatching.PairCpuFallbackSeconds == 0,
+         config.OnlineMatching.PairCancelQuarantineSeconds);
+diff --git a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+index c72ff17..823ad34 100644
+--- a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
++++ b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+@@ -13,6 +13,7 @@
+     <Compile Include="..\..\Server-Infinite\Lobbies\*.cs" Link="Lobbies\%(Filename)%(Extension)" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\OnlineTagConfigurations.cs" Link="Config\OnlineTagConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\SecurityConfigurations.cs" Link="Config\SecurityConfigurations.cs" />
++    <Compile Include="..\..\Server-Infinite\Models\Config\OnlineMatchingConfigurations.cs" Link="Config\OnlineMatchingConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Lobbies\Serilog\*.cs" Link="Lobbies\Serilog\%(Filename)%(Extension)" />
+     <!-- exvs2-lobbies 2026-11-15: WebUI Teams tab helpers (pure, no Blazor) -->
+     <Compile Include="..\..\WebUIInfinite\Shared\Dto\Common\Team.cs" Link="WebUI\Team.cs" />
+diff --git a/Tests/Matchmaking.Tests/PairAfterCpuTests.cs b/Tests/Matchmaking.Tests/PairAfterCpuTests.cs
+new file mode 100644
+index 0000000..412c314
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/PairAfterCpuTests.cs
+@@ -0,0 +1,205 @@
++using nue.protocol.mms;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// Class match test 2026-11-16 1:27-1:31 AM PT (VPS on 54cc909, ContinuePairSeconds 18): duo PCB_03 (node 1312) +
++// PCB_14 (node 1320) entered class-team (world 14) at 1:27:30, got the ContinuePair CPU room at 18.5 s (room 8), lost
++// to the CPUs and re-entered as the same pair at 1:30:27 (apply=4). Same WAIT replies as the first search, but the
++// leader cancelled after 11.7 s and the cabs showed the "continue with a CPU partner?" prompt, then the pair-split
++// black screen. ContinuePairAfterCpuSeconds answers such a re-entry on the leader's first poll (~3 s).
++public class PairAfterCpuTests
++{
++    private const uint Leader = 1312, Partner = 1320, ClassTeam = 14;
++
++    private static Client Cl(uint node, string serial)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = serial, LocId = "JPN0JPN1", PrefCode = 1, GlobalIpaddress = "203.0.113.1",
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        return c;
++    }
++
++    private static Request.EntryMatching Entry(uint leader, uint? member, uint apply, uint world = ClassTeam)
++    {
++        var e = new Request.EntryMatching
++        {
++            ApplyId = apply, Myclient = Cl(leader, $"PCB{leader}"), MatchingTimeout = 150, SeqNum = 1, CreateRoomFlag = 1,
++            Myplayer = new Player { BanapassportAmId = leader },
++            World = new World { MuchaGameId = "GIB1", Version = 106547, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = 2 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = 3 });
++        if (member != null)
++            e.Groups.Add(new Request.EntryMatching.Group
++            {
++                Client = Cl(member.Value, $"PCB{member.Value}"),
++                Player = new Player { BanapassportAmId = member.Value }
++            });
++        return e;
++    }
++
++    /// <summary>The VPS policy at 1:27 AM PT (54cc909, ContinuePairSeconds 18) plus the new setting.</summary>
++    private static Matchmaker New(double afterCpu, List<string>? log = null) =>
++        new(fillAfter: 3, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, MaxFillWait = 3, InStoreFillAfter = 3, InStoreMaxFillWait = 3,
++            NoCpuPartner = true,
++            ContinuePairMode = Matchmaker.ContinuePairPolicy.VsCpu,
++            ContinuePairSeconds = 18,
++            ContinuePairScope = Matchmaker.ContinuePairScopeKind.AnyDuo,
++            ContinuePairAfterCpuSeconds = afterCpu,
++            CpuPartnerCancelSeconds = 5,
++            PlaceCpuPartnerTeams = true,
++            PairSearchLog = true,
++            Log = log == null ? null : log.Add,
++        };
++
++    private static void AssertWait((ErrorCode Code, Matchmaker.Room? Room, uint ApplyId) r)
++    {
++        Assert.Equal(ErrorCode.Success, r.Code);
++        Assert.Null(r.Room);
++    }
++
++    private static void AssertCpuRoom(Matchmaker.Room? room)
++    {
++        Assert.NotNull(room);
++        Assert.Equal(2, room!.Humans);
++        Assert.Equal(new[] { Leader, Partner }, room.Clients.Where(c => c.GroupId == 0).Select(c => c.Client.NodeId).OrderBy(x => x));
++        Assert.Equal(2, room.Clients.Count(c => c.GroupId == 1 && c.Client.Properties.Any(p => p.PropertyValue == "N")));
++    }
++
++    /// <summary>1:27:30 first search: WAIT polls, CPU room at 18.5 s (unchanged by the new setting).</summary>
++    private static Matchmaker.Room FirstSearchGetsCpuRoomAt18s(Matchmaker mm)
++    {
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 3), 0));
++        foreach (var t in new[] { 3.1, 6.2, 9.2, 12.3, 15.4 }) AssertWait(mm.Check(Leader, t));
++        var r = mm.Check(Leader, 18.5);
++        AssertCpuRoom(r.Room);
++        return r.Room!;
++    }
++
++    [Fact]
++    public void Matchmaker_default_is_off_and_config_default_is_two_seconds()
++    {
++        Assert.Equal(-1, new Matchmaker(3, true, 15, 1).ContinuePairAfterCpuSeconds);
++        Assert.Equal(2, new ServerInfinite.Models.Config.OnlineMatchingConfigurations().ContinuePairAfterCpuSeconds);
++    }
++
++    [Fact]
++    public void Pair_back_from_its_CPU_room_gets_the_next_CPU_room_on_the_first_poll()
++    {
++        var log = new List<string>();
++        var mm = New(afterCpu: 2, log);
++        var first = FirstSearchGetsCpuRoomAt18s(mm);
++        // 1:30:27: re-entry as the same pair 177 s after the first entry
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 177));
++        var r = mm.Check(Leader, 180.1);                     // first poll, ~3 s (the cab gave up at 11.7 s)
++        AssertCpuRoom(r.Room);
++        Assert.NotEqual(first.RoomId, r.Room!.RoomId);
++        Assert.Equal(4u, r.ApplyId);
++        Assert.Contains(log, l => l.Contains("PAIR-SEARCH entry") && l.Contains("apply=4") && l.Contains("after-cpu=1") && l.Contains("cpu-wait=2s"));
++        Assert.Contains(log, l => l.Contains("continue pair:") && l.Contains("back from a CPU room"));
++        // the partner's poll gets the same room
++        Assert.Equal(r.Room.RoomId, mm.Check(Partner, 180.5).Room?.RoomId);
++    }
++
++    [Fact]
++    public void Off_keeps_the_old_18_second_wait_for_the_re_entry()
++    {
++        var mm = New(afterCpu: -1);
++        FirstSearchGetsCpuRoomAt18s(mm);
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 177));
++        foreach (var t in new[] { 180.1, 183.2, 186.2 }) AssertWait(mm.Check(Leader, t));
++        AssertCpuRoom(mm.Check(Leader, 195.5).Room);
++    }
++
++    [Fact]
++    public void First_search_still_waits_ContinuePairSeconds()
++    {
++        var mm = New(afterCpu: 2);
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 3), 0));
++        AssertWait(mm.Check(Leader, 3.1));
++        AssertWait(mm.Check(Leader, 15.4));
++        AssertCpuRoom(mm.Check(Leader, 18.5).Room);
++    }
++
++    [Fact]
++    public void Pair_back_from_a_4_human_room_still_waits_ContinuePairSeconds()
++    {
++        var mm = New(afterCpu: 2);
++        // a 4-human class-team room: our duo vs another duo
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 3), 0));
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(1400, 1402, apply: 1), 1));
++        var room = mm.Check(Leader, 3.1).Room;
++        Assert.NotNull(room);
++        Assert.Equal(4, room!.Humans);
++        // the winners continue as the same pair
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 177));
++        AssertWait(mm.Check(Leader, 180.1));
++        AssertWait(mm.Check(Leader, 192.4));
++        AssertCpuRoom(mm.Check(Leader, 195.5).Room);
++    }
++
++    [Fact]
++    public void A_4_human_room_still_wins_over_the_fast_CPU_room()
++    {
++        var mm = New(afterCpu: 2);
++        FirstSearchGetsCpuRoomAt18s(mm);
++        // another duo is already searching in class-team when ours comes back from the CPU room
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(1400, 1402, apply: 1), 176));
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 177));
++        var room = mm.Check(Leader, 180.1).Room;
++        Assert.NotNull(room);
++        Assert.Equal(4, room!.Humans);
++        Assert.Equal(1400u, mm.Check(1400, 180.2).Room?.Clients.Select(c => c.Client.NodeId).First(n => n == 1400));
++    }
++
++    [Fact]
++    public void A_different_duo_is_not_treated_as_back_from_the_CPU_room()
++    {
++        var mm = New(afterCpu: 2);
++        FirstSearchGetsCpuRoomAt18s(mm);
++        // PCB_03 now teams with someone who was not in the CPU room
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, 1500, apply: 4), 177));
++        AssertWait(mm.Check(Leader, 180.1));
++        AssertWait(mm.Check(Leader, 192.4));
++    }
++
++    [Fact]
++    public void An_old_CPU_room_does_not_count()
++    {
++        var mm = New(afterCpu: 2);
++        FirstSearchGetsCpuRoomAt18s(mm);
++        // back after more than ContinuePairWindow (900 s)
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 1000));
++        AssertWait(mm.Check(Leader, 1003.1));
++        AssertCpuRoom(mm.Check(Leader, 1018.5).Room);
++    }
++
++    [Fact]
++    public void Cancel_mode_uses_the_short_wait_too()
++    {
++        var mm = New(afterCpu: 2);
++        mm.ContinuePairMode = Matchmaker.ContinuePairPolicy.VsCpu;
++        FirstSearchGetsCpuRoomAt18s(mm);
++        mm.ContinuePairMode = Matchmaker.ContinuePairPolicy.Cancel;
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 177));
++        Assert.Equal(ErrorCode.MatchCanceled, mm.Check(Leader, 180.1).Code);
++    }
++
++    [Fact]
++    public void Never_shorter_than_ContinuePairSeconds_allows()
++    {
++        var mm = New(afterCpu: 30);   // a larger value never lengthens the wait
++        FirstSearchGetsCpuRoomAt18s(mm);
++        Assert.Equal(ErrorCode.Success, mm.Entry(Entry(Leader, Partner, apply: 4), 177));
++        AssertWait(mm.Check(Leader, 192.4));
++        AssertCpuRoom(mm.Check(Leader, 195.5).Room);
++    }
++}
+diff --git a/tools/vps/server.vps.json b/tools/vps/server.vps.json
+index 193a263..43b298e 100644
+--- a/tools/vps/server.vps.json
++++ b/tools/vps/server.vps.json
+@@ -55,6 +55,7 @@
+             "ContinuePairMode":  "VsCpu",
+             "ContinuePairSeconds":  18,
+             "ContinuePairScope":  "AnyDuo",
++            "ContinuePairAfterCpuSeconds":  2,
+             "CpuPartnerCancelSeconds":  5,
+             "PlaceCpuPartnerTeams":  true,
+             "SoloPairVsCpuSeconds":  0,
+-- 
+2.47.3
+
+
+From 6330fc7720e09c8532672751e014313501b0b21a Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 02:06:17 -0800
+Subject: [PATCH 45/46] ONLINE_MATCHMAKING.md: document
+ ContinuePairAfterCpuSeconds (default 2)
+
+A pair returning from its own humans-vs-CPU room is sent a CPU room on the
+first poll (~3 s) so the in-game partner-lost prompt is less likely. First
+searches still wait ContinuePairSeconds (18). 423 unit tests pass. The
+after-cpu path is deployed but still awaiting a real-cabinet confirmation;
+the 1:54 and 1:57 AM PT runs formed human rooms immediately.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         | 24 ++++++++++++++++---
+ tools/vps/README.md                           |  3 ++-
+ tools/vps/server.vps.pair-keep-searching.json |  1 +
+ 3 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index 2ed09c7..e22dc50 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -58,6 +58,7 @@
+   "ContinuePairMode": "VsCpu", // lone all-human pair: after ContinuePairSeconds, room vs 2 CPU stand-ins
+   "ContinuePairSeconds": 18,   // original value; must stay under the game's ~30 s pair-search give-up (do not use 30)
+   "ContinuePairScope": "AnyDuo",
++  "ContinuePairAfterCpuSeconds": 2, // pair back from its own humans-vs-CPU room: CPU room on the first poll (~3 s); first searches still wait 18 s
+   "SoloPairVsCpuSeconds": 0,   // off: two leftover solos vs CPUs froze cabinets in testing
+   "CrossWorldTeamRooms": false,// experimental: class/free pair vs two solos in the linked world; untested in-game
+   "PairNeverCpu": false,       // test only: never send a waiting pair a CPU room (game still cancels at ~30 s)
+@@ -414,6 +415,21 @@ would be ready with more margin before the second CheckMatching poll (the pair l
+ every 15 s). 18 s was restored after the 2026-11-16 tests, and a pair that waited with only one other cabinet
+ searching did get the CPU room at 18 s with no prompt.
+ 
++### ContinuePairAfterCpuSeconds (default 2)
++A pair that loses its ContinuePair CPU room and searches again can still hit the in-game partner-lost prompt
++before the usual 18 s CPU send (class test 2026-11-16 1:30 AM PT: the leader cancelled at 11.7 s; the partner
++had started searching about 10 s earlier). `ContinuePairAfterCpuSeconds` (default **2**, negative = off) shortens
++the wait for a lone all-human pair whose two humans were in a humans-vs-CPU room within `ContinuePairWindow`
++(default 900 s). That pair is sent its VsCpu room after `min(ContinuePairAfterCpuSeconds, ContinuePairSeconds)`,
++so the answer is ready on the leader's first CheckMatching poll at about 3 s. First-time searches still wait
++the full 18 s. A 4-human room still wins if one is ready. `PAIR-SEARCH` entry logs show `after-cpu=0/1` and
++`cpu-wait`.
++
++This is in the v0.5.0 build (deployed 16 November 2026, 1:50 AM PT) and is covered by unit tests. The after-cpu
++path itself has not yet been confirmed on real cabinets: the 1:54 AM and 1:57 AM PT four-cabinet runs formed
++human rooms immediately (four solos; then a pair plus two solos on the pair's first check at about 3 s), so
++the shortened CPU send did not have to fire.
++
+ ### Solo pair vs CPU (off)
+ `SoloPairVsCpuSeconds` could send two leftover solos versus CPUs after a short wait. In testing this froze
+ cabinets, so it is **off by default** (0). Leave it off.
+@@ -437,7 +453,7 @@ search by starting waiting Practice while the search continues; this server cann
+ ### Optional game change (last resort, not in this build)
+ There is research into a small game-side change that would raise the in-game pair-search timeout (about 30 s)
+ toward the general matching timeout (about 150 s), so a pair could stay in search longer and closer to official
+-waiting Practice. That work is a last resort, is not part of this pre-release, and this document does not include
++waiting Practice. That work is a last resort, is not part of this release, and this document does not include
+ patch bytes or offsets.
+ 
+ ### Pair-cancel quarantine
+@@ -495,8 +511,10 @@ pair plus solos.
+ * A room is never refilled or torn down when a member drops after the match: the protocol has no message for it.
+   Rooms are also final once sent (no later 1v1-to-2v2 merge).
+ * Ranked results are saved per card (`SaveVsmOnResult`); a side that never reports simply records nothing.
+-* A pair that loses to CPUs and searches again can still get the in-game partner-lost prompt and a black screen
+-  (under investigation; the quarantine stops a bad follow-up room, it does not remove the prompt).
++* A pair that loses to CPUs and searches again can still get the in-game partner-lost prompt and a black screen.
++  Mitigated in this build by `ContinuePairAfterCpuSeconds` (default 2): that pair is sent a CPU room on the
++  first poll (~3 s). Unit-tested; awaiting a real-cabinet confirmation of the after-cpu path. The quarantine
++  still stops a dirty follow-up room if a cancel does happen.
+ * Class Match keeps solo (world 13) and team (world 14) in separate queues; a class pair cannot match two class
+   solos with `CrossWorldTeamRooms` off.
+ * Online tag across card servers and friend requests are implemented and were tested (see sections above);
+diff --git a/tools/vps/README.md b/tools/vps/README.md
+index 69470c6..af8a963 100644
+--- a/tools/vps/README.md
++++ b/tools/vps/README.md
+@@ -56,4 +56,5 @@ VPS instead of the PC.)
+ the /tag secret). After a binary deploy, add or set those three keys on the existing
+ VPS `Configurations/server.json` and restart `exvs2-mm`. Other policy stays the same
+ (linked-world wait, regroup 75 s, SoloPairVsCpu off, CrossWorldTeamRooms off,
+-ContinuePairMode=VsCpu so turning the flags off restores the current 18 s CPU room).
++ContinuePairMode=VsCpu so turning the flags off restores the current 18 s CPU room;
++ContinuePairAfterCpuSeconds=2 for a pair re-entering after its own CPU room).
+diff --git a/tools/vps/server.vps.pair-keep-searching.json b/tools/vps/server.vps.pair-keep-searching.json
+index fefda2b..2693be1 100644
+--- a/tools/vps/server.vps.pair-keep-searching.json
++++ b/tools/vps/server.vps.pair-keep-searching.json
+@@ -64,6 +64,7 @@
+             "ContinuePairMode": "VsCpu",
+             "ContinuePairSeconds": 18,
+             "ContinuePairScope": "AnyDuo",
++            "ContinuePairAfterCpuSeconds": 2,
+             "CpuPartnerCancelSeconds": 5,
+             "PlaceCpuPartnerTeams": true,
+             "SoloPairVsCpuSeconds": 0,
+-- 
+2.47.3
+
+
+From 1478c7ff8523fd43b9f715ba858e3e62740ff397 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 02:07:23 -0800
+Subject: [PATCH 46/46] ONLINE_MATCHMAKING.md: ContinuePairAfterCpuSeconds
+ confirmed on cabinets
+
+16 November 2026 2:04:21 AM PT: a class-team pair got its first CPU room at
+18.4 s. After the loss they re-queued at 2:06:46 AM PT; the log shows
+after-cpu=1 cpu-wait=2s and a new CPU room on the first check at 3.1 s,
+with no partner-lost prompt or black screen. Class solos in the same
+session stayed in world 13 (the known class solo/team split).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md | 21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index e22dc50..34955a1 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -425,10 +425,14 @@ so the answer is ready on the leader's first CheckMatching poll at about 3 s. Fi
+ the full 18 s. A 4-human room still wins if one is ready. `PAIR-SEARCH` entry logs show `after-cpu=0/1` and
+ `cpu-wait`.
+ 
+-This is in the v0.5.0 build (deployed 16 November 2026, 1:50 AM PT) and is covered by unit tests. The after-cpu
+-path itself has not yet been confirmed on real cabinets: the 1:54 AM and 1:57 AM PT four-cabinet runs formed
+-human rooms immediately (four solos; then a pair plus two solos on the pair's first check at about 3 s), so
+-the shortened CPU send did not have to fire.
++This is in the v0.5.0 build (deployed 16 November 2026, 1:50 AM PT) and is covered by unit tests. Confirmed
++on real cabinets the same morning: at 2:04:21 AM PT a class-team pair got its first humans-vs-CPU room at
++18.4 s (the normal ContinuePair wait). They lost and re-queued at 2:06:46 AM PT; the log shows `after-cpu=1
++cpu-wait=2s`, and a new CPU room was sent on the first check at 3.1 s, with no partner-lost prompt and no
++black screen. Earlier 1:54 AM and 1:57 AM PT four-cabinet runs had already formed human rooms immediately
++(four solos; then a pair plus two solos on the pair's first check at about 3 s). Class solos searching at
++the same time as that 2:06 re-queue stayed in class-solo and did not join the class-team pair (the known
++class solo/team split, still open).
+ 
+ ### Solo pair vs CPU (off)
+ `SoloPairVsCpuSeconds` could send two leftover solos versus CPUs after a short wait. In testing this froze
+@@ -511,10 +515,11 @@ pair plus solos.
+ * A room is never refilled or torn down when a member drops after the match: the protocol has no message for it.
+   Rooms are also final once sent (no later 1v1-to-2v2 merge).
+ * Ranked results are saved per card (`SaveVsmOnResult`); a side that never reports simply records nothing.
+-* A pair that loses to CPUs and searches again can still get the in-game partner-lost prompt and a black screen.
+-  Mitigated in this build by `ContinuePairAfterCpuSeconds` (default 2): that pair is sent a CPU room on the
+-  first poll (~3 s). Unit-tested; awaiting a real-cabinet confirmation of the after-cpu path. The quarantine
+-  still stops a dirty follow-up room if a cancel does happen.
++* A pair that loses to CPUs and searches again could still get the in-game partner-lost prompt and a black
++  screen. Mitigated in this build by `ContinuePairAfterCpuSeconds` (default 2): that pair is sent a CPU room
++  on the first poll (~3 s). Confirmed on real cabinets 16 November 2026, 2:06:46 AM PT (`after-cpu=1
++  cpu-wait=2s`, CPU room at 3.1 s, no prompt). The quarantine still stops a dirty follow-up room if a cancel
++  does happen.
+ * Class Match keeps solo (world 13) and team (world 14) in separate queues; a class pair cannot match two class
+   solos with `CrossWorldTeamRooms` off.
+ * Online tag across card servers and friend requests are implemented and were tested (see sections above);
 -- 
 2.47.3
 

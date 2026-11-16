@@ -21,22 +21,30 @@ Our scripts and instructions in the package are GPL-3.0 (`package/LICENSE.txt`).
 | `linux/build-server.sh`, `configure.sh`, `start-server.sh`, `exvs2-matchmaking.service` | same for a Linux PC / VPS (self-contained linux-x64, `-p:LinuxHost=true`), systemd example |
 | `START-HERE.txt`, `Connect-Your-Game.txt`, `Public-Server.txt`, `Troubleshooting.txt` | plain-language instructions |
 
-Build the zip: `release/make-release.sh v0.5.0-pre` → `release/dist/` (not committed).
+Build the zip: `release/make-release.sh v0.5.0` → `release/dist/` (not committed).
 
 ## Changelog
 
-* **v0.5.0-pre (2026-11-16)** — pair-cancel guard and matchmaking findings (rebuild required). The patch is
-  42 commits on Chiang-17/EXVS2-IB-Server @ `7f4b280` (**413** unit tests). `ContinuePairMode=VsCpu` at the
-  original **18 s** (do not use 30: that races the game's ~30 s pair-search timer). After a pair cancel,
-  `PairCancelQuarantineSeconds` (default 180) holds those cabinets out of new human rooms until a clean
-  restart. `PairNeverCpu` and `SoloPairVsCpu` are off (the unpatched game does not practice-and-keep-search;
-  leftover solos versus CPUs froze cabinets). Class Match solo (world 13) and team (world 14) stay separate;
-  use Mix Match for a pair plus solos. Friend requests / block lists / Friends page, online-tag rename and
-  delete sync, and the WebUI Teams list + Edit Team page are in this package (every card server and the
-  matchmaker need this build). Docs: [docs/KNOWN_ISSUES.md](../docs/KNOWN_ISSUES.md),
+* **v0.5.0 (2026-11-16)** — pair-cancel guard, ContinuePair at 18 s, and a fast CPU room after a CPU loss
+  (rebuild required). Replaces the short-lived `v0.5.0-pre` tag from earlier the same day. The patch is
+  46 commits on Chiang-17/EXVS2-IB-Server @ `7f4b280` (**423** unit tests). `ContinuePairMode=VsCpu` at the
+  original **18 s** (do not use 30: that races the game's ~30 s pair-search timer). `ContinuePairAfterCpuSeconds`
+  (default **2**) sends a pair returning from its own humans-vs-CPU room a CPU room on the first poll (~3 s)
+  instead of waiting 18 s; confirmed on cabinets 16 November 2026, 2:06 AM PT (`after-cpu=1 cpu-wait=2s`,
+  CPU room at 3.1 s, no prompt). After a pair cancel, `PairCancelQuarantineSeconds` (default 180) holds those
+  cabinets out of new human rooms until a clean restart. `PairNeverCpu` and `SoloPairVsCpu` are off (the
+  unpatched game does not practice-and-keep-search; leftover solos versus CPUs froze cabinets). Class Match
+  solo (world 13) and team (world 14) stay separate; use Mix Match for a pair plus solos. Friend requests /
+  block lists / Friends page, online-tag rename and delete sync, and the WebUI Teams list + Edit Team page
+  are in this package (every card server and the matchmaker need this build). Docs:
+  [docs/KNOWN_ISSUES.md](../docs/KNOWN_ISSUES.md),
   [docs/MATCHMAKING-BEHAVIOUR.md](../docs/MATCHMAKING-BEHAVIOUR.md). Cabinet tests 2026-11-16 (PT): Mix pair
   + two solos in one room; lone Mix pair got a CPU room at 18 s with no prompt; a class pair did not meet
-  class solos; 21-01 causes recorded (VPS restart, LM closed, half-reset cab). The pair-loss requeue prompt / black screen is still under investigation. Long waits: the server matches instantly once four compatible humans are in the same queue; delays come from mixed modes, staggered search, the 150 s game timeout, the pair-cancel hold, and NoCpuPartner waiting for a 4th.
+  class solos; 21-01 causes recorded (VPS restart, LM closed, half-reset cab); four solos and a pair + two
+  solos matched instantly (1:54 / 1:57 AM); after a CPU loss the same pair re-queued and got a CPU room at
+  3.1 s with no prompt (2:06 AM). Long waits: the server matches instantly once four compatible humans are
+  in the same queue; delays come from mixed modes, staggered search, the 150 s game timeout, the pair-cancel
+  hold, and NoCpuPartner waiting for a 4th.
 * **v0.4.1-pre (2026-11-15)** — docs only, same `online-matchmaking.patch` as v0.4.0-pre (rebuild not needed).
   `testmode_pcb.json` is in `<game folder>\29\`; how to set `battleMode` to 0 by hand in Notepad (only `value`,
   leave `type`, every `group` of the active `settingFile`, game closed, back up first). Every cabinet needs its

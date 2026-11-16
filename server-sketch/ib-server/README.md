@@ -18,7 +18,7 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the prerelease/pair-cancel-guard series, 43 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, and the pair-cancel quarantine.
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series, 46 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss).
 The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
@@ -29,13 +29,13 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 43 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 46 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
 # or Linux server:
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
-# matchmaker unit tests (413 passing, including NoCpuPartner, ContinuePair, pair-cancel quarantine, friends, Teams pages, and security):
+# matchmaker unit tests (423 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, and security):
 dotnet test Tests/Matchmaking.Tests
 ```
 Copy your existing `ServerInfinite.db` next to the new build if you want to keep cards; the new migration
@@ -69,6 +69,7 @@ In `Configurations/server.json` under `CardServerConfig` → `OnlineMatching`:
 | `LogPostMatchTraffic` | `true` | logging only: `MMS-POST` / `STUN-POST` lines for matchmaker / STUN traffic from a cabinet up to 30 min after its match, `MMS-UNHANDLED` for unknown methods ([post-match-server-traffic.md](../../analysis/post-match-server-traffic.md)) |
 | `LogResultGap` | `true` | logging only: `RESULT-SAVE` / `RESULT-WAIT` / `RESULT-GAP` lines from a cabinet's result save to its next request ([RESULTS-GAP-AND-ROLLING-FILL.md](RESULTS-GAP-AND-ROLLING-FILL.md)) |
 | `ContinuePairMode` / `ContinuePairSeconds` | `VsCpu` / `18` | a lone all-human pair waits this long for a 4-human room, then is sent versus two CPU stand-ins. 18 s is the original value (under the game's ~30 s pair timer; do not use 30). |
+| `ContinuePairAfterCpuSeconds` | `2` | a pair re-entering after its own humans-vs-CPU room is sent a CPU room on the first poll (~3 s) instead of waiting 18 s. Negative = off. First searches still wait `ContinuePairSeconds`. Confirmed on cabinets 16 November 2026, 2:06 AM PT. |
 | `PairCancelQuarantineSeconds` | `180` | after a pair cancel, hold those cabs out of human rooms until a clean restart (new node id) or this many seconds. `0` = off |
 | `SoloPairVsCpuSeconds` | `0` (off) | leave off; sending leftover solos versus CPUs froze cabinets |
 | `PairNeverCpu` / `CrossWorldTeamRooms` | `false` | test / experimental flags; leave off. The unpatched game does not practice-and-keep-search; a class pair cannot match class solos |
