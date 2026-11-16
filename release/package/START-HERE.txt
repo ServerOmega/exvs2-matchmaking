@@ -1,4 +1,4 @@
-EXVS2 Infinite Boost - online matchmaking server  (v0.4.0-pre, EXPERIMENTAL TEST BUILD)
+EXVS2 Infinite Boost - online matchmaking server  (v0.5.0-pre, EXPERIMENTAL TEST BUILD)
 =====================================================================================
 
 What is this?
@@ -12,9 +12,22 @@ What is this?
 
 IMPORTANT - 2v2 matches:
   In 2v2 modes (Mix, Class, In-store, Teamplay, ...) a match only forms when at least 4 human
-  players are searching. There are no CPU partners and no CPU fill. With fewer than 4 players,
-  each cabinet times out after about 150 seconds, returns to practice mode, and can search again.
+  players are searching, except a lone pair that has waited 18 seconds: they get a room against
+  two CPU stand-ins so the game's ~30 second pair timer does not cancel the search. There are no
+  CPU teammates for a solo. With fewer than 4 players who are not that waiting pair, each cabinet
+  times out after about 150 seconds, returns to practice mode, and can search again.
   Fes 1on1 (world 20) needs only 2 players.
+
+  Class Match solo and Class Match team are separate queues. For a pair plus two solos, use Mix
+  Match. The server matches instantly once four compatible humans are in the same queue; long
+  waits usually mean someone is in a different mode, still on the title or results screen, or
+  held after a pair cancel. Known issues:
+  https://github.com/ServerOmega/exvs2-matchmaking/blob/prerelease/pair-cancel-guard/docs/KNOWN_ISSUES.md
+
+NEW in v0.5.0-pre - pair-cancel guard, ContinuePair at 18 s, friends and Teams pages:
+  After a pair cancels, those cabinets are held out of new human rooms until a clean restart (or
+  up to 3 minutes). Friend requests / block lists and online-tag rename/delete sync are in this
+  package; every card server and the matchmaker need this build. Rebuild with 1-Build-Server.bat.
 
 NEW in v0.4.0-pre - security:
   2-Configure.bat now sets who may reach the server ("AccessMode") and a shared secret for online tag

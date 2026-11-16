@@ -163,12 +163,12 @@ partners on different card servers that share one matchmaker:
      cross-server and one same-server) form one 2v2 together - tested 2026-11-15 with 4 cabinets.
   3. If one of you searches alone, the matchmaker log says "TAG-WAIT ... waiting for partner N:
      partner not searching" - the partner's cabinet hasn't started an Online Tag search.
-  4. Partner display names on the matchmaker are stored when the team is created or joined. A fix that
-     syncs renames on card insert and lets either member delete a team is not yet in a published package.
-     Until every card server and the matchmaker run that update, a renamed partner can stay stale and a
-     deleted team can reappear after a card insert.
+  4. Partner display names update when a card is inserted, and either member can delete a team
+     (this pre-release). Every card server and the matchmaker need this build; mixed old/new servers
+     can still show a stale name or a reappearing deleted team.
 
-Friend requests (results-screen OPTION, hold Start, pick フレンド申請) are not supported yet (planned).
-  They are partner-only and both players must be on cards. Keep PostMatchStubs true in the card server's
-  server.json (CardServerConfig) so the game gets an empty reply; with it false the game shows an
-  "Unhandled case" error. A friend request does not create an online-tag team today.
+Friend requests (results-screen OPTION, hold Start, pick フレンド申請) and block lists are in this
+  pre-release. They are partner-only and both players must be on cards. A mutual request (or an accept
+  on the Friends web page) also makes sure the two share an online-tag team. Every card server and the
+  matchmaker need this build. An older card server should keep PostMatchStubs true so RegisterOption
+  does not show an "Unhandled case" error.

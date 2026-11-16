@@ -215,8 +215,49 @@ the shared VPS matchmaker, and played with the Test cabinets already on that mat
   `LM_IpAddress` to this PC's LAN IP. Close SnowLauncher before editing its ini (it keeps the file in memory).
 * [x] LM discovery is a LAN broadcast (UDP 49000): two LMs on the same home network can claim each other's
   cabinets. When two people in one house simulate "internet players", run one LM or isolate the PCs.
-* [ ] Online-tag partner names are stored on the matchmaker at create/join. A fix that syncs renames on card
-  insert and lets either member delete a team is **not yet in a published package**. Until every server runs
-  it, stale names and reappearing deleted teams can happen.
-* [ ] Friend requests (results-screen OPTION → フレンド申請, partner only, both on cards) are **not supported
-  yet** (planned). Keep `PostMatchStubs` true so the game does not show an "Unhandled case" error.
+* [x] Online-tag partner names sync on card insert, and either member can delete a team, in this pre-release
+  (patch commits after v0.4.1-pre). Every card server and the matchmaker need this build; mixed old/new
+  servers can still show a stale name or a reappearing deleted team.
+* [x] Friend requests (results-screen OPTION → フレンド申請, partner only, both on cards), block lists, and
+  the Friends web page are in this pre-release. Keep mixed old card servers off this matchmaker, or they
+  can still log `Unhandled case` for RegisterOption (those should keep `PostMatchStubs` true).
+
+## Pair search, class match, and the pair-cancel guard (2026-11-16)
+
+Docs: [docs/MATCHMAKING-BEHAVIOUR.md](docs/MATCHMAKING-BEHAVIOUR.md), [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
+Matchmaker unit tests: **413** passing (includes ContinuePair, PairNeverCpu, pair-cancel quarantine, class-linked
+worlds, friends, Teams pages). This pre-release ships `ContinuePairMode=VsCpu` at **18 s** (the original value;
+not 30, which races the game's ~30 s pair timer) and `PairCancelQuarantineSeconds=180`. `PairNeverCpu` and
+`SoloPairVsCpu` are off. Times below are Pacific Time.
+
+* [x] **Solo-first Mix Match, then a continuing pair:** 12:59 AM, room of four solos. 1:02 AM, PCB 03 + PCB 15
+  (solos) versus PCB 14 + PCB 02 (a pair that had stayed together) — a Mix Match pair and two solos in one
+  4-player room. 1:05 AM, the same pair searched with only PCB 15 also searching; after 18 s they got a CPU
+  room, no partner-lost prompt.
+* [x] **Class Match split:** a class-match pair (PCB 14 + 3) did not meet two class-match solos (PCB 2 + 15).
+  The pair was sent versus CPUs at 18 s; the solos joined in that same second, a fraction too late, and would
+  have been in a different queue anyway (world 14 vs 13). Workaround: Mix Match, or have the solos also pair up.
+* [x] **PairNeverCpu test (15 Nov evening, flag now off):** the server kept a searching pair waiting, but at
+  ~30 s the game cancelled the search and showed the partner-lost prompt. Different Yes/No answers led to a
+  black screen. The unpatched game does not practice-and-keep-search.
+* [x] **Pair-cancel quarantine:** after a class pair lost to CPUs, requeued, and hit Yes on the prompt, the
+  server held both cabs out of new rooms (up to 3 minutes or until a clean restart). That blocks the 21-01
+  case from a half-reset cab joining a room. The requeue prompt / black screen itself is still under
+  investigation.
+* [x] **21-01 causes recorded:** VPS restart during a guard deploy (12:52 AM, every cab); Live Monitor closed
+  (~1:07 AM, searching cabs first); half-reset cab in a room (earlier 15 Nov test, the reason for the guard).
+  Junk STUN traffic from outside IPs was present during successful matches and was not the cause.
+* [x] **Startup order:** the LM and cabs started at 11:50 PM on 15 Nov before the card servers were back
+  (11:54 PM). The game does not retry its server check; they had to be restarted after the card servers were up.
+* [x] **Long waits, 1:31–1:43 AM PT (Class Match):** the server matched instantly whenever four compatible
+  humans were in the same queue. 1:33–1:37: after the pair split, PCB 3 was held ~20 s by the quarantine,
+  then waited alone until PCB 14 came back with a fresh start; a match started at 1:37:33. 1:39–1:42: one
+  cab searched Mix (world 23) while the others were in Class, so they could not meet; it cancelled at
+  1:40:30 and re-entered class solo at 1:41:23. The others hit the game's 150 s search timeout, cancelled
+  and requeued. A four-solo class room formed at 1:42:40. Takeaway: everyone pick the same mode, wait for
+  all four to be on the search screen, use Mix for pair+solos. A "3 humans + 1 CPU after a delay" option
+  is not implemented.
+* [ ] Pair loses to CPUs, requeues, and avoids the partner-lost prompt / black screen (under investigation).
+* [ ] `CrossWorldTeamRooms` (class pair vs two class solos) tested with the real game (off by default).
+* [ ] Optional game-side change to raise the in-game pair timer (last resort; not in this pre-release).
+* [ ] Two-location NAT test (different homes / VPN) still pending.

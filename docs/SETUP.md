@@ -3,8 +3,11 @@
 > ⚠️ Experimental. Verified in the real game: **2026-11-13** two cabinets on one PC
 > ([test report](../analysis/real-game-test-2026-11-13.md)); **2026-11-15** a second person's from-scratch card-server
 > build paired in Online Tag and completed a 4-human Mix Match through a shared VPS matchmaker (same house; a
-> two-location NAT test is still pending). You must already have your own copy of the game; nothing here includes
+> two-location NAT test is still pending); **2026-11-16** four-cabinet tests of ContinuePair (18 s), Mix pair + solos,
+> class-match queues and the pair-cancel guard. You must already have your own copy of the game; nothing here includes
 > game files.
+>
+> Behaviour and official-cabinet notes: [MATCHMAKING-BEHAVIOUR.md](MATCHMAKING-BEHAVIOUR.md). Problems and workarounds: [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 The matchmaking server is the **patched EXVS2-IB-Server** (card server + matchmaker + optional STUN in one exe),
 built from [`server-sketch/ib-server/online-matchmaking.patch`](../server-sketch/ib-server/online-matchmaking.patch).
@@ -76,7 +79,11 @@ Minimum for a matchmaker with built-in STUN:
 | `InStoreFillAfterSeconds` / `InStoreMaxFillWaitSeconds` | In-store worlds (15/16) only: shipped default 3 / 3. `0` = use the shared FillAfter / MaxFillWait. |
 | `OneOnOneWorlds` | Default `"20"` (Fes 1on1): two solos pair immediately into a 2-client 1v1 with no CPU seats. `""` = off. To offer Fes 1on1, also set that day's `FesConfigurations.*Type` to a `OneOnOne*` value and restart the cabinets. |
 | `AllowPartialRooms` | `true` = allow short-handed rooms when `NoCpuPartner` is off; `false` = only full 4-player rooms. |
-| `NoCpuPartner` | **Default `true`.** 2v2 modes only form a match when at least 4 human players are searching (no CPU partners). Fes 1on1 (world 20) still needs only 2 players. |
+| `NoCpuPartner` | **Default `true`.** 2v2 modes only form a match when at least 4 human players are searching (no CPU *teammates*). Fes 1on1 (world 20) still needs only 2 players. A lone all-human pair is a special case: see `ContinuePairMode`. |
+| `ContinuePairMode` / `ContinuePairSeconds` | **Default `VsCpu` / `18`.** If a lone all-human pair has no 4-human room after 18 seconds, they are sent versus two CPU stand-ins. 18 s is the original value and stays under the game's ~30 s pair-search give-up. **Do not set this to 30** — that races the in-game timer and can black-screen the pair. See [MATCHMAKING-BEHAVIOUR.md](MATCHMAKING-BEHAVIOUR.md). |
+| `PairCancelQuarantineSeconds` | **Default `180`.** After a pair cancels, those cabinets are held out of new human rooms until a clean restart (new node id) or this many seconds. Stops a half-reset cab causing a 21-01. `0` = off. |
+| `SoloPairVsCpuSeconds` | **Leave `0` (off).** Sending two leftover solos versus CPUs froze cabinets in testing. |
+| `CrossWorldTeamRooms` / `PairNeverCpu` | **Leave `false`.** Experimental / test flags. A class pair still cannot match class solos (use Mix Match). `PairNeverCpu` was tested: the unpatched game still cancels a pair at ~30 s. |
 | `CpuStandInSeats` | **Experimental**, leave `false`. Lists a CPU client for each empty seat; it did not fix the results-screen hang. |
 | `PollingIntervalSeconds`, `StaleAfterSeconds`, `NetworkRealms`, `InStoreScope`, `ShopKeys`, `VerboseLog` | Optional; see the [config reference](../server-sketch/ib-server/README.md#configure). |
 
@@ -286,13 +293,33 @@ subnet, or add a firewall rule that blocks UDP 49000 between the two PCs. Never 
 internet.
 
 ### B4. Queue
+Start the **card servers first**, then the Live Monitor, then the cabinets. The game does not retry its
+server check: if the LM and cabinets start while the card servers are down, they never talk to the card
+servers until you close them and start again ([KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
+
 1. Start the game, insert your card, pick an online mode. **Everyone must pick the same mode** to meet
-   (each mode is its own queue; e.g. Mix Match and Class Match solo never mix).
+   (each mode is its own queue). **Class Match solo and Class Match team are also separate queues**
+   (worlds 13 and 14). A class pair cannot match two class solos. For a pair plus two solos, use
+   **Mix Match**, or have the two solos also pair up.
 2. Wait. **2v2 matches only form when at least 4 human players are searching** (`NoCpuPartner`,
-   default on; no CPU partners). With fewer than 4, each cabinet times out after about 150 s,
-   returns to practice mode, and can search again. Fes 1on1 (world 20) needs only 2 players.
-3. Cancelling in the game's search screen works and leaves the queue.
+   default on; no CPU teammates), except a lone all-human pair: after **18 seconds** the server sends
+   them a room versus two CPU stand-ins, so the game's ~30 s pair timer does not show the partner-lost
+   prompt. Other short groups wait until each cabinet's own matching timeout (~150 s), then return to
+   practice mode and can search again. Fes 1on1 (world 20) needs only 2 players. Once a room is sent
+   it cannot later absorb more players.
+3. Cancelling in the game's search screen works and leaves the queue. After a pair cancel, this build
+   holds those cabinets out of new human rooms until a clean restart (or up to 3 minutes).
 4. After the match, results (class-match rate, badge) are saved to **your own** card server.
+
+The server matches **instantly** once four compatible humans are searching in the same mode / queue.
+Long waits usually mean they were not all searching together: someone is still on the title or results
+screen, or waiting for a 45–60 s card re-read; one cabinet picked a different mode (Mix is world 23,
+Class solo 13, Class team 14 — they never meet); a cabinet hit the game's 150 s search timeout and
+requeued; or the pair-cancel guard is holding a cab for up to 3 minutes after a pair cancel. Three
+humans also wait for a fourth (`NoCpuPartner` does not add a CPU teammate; an optional "3 humans + 1
+CPU after a delay" setting is not in this pre-release). Tips: everyone pick the **same mode**, wait
+until all four are on the search screen, and use **Mix Match** for a pair plus solos. More detail:
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md#matches-take-a-long-time-to-form).
 
 ### B5. Invite a partner (online tag)
 Online tag (オンラインタッグ) lets two players in different shops / homes play as a fixed team. There is no
@@ -324,15 +351,12 @@ can also use a partner code (tested 2026-11-15 with four cabinets: one cross-ser
    updates the copy on the matchmaker; reload the other side's Teams tab (or reinsert the card) to pick
    it up.
 
-Partner **display names** on the matchmaker are stored when the team is created or joined. A fix that syncs
-renames on card insert and lets either member delete a team is **not yet in a published package**. Until every
-card server and the matchmaker run that update, a renamed partner can stay stale and a deleted team can
-reappear after a card insert.
+Partner **display names** on the matchmaker update when a card is inserted, and either member can delete a
+team (this pre-release includes that sync). Every card server and the matchmaker need this build; mixed
+old/new servers can still show a stale name or a reappearing deleted team.
 
-**Friend requests and block lists** (results-screen OPTION → hold Start → フレンド申請 / NG) — **not yet in a
-published package** (coming with the next card-server + matchmaker update; until then keep
-`CardServerConfig.PostMatchStubs` **true** so the game gets an empty reply instead of an "Unhandled case" error).
-With the update:
+**Friend requests and block lists** (results-screen OPTION → hold Start → フレンド申請 / NG) are in this
+pre-release (every card server and the matchmaker need this build):
 
 * A friend request from the results screen goes from **your** card server to the shared matchmaker (same
   `OnlineTag.TagSecret` as online tag; nothing new to open or configure). Your partner may be on another card server.
@@ -383,8 +407,14 @@ Partner recruit (パートナー急募, random partner) also pairs two players, 
 | Online tag: `entry online-tag` for both but no `online-tag pair` | they searched a different mode (e.g. Mix Match world 23 instead of Online Tag world 5), or the two cabinets sent different pair keys / codes, or they didn't search at the same time (90 s each) |
 | Online tag: one cabinet searches alone, matchmaker log `TAG-WAIT … waiting for partner N: partner not searching` | the partner's cabinet never started an Online Tag search (still in menus, picked another mode, or started more than ~90 s later). `… partner is in the queue as node=… but cannot pair` = the partner searched another mode (e.g. Team mode with a CPU partner) — see [SECURITY.md](SECURITY.md#reading-tag-wait-why-an-online-tag-pair-didnt-form) |
 | "Create a code" / "Join" fails; card server log `The matchmaker refused this card server: OnlineTag.TagSecret in server.json is missing or does not match the matchmaker's.`; matchmaker `SEC-REFUSE 401 … /tag … /tag without a valid shared secret` | `OnlineTag.TagSecret` missing or different from the matchmaker's (A8). Get the host's value privately, paste it, restart the card server. |
-| Online tag: partner name stays old, or a deleted team comes back after a card insert | names are stored at create/join; the rename/delete sync is not in a published package yet (B5) |
-| Results screen フレンド申請 (friend request) errors, or log `Unhandled case` for RegisterOption | card server older than the friends update: keep `PostMatchStubs` true (B5) |
+| Online tag: partner name stays old, or a deleted team comes back after a card insert | mixed old/new servers: this pre-release syncs renames and deletes (B5); upgrade every card server and the matchmaker |
+| Results screen フレンド申請 (friend request) errors, or log `Unhandled case` for RegisterOption | card server older than this pre-release's friends update (B5) |
+| Live Monitor **21-01** on every cabinet at once | the matchmaker (VPS) restarted, or the LM was closed. Restart the cabinets after the matchmaker / LM is back. Do not restart the VPS while cabs are running. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
+| 21-01 on some cabs during loading after a pair cancel / black screen | a cab re-entered without a clean restart. This build quarantines those cabs; send them through the title screen and a card swipe. |
+| Pair sees a partner-lost / CPU prompt, then a black screen | the game cancelled the pair search at ~30 s, or a pair requeued after a CPU loss (still under investigation). Release the partner on the other cab, or wait ~2 minutes, then come back through the title screen. [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
+| A class-match pair never meets two class-match solos | official-style split: worlds 13 and 14 are separate. Use Mix Match, or have the solos also pair up. |
+| Searching for a long time even though four people want to play | the server matches instantly once four compatible humans are in the **same** queue. Check that every cab is in the same mode (Mix 23 / Class solo 13 / Class team 14 never mix), that all four are on the search screen, and that a pair-cancel hold is not still in effect. [KNOWN_ISSUES.md](KNOWN_ISSUES.md#matches-take-a-long-time-to-form) |
+| LM looks wrong / cabs never reach the card servers, even though the card servers are up | they started before the card servers. Start card servers first, then close and restart the LM and cabs. |
 | Friend request sent but nothing on the Friends page; card server log `RegisterOption: … (matchmaker unreachable, queued for retry: …)` | the matchmaker is unreachable, refused the TagSecret (see the TagSecret row), or still runs an older build (`404`). The request is retried on the next card insert |
 | Two LMs on one home network steal each other's cabinets | LM discovery is a LAN broadcast (B3b): run one LM, or isolate the two PCs |
 | Card website or cabinet gets HTTP 403, log `SEC-REFUSE 403` | the source isn't allowed by `Security.AccessMode`: a VPN range missing from `ExtraAllowedCidrs`, or a cabinet on the internet using a `PublicMatchmaker` server as its card server (use your own card server, A6) |
