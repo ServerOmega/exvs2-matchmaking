@@ -17,6 +17,8 @@
 
 ## ➡️ [Setup guide: host a matchmaking server / connect your cabinet](docs/SETUP.md)
 
+## 🔧 [Patching the game .exe: simple guide](docs/PATCHING.md)
+
 ## 🔒 [Security: access modes, the `/tag` shared secret, log masking, known risks](docs/SECURITY.md)
 
 ## 📦 [Download the pre-release server package (Windows + Linux)](https://github.com/ServerOmega/exvs2-matchmaking/releases) — build, configure and start with three double-clicks; hosting a public server (port forwarding / VPN / VPS): [`release/package/Public-Server.txt`](release/package/Public-Server.txt); card-website pictures from the official v1.2.0 release: [`release/package/Import-Pictures.txt`](release/package/Import-Pictures.txt)
