@@ -1,0 +1,2385 @@
+From b2f4a4ff238244707ea3b4fe78e59c16e2143e16 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Tue, 17 Nov 2026 03:36:38 -0800
+Subject: [PATCH 1/2] Add structured match events with one match id and stage
+ timing.
+
+Card server and matchmaker write one JSON line per match step to
+Logs/events (card insert, queue, room, match found, peer connect,
+loading, battle, result, disconnect, room end). A background writer
+masks and writes them, rotates daily, keeps 14 days and caps the folder
+at 200 MB. A full queue drops events instead of slowing requests.
+
+The matchmaker names each room m-<boot>-<room>. The card server gets the
+boot id from the optional boot field in GET /status and rebuilds the id
+from the room the cabinet reports, so no game reply changes.
+
+Stages slower than configurable limits log gap_warning, and
+tools/match-timeline rebuilds one match from events files. Card ids,
+access codes, serials, secrets and IPs never appear; tests enforce it.
+Text logs are unchanged and StructuredLog.Enabled=false turns it off.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ Server-Infinite/Configurations/server.json    |  15 +
+ Server-Infinite/Controllers/GameController.cs |  11 +-
+ Server-Infinite/Lobbies/CardEventTracker.cs   | 240 ++++++++
+ Server-Infinite/Lobbies/EventLogWriter.cs     | 237 ++++++++
+ Server-Infinite/Lobbies/EventNames.cs         |  26 +
+ Server-Infinite/Lobbies/GapThresholds.cs      |  16 +
+ .../Hosting/StructuredEventsService.cs        |  65 +++
+ Server-Infinite/Lobbies/MatchTimeline.cs      | 275 +++++++++
+ Server-Infinite/Lobbies/MatchmakerBootId.cs   |  29 +
+ Server-Infinite/Lobbies/StructuredEvents.cs   | 224 ++++++++
+ Server-Infinite/Matchmaking/Matchmaker.cs     | 119 ++++
+ .../Matchmaking/MatchmakerStatus.cs           |   9 +-
+ .../Models/Config/CardServerConfig.cs         |   3 +
+ .../Config/StructuredLogConfigurations.cs     |  33 ++
+ Server-Infinite/Program.cs                    |  33 +-
+ .../Matchmaking.Tests/StructuredEventBench.cs |  65 +++
+ .../Matchmaking.Tests/StructuredEventTests.cs | 529 ++++++++++++++++++
+ tools/match-timeline/Program.cs               |  42 ++
+ tools/match-timeline/match-timeline.csproj    |  16 +
+ 19 files changed, 1981 insertions(+), 6 deletions(-)
+ create mode 100644 Server-Infinite/Lobbies/CardEventTracker.cs
+ create mode 100644 Server-Infinite/Lobbies/EventLogWriter.cs
+ create mode 100644 Server-Infinite/Lobbies/EventNames.cs
+ create mode 100644 Server-Infinite/Lobbies/GapThresholds.cs
+ create mode 100644 Server-Infinite/Lobbies/Hosting/StructuredEventsService.cs
+ create mode 100644 Server-Infinite/Lobbies/MatchTimeline.cs
+ create mode 100644 Server-Infinite/Lobbies/MatchmakerBootId.cs
+ create mode 100644 Server-Infinite/Lobbies/StructuredEvents.cs
+ create mode 100644 Server-Infinite/Models/Config/StructuredLogConfigurations.cs
+ create mode 100644 Tests/Matchmaking.Tests/StructuredEventBench.cs
+ create mode 100644 Tests/Matchmaking.Tests/StructuredEventTests.cs
+ create mode 100644 tools/match-timeline/Program.cs
+ create mode 100644 tools/match-timeline/match-timeline.csproj
+
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index 97c8231..d290298 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -34,6 +34,21 @@
+         "ResetBadgeExpOnChange": false
+       }
+     },
++    "StructuredLog": {
++      "Enabled": true,
++      "Directory": "./Logs/events",
++      "RetentionDays": 14,
++      "MaxTotalMegabytes": 200,
++      "QueueCapacity": 20000,
++      "FetchMatchmakerBootId": true,
++      "Gaps": {
++        "RoomFetchSeconds": 10,
++        "ConnectSeconds": 40,
++        "LoadingSeconds": 20,
++        "BattleSeconds": 480,
++        "ResultsSeconds": 60
++      }
++    },
+     "OnlineMatching": {
+       "Enabled": false,
+       "MatchUrl": "",
+diff --git a/Server-Infinite/Controllers/GameController.cs b/Server-Infinite/Controllers/GameController.cs
+index 77c82fb..12725db 100644
+--- a/Server-Infinite/Controllers/GameController.cs
++++ b/Server-Infinite/Controllers/GameController.cs
+@@ -18,10 +18,13 @@ public class GameController : BaseController<GameController>
+     private readonly ServerDbContext context;
+     private readonly ServerInfinite.Models.Config.CardServerConfig config;
+     private readonly IServiceScopeFactory scopeFactory;
++    private readonly ServerInfinite.Lobbies.CardEventTracker? events;
+     
+     public GameController(IMediator mediator, ServerDbContext context,
+-        IOptions<ServerInfinite.Models.Config.CardServerConfig> options, IServiceScopeFactory scopeFactory)
++        IOptions<ServerInfinite.Models.Config.CardServerConfig> options, IServiceScopeFactory scopeFactory,
++        ServerInfinite.Lobbies.CardEventTracker? events = null)
+     {
++        this.events = events;
+         this.mediator = mediator;
+         this.context = context;
+         this.config = options.Value;
+@@ -64,10 +67,14 @@ public class GameController : BaseController<GameController>
+             if (timedOut)
+                 Logger.LogWarning("WATCHDOG {Type} not finished after {Ms} ms: replied Success early (empty body)", request.Type,
+                     ServerInfinite.Lobbies.PostMatchWatchdog.Clamp(config.PostMatchWatchdogMs));
++            events?.Observe(request, reply);
+             return Ok(reply);
+         }
+ 
+-        return Ok(await Dispatch(mediator, request, baseAddress));
++        var response = await Dispatch(mediator, request, baseAddress);
++        // exvs2-lobbies 2026-11-17: structured events (logging only; the reply is not touched; enqueue only, no disk)
++        events?.Observe(request, response);
++        return Ok(response);
+     }
+ 
+     private async Task<Response> Dispatch(IMediator mediator, Request request, string baseAddress)
+diff --git a/Server-Infinite/Lobbies/CardEventTracker.cs b/Server-Infinite/Lobbies/CardEventTracker.cs
+new file mode 100644
+index 0000000..3aa8fb3
+--- /dev/null
++++ b/Server-Infinite/Lobbies/CardEventTracker.cs
+@@ -0,0 +1,240 @@
++using nue.protocol.exvs;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-17] Card-server side of the structured events. Looks at each game request after it was
++/// answered (never changes the reply) and emits card_insert / peer_connect / load_end / battle_start / result_saved /
++/// disconnect, plus gap_warning when a cabinet stays in loading or on the results screen too long.
++///
++/// Per cabinet it remembers the last stage, apply_id and room so later events carry them. The match id comes from
++/// <see cref="MatchmakerBoot"/> (the matchmaker's boot id, read from its /status) + the room id the game reports in
++/// its result; earlier events carry <c>cab</c> + <c>apply</c>, which the matchmaker's events also carry, so the
++/// timeline tool can join them.
++/// </summary>
++public sealed class CardEventTracker
++{
++    private sealed class CabState
++    {
++        public string Stage = "";
++        public DateTimeOffset StageAt;
++        public uint Apply;
++        public ulong Room;
++        public string? Match;
++        public string? Warned;
++    }
++
++    private readonly IEventSink _sink;
++    private readonly Func<DateTimeOffset> _now;
++    private readonly Dictionary<string, CabState> _cabs = new();
++    private readonly object _gate = new();
++
++    public CardEventTracker(IEventSink sink, GapThresholds? gaps = null, Func<DateTimeOffset>? now = null)
++    {
++        _sink = sink;
++        Gaps = gaps ?? new GapThresholds();
++        _now = now ?? (() => DateTimeOffset.Now);
++    }
++
++    public GapThresholds Gaps { get; }
++
++    /// <summary>Boot id of the matchmaker the cabinets use (null = unknown: events carry room, not match).</summary>
++    public Func<string?> MatchmakerBoot { get; set; } = () => null;
++
++    public bool Enabled => _sink.Enabled;
++
++    /// <summary>Call after the reply is built. Never throws.</summary>
++    public void Observe(Request? req, Response? resp)
++    {
++        if (req == null || !_sink.Enabled) return;
++        try { ObserveCore(req, resp); }
++        catch (Exception) { /* logging only */ }
++    }
++
++    private void ObserveCore(Request req, Response? resp)
++    {
++        var cab = EventIds.Cab(req.PcbSerial);
++        if (cab == null) return;
++        var now = _now();
++        var ok = resp == null || resp.Error == Error.Success;
++        List<EventRecord> outEvents = new(3);
++        lock (_gate)
++        {
++            // the other cabs are swept at most once a second (and every 2 s by the hosted service);
++            // this cab's own stage is checked now, before this request moves it on
++            if ((now - _lastSweep).TotalSeconds >= 1) SweepLocked(now, outEvents);
++            if (!_cabs.TryGetValue(cab, out var st))
++            {
++                if (_cabs.Count > 4096) _cabs.Clear();
++                _cabs[cab] = st = new CabState();
++            }
++            else CheckLocked(cab, st, now, outEvents);
++            // any request from the cabinet ends a results-screen wait
++            switch (req.Type)
++            {
++                case MethodType.MthdLoadCard:
++                    outEvents.Add(Ev(EventNames.CardInsert, cab, now).With("ok", ok));
++                    SetStage(st, "menus", now);
++                    break;
++
++                case MethodType.MthdCheckCommunication when req.check_communication is { } cc:
++                {
++                    st.Apply = cc.ApplyId;
++                    st.Room = 0;
++                    st.Match = null;
++                    var udp = cc.UdpHpResult;
++                    var e = Ev(EventNames.PeerConnect, cab, now)
++                        .With("apply", cc.ApplyId)
++                        .With("ok", udp == UdpHpResultType.UdphpSuccess && cc.FoundPlayerFlag)
++                        .With("udp", Name(udp))
++                        .With("found", cc.FoundPlayerFlag)
++                        .With("try", cc.MatchingTryNum)
++                        .With("line", Name(cc.LineType))
++                        .With("peers", cc.Players.Count)
++                        .With("rtt_max", cc.Players.Count > 0 ? cc.Players.Max(p => p.Rtt) : (uint?)null)
++                        .With("nat", cc.stun_result != null ? $"{(int)cc.stun_result.nat_mapping_type}/{(int)cc.stun_result.nat_filtering_type}" : null);
++                    // start_date / end_date are the cabinet's own unix seconds: search start -> connection done
++                    if (cc.StartDate > 1_600_000_000 && cc.EndDate >= cc.StartDate && cc.EndDate - cc.StartDate < 3600)
++                        e.With("search_s", (long)(cc.EndDate - cc.StartDate));
++                    outEvents.Add(e);
++                    if (udp != UdpHpResultType.UdphpSuccess)
++                    {
++                        outEvents.Add(Ev(EventNames.Disconnect, cab, now).With("apply", cc.ApplyId)
++                            .With("stage", "connect").With("reason", "udp-" + Name(udp)));
++                        SetStage(st, "menus", now);
++                    }
++                    else SetStage(st, "loading", now);
++                    break;
++                }
++
++                case MethodType.MthdSaveBattleLogOn when req.save_battle_log_on is { } bl:
++                {
++                    var g = bl.BattleLog;
++                    var loadS = st.Stage == "loading" ? (now - st.StageAt).TotalSeconds : (double?)null;
++                    outEvents.Add(Ev(EventNames.LoadEnd, cab, now).With("apply", NonZero(st.Apply)).With("load_s", loadS));
++                    outEvents.Add(Ev(EventNames.BattleStart, cab, now).With("apply", NonZero(st.Apply))
++                        .With("mode", g != null ? Name(g.OnlineMatchingMode) : null)
++                        .With("humans", g?.Pilots.Count(p => p.IsHuman))
++                        .With("seats", g?.Pilots.Count));
++                    SetStage(st, "battle", now);
++                    break;
++                }
++
++                case MethodType.MthdSaveVsmOnResult when req.save_vsm_on_result is { } r:
++                {
++                    var res = r.Result;
++                    var room = res?.RoomId ?? 0;
++                    st.Room = room;
++                    st.Match = EventIds.MatchId(MatchmakerBoot(), room);
++                    var e = Ev(EventNames.ResultSaved, cab, now)
++                        .With("match", st.Match).With("room", NonZero(room)).With("apply", NonZero(st.Apply))
++                        .With("ok", ok).With("method", "vsm_on")
++                        .With("mode", res != null ? Name(res.OnlineMatchingMode) : null)
++                        .With("win", res?.WinFlag)
++                        .With("battle_s", res?.VsElapsedTime);
++                    var nr = r.NetworkReport;
++                    if (nr != null && nr.PcbDatas.Count > 0)
++                    {
++                        e.With("rtt_max", nr.PcbDatas.Max(p => p.MaxRtt));
++                        e.With("loss_max", nr.PcbDatas.Max(p => p.PacketLostRate));
++                    }
++                    outEvents.Add(e);
++                    SetStage(st, "results", now);
++                    break;
++                }
++
++                case MethodType.MthdSaveVsmResult when req.save_vsm_result is { } r2:
++                    outEvents.Add(Ev(EventNames.ResultSaved, cab, now).With("apply", NonZero(st.Apply)).With("ok", ok)
++                        .With("method", "vsm").With("win", r2.Result?.WinFlag).With("battle_s", r2.Result?.VsElapsedTime));
++                    SetStage(st, "results", now);
++                    break;
++
++                case MethodType.MthdSaveFailedBattleLogOn when req.save_failed_battle_log_on is { } f:
++                {
++                    st.Room = f.RoomId;
++                    st.Match = EventIds.MatchId(MatchmakerBoot(), f.RoomId);
++                    outEvents.Add(Ev(EventNames.Disconnect, cab, now)
++                        .With("match", st.Match).With("room", NonZero(f.RoomId)).With("apply", NonZero(st.Apply))
++                        .With("stage", st.Stage.Length > 0 ? st.Stage : null)
++                        .With("reason", "failed-battle-log")
++                        .With("my_fault", f.MyFaultFlag)
++                        .With("mode", Name(f.OnlineMatchingMode)));
++                    SetStage(st, "menus", now);
++                    break;
++                }
++
++                default:
++                    if (st.Stage == "results" && !ResultGapTrace.IsResultSave(req.Type))
++                        SetStage(st, "menus", now);
++                    break;
++            }
++        }
++        foreach (var e in outEvents) _sink.Emit(e);
++    }
++
++    /// <summary>Timer tick (every few seconds): gap warnings for cabinets that went silent.</summary>
++    public void Sweep()
++    {
++        if (!_sink.Enabled) return;
++        List<EventRecord> outEvents = new();
++        lock (_gate) SweepLocked(_now(), outEvents);
++        foreach (var e in outEvents) _sink.Emit(e);
++    }
++
++    private DateTimeOffset _lastSweep;
++
++    private void SweepLocked(DateTimeOffset now, List<EventRecord> outEvents)
++    {
++        _lastSweep = now;
++        foreach (var (cab, st) in _cabs) CheckLocked(cab, st, now, outEvents);
++    }
++
++    private void CheckLocked(string cab, CabState st, DateTimeOffset now, List<EventRecord> outEvents)
++    {
++        {
++            var limit = st.Stage switch
++            {
++                "loading" => Gaps.LoadingSeconds,
++                "battle" => Gaps.BattleSeconds,
++                "results" => Gaps.ResultsSeconds,
++                _ => 0,
++            };
++            if (limit <= 0 || st.Warned == st.Stage) return;
++            var waited = (now - st.StageAt).TotalSeconds;
++            if (waited < limit) return;
++            st.Warned = st.Stage;
++            outEvents.Add(Ev(EventNames.GapWarning, cab, now)
++                .With("match", st.Match).With("room", NonZero(st.Room)).With("apply", NonZero(st.Apply))
++                .With("stage", st.Stage).With("waited_s", Math.Round(waited, 1)).With("limit_s", limit)
++                .With("after", st.Stage switch { "loading" => EventNames.PeerConnect, "battle" => EventNames.BattleStart, _ => EventNames.ResultSaved }));
++        }
++    }
++
++    private static void SetStage(CabState st, string stage, DateTimeOffset now)
++    {
++        st.Stage = stage;
++        st.StageAt = now;
++        st.Warned = null;
++    }
++
++    private static EventRecord Ev(string name, string cab, DateTimeOffset now) =>
++        new EventRecord("card", name) { At = now }.With("cab", cab);
++
++    private static uint? NonZero(uint v) => v == 0 ? null : v;
++    private static ulong? NonZero(ulong v) => v == 0 ? null : v;
++
++    private static string Name<T>(T v) where T : struct, Enum
++    {
++        var s = v.ToString();
++        // UdphpFailTimeout -> fail-timeout, OmmClass -> class, OnlinetSolo -> solo
++        foreach (var p in new[] { "Udphp", "Omm", "Onlinet" })
++            if (s.StartsWith(p, StringComparison.Ordinal) && s.Length > p.Length) { s = s[p.Length..]; break; }
++        var sb = new System.Text.StringBuilder(s.Length + 4);
++        for (var i = 0; i < s.Length; i++)
++        {
++            if (char.IsUpper(s[i]) && i > 0) sb.Append('-');
++            sb.Append(char.ToLowerInvariant(s[i]));
++        }
++        return sb.ToString();
++    }
++}
+diff --git a/Server-Infinite/Lobbies/EventLogWriter.cs b/Server-Infinite/Lobbies/EventLogWriter.cs
+new file mode 100644
+index 0000000..460dcd3
+--- /dev/null
++++ b/Server-Infinite/Lobbies/EventLogWriter.cs
+@@ -0,0 +1,237 @@
++using System.Globalization;
++using System.Text;
++using System.Threading.Channels;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>Options for <see cref="EventLogWriter"/> (StructuredLog.* in server.json).</summary>
++public sealed class EventLogOptions
++{
++    public string Directory { get; set; } = "./Logs/events";
++    public int RetentionDays { get; set; } = 14;
++    public long MaxTotalBytes { get; set; } = 200L * 1024 * 1024;
++    /// <summary>Events waiting for the disk. When full, new events are dropped (counted) instead of blocking.</summary>
++    public int QueueCapacity { get; set; } = 20000;
++}
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-17] Background JSON-lines writer. <see cref="Emit"/> only serializes and enqueues (no disk, no
++/// lock held while writing); one background task appends to <c>events-YYYYMMDD.jsonl</c> (local date), flushing when
++/// the queue runs empty. Rotation: a new file per day, and a new part (<c>-002</c>, ...) when one file passes a quarter
++/// of the size cap. Retention: files older than RetentionDays are deleted, then the oldest files until the folder is
++/// under MaxTotalBytes. A full queue drops events (a <c>log_dropped</c> line reports how many) rather than slowing a
++/// request.
++/// </summary>
++public sealed class EventLogWriter : IEventSink, IDisposable
++{
++    private readonly EventLogOptions _opt;
++    private readonly Func<DateTimeOffset> _now;
++    private readonly Channel<EventRecord> _queue;   // serialized on the writer thread, not the request thread
++    private readonly Task _pump;
++    private long _dropped, _droppedReported, _written, _bytes, _accepted, _processed;
++    private StreamWriter? _file;
++    private string? _fileDate;
++    private int _part;
++    private long _fileBytes;
++    private long _sinceCleanup;
++    private volatile bool _disposed;
++
++    public EventLogWriter(EventLogOptions options, Func<DateTimeOffset>? now = null)
++    {
++        _opt = options;
++        _now = now ?? (() => DateTimeOffset.Now);
++        System.IO.Directory.CreateDirectory(_opt.Directory);
++        LoadOrCreateSalt();
++        _queue = Channel.CreateBounded<EventRecord>(new BoundedChannelOptions(Math.Max(100, _opt.QueueCapacity))
++        {
++            SingleReader = true, SingleWriter = false, FullMode = BoundedChannelFullMode.Wait,   // only TryWrite is used: false when full (DropWrite would hide drops)
++        });
++        Cleanup();
++        _pump = Task.Run(PumpAsync);
++    }
++
++    public bool Enabled => !_disposed;
++    public long Written => Interlocked.Read(ref _written);
++    public long Dropped => Interlocked.Read(ref _dropped);
++    /// <summary>Events taken into the queue (each one is written unless the disk fails).</summary>
++    public long Accepted => Interlocked.Read(ref _accepted);
++    public long BytesWritten => Interlocked.Read(ref _bytes);
++    public string Directory => _opt.Directory;
++
++    public void Emit(EventRecord e)
++    {
++        if (_disposed) return;
++        // the caller only stamps the time and enqueues; masking + JSON happen on the writer thread
++        e.At ??= _now();
++        if (_queue.Writer.TryWrite(e)) Interlocked.Increment(ref _accepted);
++        else Interlocked.Increment(ref _dropped);
++    }
++
++    /// <summary>Waits until everything queued so far is on disk (tests, shutdown).</summary>
++    public async Task FlushAsync(TimeSpan? timeout = null)
++    {
++        var until = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
++        while (Interlocked.Read(ref _processed) < Interlocked.Read(ref _accepted) && DateTime.UtcNow < until) await Task.Delay(5);
++        lock (_fileGate) { ReportDrops(); _file?.Flush(); }
++    }
++
++    private readonly object _fileGate = new();
++
++    private async Task PumpAsync()
++    {
++        var reader = _queue.Reader;
++        try
++        {
++            while (await reader.WaitToReadAsync().ConfigureAwait(false))
++            {
++                lock (_fileGate)
++                {
++                    while (reader.TryRead(out var e))
++                    {
++                        string? line = null;
++                        try { line = EventJson.Serialize(e, e.At ?? _now()); }
++                        catch (Exception) { Interlocked.Increment(ref _dropped); }
++                        if (line != null) WriteLine(line);
++                        Interlocked.Increment(ref _processed);
++                    }
++                    ReportDrops();
++                    _file?.Flush();
++                }
++            }
++        }
++        catch (Exception) { /* logging must never take the server down */ }
++        finally
++        {
++            lock (_fileGate) { _file?.Flush(); _file?.Dispose(); _file = null; }
++        }
++    }
++
++    private void ReportDrops()
++    {
++        var d = Interlocked.Read(ref _dropped);
++        if (d == _droppedReported) return;
++        var e = new EventRecord("log", EventNames.LogDropped).With("count", d - _droppedReported).With("total", d);
++        _droppedReported = d;
++        WriteLine(EventJson.Serialize(e, _now()));
++    }
++
++    private void WriteLine(string line)
++    {
++        try
++        {
++            var now = _now();
++            var date = now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
++            var partCap = Math.Max(64 * 1024, _opt.MaxTotalBytes / 4);
++            if (_file == null || date != _fileDate || _fileBytes >= partCap)
++                Open(date, rollPart: _file != null && date == _fileDate);
++            var n = Encoding.UTF8.GetByteCount(line) + 1;
++            _file!.Write(line);
++            _file.Write('\n');
++            _fileBytes += n;
++            _sinceCleanup += n;
++            Interlocked.Add(ref _bytes, n);
++            Interlocked.Increment(ref _written);
++            if (_sinceCleanup > Math.Max(1024 * 1024, _opt.MaxTotalBytes / 20))
++            {
++                _sinceCleanup = 0;
++                Cleanup();
++            }
++        }
++        catch (Exception)
++        {
++            Interlocked.Increment(ref _dropped);
++        }
++    }
++
++    private void Open(string date, bool rollPart)
++    {
++        _file?.Flush();
++        _file?.Dispose();
++        _part = rollPart ? _part + 1 : 1;
++        string path;
++        while (true)
++        {
++            path = PathFor(date, _part);
++            if (rollPart || !File.Exists(path) || new FileInfo(path).Length < Math.Max(64 * 1024, _opt.MaxTotalBytes / 4)) break;
++            _part++;
++        }
++        var fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, 64 * 1024);
++        _file = new StreamWriter(fs, new UTF8Encoding(false), 64 * 1024) { AutoFlush = false };
++        _fileDate = date;
++        _fileBytes = fs.Length;
++        Cleanup();
++    }
++
++    private string PathFor(string date, int part) =>
++        Path.Combine(_opt.Directory, part <= 1 ? $"events-{date}.jsonl" : $"events-{date}-{part:000}.jsonl");
++
++    /// <summary>Deletes files past retention, then the oldest until the folder is under the size cap.</summary>
++    public void Cleanup()
++    {
++        try
++        {
++            var files = new DirectoryInfo(_opt.Directory).GetFiles("events-*.jsonl")
++                .OrderBy(f => f.Name, StringComparer.Ordinal).ToList();
++            var current = _file?.BaseStream is FileStream fs ? fs.Name : null;
++            var cutoff = _now().Date.AddDays(-Math.Max(1, _opt.RetentionDays) + 1);
++            foreach (var f in files.ToList())
++            {
++                if (DateOf(f.Name) is DateTime d && d < cutoff && !SamePath(f.FullName, current))
++                {
++                    TryDelete(f);
++                    files.Remove(f);
++                }
++            }
++            long total = files.Sum(f => f.Length);
++            foreach (var f in files.ToList())
++            {
++                if (total <= _opt.MaxTotalBytes) break;
++                if (SamePath(f.FullName, current)) continue;
++                total -= f.Length;
++                TryDelete(f);
++            }
++        }
++        catch (Exception) { }
++    }
++
++    private static bool SamePath(string a, string? b) => b != null && string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
++
++    private static void TryDelete(FileInfo f)
++    {
++        try { f.Delete(); } catch (Exception) { }
++    }
++
++    public static DateTime? DateOf(string fileName)
++    {
++        // events-20261117.jsonl / events-20261117-002.jsonl
++        if (fileName.Length < 15 || !fileName.StartsWith("events-", StringComparison.Ordinal)) return null;
++        return DateTime.TryParseExact(fileName.Substring(7, 8), "yyyyMMdd", CultureInfo.InvariantCulture,
++            DateTimeStyles.None, out var d) ? d : null;
++    }
++
++    private void LoadOrCreateSalt()
++    {
++        try
++        {
++            var path = Path.Combine(_opt.Directory, ".salt");
++            byte[] salt;
++            if (File.Exists(path) && (salt = File.ReadAllBytes(path)).Length >= 16)
++            {
++                EventIds.SetIpSalt(salt);
++                return;
++            }
++            salt = System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
++            File.WriteAllBytes(path, salt);
++            EventIds.SetIpSalt(salt);
++        }
++        catch (Exception) { /* keep the per-process random salt */ }
++    }
++
++    public void Dispose()
++    {
++        if (_disposed) return;
++        _disposed = true;
++        _queue.Writer.TryComplete();
++        try { _pump.Wait(TimeSpan.FromSeconds(5)); } catch (Exception) { }
++    }
++}
+diff --git a/Server-Infinite/Lobbies/EventNames.cs b/Server-Infinite/Lobbies/EventNames.cs
+new file mode 100644
+index 0000000..931e8e8
+--- /dev/null
++++ b/Server-Infinite/Lobbies/EventNames.cs
+@@ -0,0 +1,26 @@
++namespace ServerInfinite.Lobbies;
++
++/// <summary>Event names (schema v1). Stage order for one cabinet in one match is the order below.</summary>
++public static class EventNames
++{
++    public const string CardInsert = "card_insert";
++    public const string QueueStart = "queue_start";
++    public const string QueueStop = "queue_stop";
++    public const string RoomCreated = "room_created";
++    public const string MatchFound = "match_found";
++    public const string LoadStart = "load_start";
++    public const string PeerConnect = "peer_connect";
++    public const string LoadEnd = "load_end";
++    public const string BattleStart = "battle_start";
++    public const string ResultSaved = "result_saved";
++    public const string Disconnect = "disconnect";
++    public const string RoomEnded = "room_ended";
++    public const string GapWarning = "gap_warning";
++    public const string LogDropped = "log_dropped";
++
++    public static readonly string[] All =
++    {
++        CardInsert, QueueStart, QueueStop, RoomCreated, MatchFound, LoadStart, PeerConnect, LoadEnd, BattleStart,
++        ResultSaved, Disconnect, RoomEnded, GapWarning, LogDropped,
++    };
++}
+diff --git a/Server-Infinite/Lobbies/GapThresholds.cs b/Server-Infinite/Lobbies/GapThresholds.cs
+new file mode 100644
+index 0000000..2336096
+--- /dev/null
++++ b/Server-Infinite/Lobbies/GapThresholds.cs
+@@ -0,0 +1,16 @@
++namespace ServerInfinite.Lobbies;
++
++/// <summary>Gap thresholds (StructuredLog.Gaps.*). 0 = that check is off.</summary>
++public sealed class GapThresholds
++{
++    /// <summary>Matchmaker: room made -> a cabinet has not fetched it (polls every ~3 s).</summary>
++    public double RoomFetchSeconds { get; set; } = 10;
++    /// <summary>Room fetched (match_found) -> peer_connect. Seen 19-23 s in the 2026-11-14/15 real-cab logs.</summary>
++    public double ConnectSeconds { get; set; } = 40;
++    /// <summary>peer_connect -> battle_start (the loading screen). Seen 14-19 s (2 humans) and 30 s (4 humans).</summary>
++    public double LoadingSeconds { get; set; } = 20;
++    /// <summary>battle_start -> result_saved. Battles take ~2-4 min.</summary>
++    public double BattleSeconds { get; set; } = 480;
++    /// <summary>result_saved -> the cabinet's next request (results screen). Normal 24-35 s.</summary>
++    public double ResultsSeconds { get; set; } = 60;
++}
+diff --git a/Server-Infinite/Lobbies/Hosting/StructuredEventsService.cs b/Server-Infinite/Lobbies/Hosting/StructuredEventsService.cs
+new file mode 100644
+index 0000000..30a27c5
+--- /dev/null
++++ b/Server-Infinite/Lobbies/Hosting/StructuredEventsService.cs
+@@ -0,0 +1,65 @@
++using Microsoft.Extensions.Options;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++
++namespace ServerInfinite.Lobbies.Hosting;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-17] Background side of the structured events: runs the card-server gap sweep every 2 s and,
++/// when the cabinets use a matchmaker URL, reads that matchmaker's boot id from its public GET /status once a minute so
++/// card-server events carry the same match id as the matchmaker's. Nothing here runs on a request.
++/// </summary>
++public sealed class StructuredEventsService : BackgroundService
++{
++    private readonly CardServerConfig _cfg;
++    private readonly CardEventTracker _tracker;
++    private readonly Matchmaker _mm;
++    private readonly IHttpClientFactory _http;
++    private readonly ILogger<StructuredEventsService> _log;
++    private volatile string? _remoteBoot;
++
++    public StructuredEventsService(IOptions<CardServerConfig> options, CardEventTracker tracker, Matchmaker mm,
++        IHttpClientFactory http, ILogger<StructuredEventsService> log)
++    {
++        _cfg = options.Value;
++        _tracker = tracker;
++        _mm = mm;
++        _http = http;
++        _log = log;
++        var statusUrl = MatchmakerBootId.StatusUrlFor(_cfg.OnlineMatching.MatchUrl);
++        _tracker.MatchmakerBoot = statusUrl == null ? () => _mm.BootId : () => _remoteBoot;
++    }
++
++    protected override async Task ExecuteAsync(CancellationToken stop)
++    {
++        if (!_tracker.Enabled) return;
++        var statusUrl = _cfg.StructuredLog.FetchMatchmakerBootId ? MatchmakerBootId.StatusUrlFor(_cfg.OnlineMatching.MatchUrl) : null;
++        var nextFetch = DateTime.UtcNow;
++        string? lastLogged = null;
++        while (!stop.IsCancellationRequested)
++        {
++            try { _tracker.Sweep(); } catch (Exception) { }
++            if (statusUrl != null && DateTime.UtcNow >= nextFetch)
++            {
++                nextFetch = DateTime.UtcNow.AddSeconds(60);
++                try
++                {
++                    var client = _http.CreateClient("mm-status");
++                    client.Timeout = TimeSpan.FromSeconds(5);
++                    var boot = MatchmakerBootId.ParseBoot(await client.GetStringAsync(statusUrl, stop));
++                    _remoteBoot = boot;
++                    if (boot != lastLogged)
++                    {
++                        lastLogged = boot;
++                        _log.LogInformation("Structured events: matchmaker boot id {Boot}", boot ?? "unknown (older matchmaker: events carry the room id only)");
++                    }
++                }
++                catch (Exception e) when (e is not OperationCanceledException || !stop.IsCancellationRequested)
++                {
++                    _log.LogDebug("Structured events: matchmaker /status not readable: {Error}", e.Message);
++                }
++            }
++            try { await Task.Delay(2000, stop); } catch (OperationCanceledException) { break; }
++        }
++    }
++}
+diff --git a/Server-Infinite/Lobbies/MatchTimeline.cs b/Server-Infinite/Lobbies/MatchTimeline.cs
+new file mode 100644
+index 0000000..3fec563
+--- /dev/null
++++ b/Server-Infinite/Lobbies/MatchTimeline.cs
+@@ -0,0 +1,275 @@
++using System.Globalization;
++using System.Text;
++using System.Text.Json;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>One parsed structured event (schema v1).</summary>
++public sealed class TimelineEvent
++{
++    public DateTimeOffset Ts { get; init; }
++    public string Src { get; init; } = "";
++    public string Ev { get; init; } = "";
++    public string? Match { get; init; }
++    public ulong Room { get; init; }
++    public string? Cab { get; init; }
++    public uint Apply { get; init; }
++    public uint Node { get; init; }
++    public IReadOnlyList<string> Cabs { get; init; } = Array.Empty<string>();
++    public IReadOnlyDictionary<string, string> Fields { get; init; } = new Dictionary<string, string>();
++
++    public string? Field(string k) => Fields.TryGetValue(k, out var v) ? v : null;
++
++    private static readonly HashSet<string> Core = new() { "v", "ts", "src", "ev", "match", "room", "cab", "apply", "node", "cabs" };
++
++    public static TimelineEvent? Parse(string line)
++    {
++        if (string.IsNullOrWhiteSpace(line) || line[0] != '{') return null;
++        try
++        {
++            using var doc = JsonDocument.Parse(line);
++            var r = doc.RootElement;
++            if (!r.TryGetProperty("ev", out var ev) || !r.TryGetProperty("ts", out var ts)) return null;
++            if (!DateTimeOffset.TryParse(ts.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var at)) return null;
++            var fields = new Dictionary<string, string>();
++            var cabs = new List<string>();
++            foreach (var p in r.EnumerateObject())
++            {
++                if (p.Name == "cabs" && p.Value.ValueKind == JsonValueKind.Array)
++                    cabs.AddRange(p.Value.EnumerateArray().Select(x => x.ToString()));
++                if (Core.Contains(p.Name)) continue;
++                fields[p.Name] = p.Value.ValueKind == JsonValueKind.String ? p.Value.GetString() ?? "" : p.Value.GetRawText();
++            }
++            return new TimelineEvent
++            {
++                Ts = at,
++                Src = Str(r, "src") ?? "",
++                Ev = ev.GetString() ?? "",
++                Match = Str(r, "match"),
++                Room = r.TryGetProperty("room", out var room) && room.TryGetUInt64(out var rv) ? rv : 0,
++                Cab = Str(r, "cab"),
++                Apply = r.TryGetProperty("apply", out var a) && a.TryGetUInt32(out var av) ? av : 0,
++                Node = r.TryGetProperty("node", out var n) && n.TryGetUInt32(out var nv) ? nv : 0,
++                Cabs = cabs,
++                Fields = fields,
++            };
++        }
++        catch (Exception) { return null; }
++    }
++
++    private static string? Str(JsonElement r, string k) =>
++        r.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
++}
++
++public sealed record TimelineEntry(DateTimeOffset Ts, string Cab, string Src, string Ev, string Detail, double? SincePrev);
++public sealed record TimelineGap(string Cab, string Stage, string From, string To, double Seconds, double Limit);
++public sealed record MatchSummary(string MatchId, DateTimeOffset At, ulong Room, string World, int Humans, int Seats);
++
++public sealed class MatchTimelineResult
++{
++    public string MatchId { get; init; } = "";
++    public ulong Room { get; init; }
++    public string World { get; init; } = "";
++    public DateTimeOffset? CreatedAt { get; init; }
++    public List<string> Cabs { get; } = new();
++    public List<TimelineEntry> Entries { get; } = new();
++    public List<TimelineGap> Gaps { get; } = new();
++    public bool Found => Entries.Count > 0;
++}
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-17] Rebuilds the stage timeline of one match from structured event lines (matchmaker and
++/// card-server files can be mixed). Joins: same <c>match</c>; or a card event with the room id and one of the room's
++/// cabs; or (cab, apply_id) as logged by the matchmaker's match_found; or, for card events with neither, the cab's
++/// events between this room and its next one. Stage gaps over <see cref="GapThresholds"/> are listed.
++/// </summary>
++public static class MatchTimeline
++{
++    private static readonly string[] CabStages =
++    {
++        EventNames.CardInsert, EventNames.QueueStart, EventNames.QueueStop, EventNames.MatchFound, EventNames.LoadStart,
++        EventNames.PeerConnect, EventNames.LoadEnd, EventNames.BattleStart, EventNames.ResultSaved, EventNames.Disconnect,
++        EventNames.RoomEnded, EventNames.GapWarning,
++    };
++
++    public static List<TimelineEvent> ParseLines(IEnumerable<string> lines) =>
++        lines.Select(TimelineEvent.Parse).OfType<TimelineEvent>().OrderBy(e => e.Ts).ToList();
++
++    public static IEnumerable<string> ReadFiles(IEnumerable<string> paths)
++    {
++        foreach (var p in paths)
++        {
++            IEnumerable<string> lines;
++            try
++            {
++                using var fs = new FileStream(p, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
++                using var sr = new StreamReader(fs);
++                lines = sr.ReadToEnd().Split('\n');
++            }
++            catch (Exception) { continue; }
++            foreach (var l in lines) yield return l.TrimEnd('\r');
++        }
++    }
++
++    /// <summary>Matches seen in the events, newest first.</summary>
++    public static List<MatchSummary> ListMatches(IReadOnlyList<TimelineEvent> events)
++    {
++        var list = new Dictionary<string, MatchSummary>();
++        foreach (var e in events)
++        {
++            if (e.Match == null) continue;
++            if (e.Ev == EventNames.RoomCreated)
++                list[e.Match] = new MatchSummary(e.Match, e.Ts, e.Room, e.Field("world") ?? "", Int(e.Field("humans")), Int(e.Field("seats")));
++            else if (!list.ContainsKey(e.Match))
++                list[e.Match] = new MatchSummary(e.Match, e.Ts, e.Room, e.Field("world") ?? e.Field("mode") ?? "", 0, 0);
++        }
++        return list.Values.OrderByDescending(m => m.At).ToList();
++    }
++
++    public static ulong RoomOf(string matchId)
++    {
++        var i = matchId.LastIndexOf('-');
++        return i > 0 && ulong.TryParse(matchId[(i + 1)..], out var r) ? r : 0;
++    }
++
++    public static MatchTimelineResult Build(IReadOnlyList<TimelineEvent> events, string matchId, GapThresholds? gaps = null)
++    {
++        gaps ??= new GapThresholds();
++        var anchor = events.FirstOrDefault(e => e.Ev == EventNames.RoomCreated && e.Match == matchId);
++        var room = anchor?.Room ?? RoomOf(matchId);
++        var direct = events.Where(e => e.Match == matchId).ToList();
++        var t0 = anchor?.Ts ?? direct.Select(e => e.Ts).DefaultIfEmpty().Min();
++        var result = new MatchTimelineResult
++        {
++            MatchId = matchId, Room = room, World = anchor?.Field("world") ?? direct.Select(e => e.Field("world") ?? e.Field("mode")).FirstOrDefault(x => x != null) ?? "",
++            CreatedAt = anchor?.Ts,
++        };
++        if (direct.Count == 0) return result;
++
++        var cabs = new List<string>();
++        if (anchor != null) cabs.AddRange(anchor.Cabs.Where(c => c != "-"));
++        foreach (var e in direct) if (e.Cab != null && !cabs.Contains(e.Cab)) cabs.Add(e.Cab);
++        result.Cabs.AddRange(cabs);
++
++        // the cab's apply id as the matchmaker saw it (match_found) or, without matchmaker events, as the card server
++        // logged it with the result: joins the card events logged before the room id was known
++        var applyByCab = direct.Where(e => e.Ev == EventNames.MatchFound && e.Cab != null && e.Apply != 0)
++            .GroupBy(e => e.Cab!).ToDictionary(g => g.Key, g => g.First().Apply);
++        if (anchor == null)
++            foreach (var g in direct.Where(e => e.Cab != null && e.Apply != 0).GroupBy(e => e.Cab!))
++                applyByCab.TryAdd(g.Key, g.First().Apply);
++
++        var picked = new HashSet<TimelineEvent>(direct);
++        foreach (var cab in cabs)
++        {
++            // window: from 15 min before the room (queue / card insert) to the cab's next room or 20 min after
++            var nextRoom = events.FirstOrDefault(e => e.Ev == EventNames.RoomCreated && e.Match != matchId && e.Ts > t0 && e.Cabs.Contains(cab));
++            var end = nextRoom?.Ts ?? t0.AddMinutes(20);
++            var cabEvents = events.Where(e => e.Cab == cab && e.Ts >= t0.AddMinutes(-15) && e.Ts < end).ToList();
++            var lastBefore = cabEvents.Where(e => e.Ts < t0 && e.Ev is "queue_start" or "card_insert").Select(e => e.Ts).DefaultIfEmpty(t0).Max();
++            foreach (var e in cabEvents)
++            {
++                if (picked.Contains(e)) continue;
++                if (e.Match != null && e.Match != matchId) continue;              // another match
++                if (e.Room != 0 && e.Room != room) continue;
++                bool take =
++                    (e.Room == room && e.Room != 0) ||
++                    (e.Apply != 0 && applyByCab.TryGetValue(cab, out var ap) && ap == e.Apply && e.Ts >= t0.AddMinutes(-15)) ||
++                    (e.Ts >= t0.AddSeconds(-2) && e.Ev is not EventNames.RoomCreated) ||
++                    (e.Ts >= lastBefore && e.Ts < t0 && e.Ev is EventNames.QueueStart or EventNames.CardInsert);
++                if (take) picked.Add(e);
++            }
++        }
++
++        foreach (var cab in cabs.Count > 0 ? cabs : new List<string> { "-" })
++        {
++            var mine = picked.Where(e => (e.Cab ?? "-") == cab && CabStages.Contains(e.Ev)).OrderBy(e => e.Ts).ThenBy(e => Array.IndexOf(CabStages, e.Ev)).ToList();
++            // the room line goes where it happened: after this cab's search started, before it got the room
++            if (anchor != null) mine.Insert(mine.FindLastIndex(e => e.Ts < anchor.Ts || (e.Ts == anchor.Ts && e.Ev is "queue_start" or "card_insert")) + 1, anchor);
++            DateTimeOffset? prev = null;
++            foreach (var e in mine)
++            {
++                result.Entries.Add(new TimelineEntry(e.Ts, cab, e.Src, e.Ev, Detail(e), prev is { } p ? (e.Ts - p).TotalSeconds : null));
++                prev = e.Ts;
++            }
++            AddGaps(result, cab, mine, gaps);
++        }
++        return result;
++    }
++
++    private static void AddGaps(MatchTimelineResult r, string cab, List<TimelineEvent> mine, GapThresholds g)
++    {
++        TimelineEvent? First(string ev) => mine.FirstOrDefault(e => e.Ev == ev && (e.Cab == cab || e.Ev == EventNames.RoomCreated));
++        void Check(string stage, string from, string to, double limit, string? fallbackTo = null)
++        {
++            if (limit <= 0) return;
++            var a = First(from);
++            var b = First(to) ?? (fallbackTo != null ? First(fallbackTo) : null);
++            if (a == null) return;
++            if (b == null)
++            {
++                // never reached the next stage: report when something later happened (a drop / room end)
++                var later = mine.LastOrDefault(e => e.Ts > a.Ts && e.Ev is EventNames.Disconnect or EventNames.RoomEnded or EventNames.QueueStart);
++                if (later != null && (later.Ts - a.Ts).TotalSeconds > limit)
++                    r.Gaps.Add(new TimelineGap(cab, stage, from, later.Ev + " (stage never finished)", (later.Ts - a.Ts).TotalSeconds, limit));
++                return;
++            }
++            var s = (b.Ts - a.Ts).TotalSeconds;
++            if (s > limit) r.Gaps.Add(new TimelineGap(cab, stage, from, b.Ev, s, limit));
++        }
++        Check("fetch", EventNames.RoomCreated, EventNames.MatchFound, g.RoomFetchSeconds);
++        Check("connect", EventNames.MatchFound, EventNames.PeerConnect, g.ConnectSeconds);
++        Check("loading", EventNames.PeerConnect, EventNames.BattleStart, g.LoadingSeconds, EventNames.LoadEnd);
++        Check("battle", EventNames.BattleStart, EventNames.ResultSaved, g.BattleSeconds);
++        foreach (var w in mine.Where(e => e.Ev == EventNames.GapWarning && e.Cab == cab))
++            if (!r.Gaps.Any(x => x.Stage == w.Field("stage")))
++                r.Gaps.Add(new TimelineGap(cab, w.Field("stage") ?? "?", w.Field("after") ?? "?", "(live warning)",
++                    Dbl(w.Field("waited_s")), Dbl(w.Field("limit_s"))));
++    }
++
++    private static readonly HashSet<string> DetailSkip = new() { "world" };
++
++    private static string Detail(TimelineEvent e)
++    {
++        var parts = new List<string>();
++        if (e.Ev == EventNames.RoomCreated && e.Cabs.Count > 0) parts.Add("cabs=" + string.Join(",", e.Cabs));
++        if (e.Apply != 0) parts.Add("apply=" + e.Apply);
++        foreach (var (k, v) in e.Fields)
++        {
++            if (DetailSkip.Contains(k)) continue;
++            parts.Add($"{k}={v}");
++        }
++        return string.Join(" ", parts);
++    }
++
++    public static string Render(MatchTimelineResult r)
++    {
++        var sb = new StringBuilder();
++        if (!r.Found)
++        {
++            sb.AppendLine($"No events for match {r.MatchId}.");
++            return sb.ToString();
++        }
++        sb.AppendLine($"Match {r.MatchId}  room {r.Room}  {r.World}  cabs {string.Join(", ", r.Cabs)}");
++        if (r.CreatedAt is { } c) sb.AppendLine($"Room created {c:yyyy-MM-dd HH:mm:ss.fff zzz}");
++        foreach (var g in r.Entries.GroupBy(e => e.Cab))
++        {
++            sb.AppendLine();
++            sb.AppendLine($"cab {g.Key}");
++            foreach (var e in g)
++                sb.AppendLine($"  {e.Ts:HH:mm:ss.fff}  {(e.SincePrev is { } s ? $"+{s,6:0.0}s" : "        ")}  {e.Src,-4} {e.Ev,-13} {e.Detail}");
++        }
++        sb.AppendLine();
++        if (r.Gaps.Count == 0) sb.AppendLine("No stage over its threshold.");
++        else
++        {
++            sb.AppendLine("Gaps over threshold:");
++            foreach (var g in r.Gaps)
++                sb.AppendLine($"  cab {g.Cab}: {g.Stage} {g.From} -> {g.To} took {g.Seconds:0.0}s (limit {g.Limit:0}s)");
++        }
++        return sb.ToString();
++    }
++
++    private static int Int(string? s) => int.TryParse(s, out var v) ? v : 0;
++    private static double Dbl(string? s) => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : 0;
++}
+diff --git a/Server-Infinite/Lobbies/MatchmakerBootId.cs b/Server-Infinite/Lobbies/MatchmakerBootId.cs
+new file mode 100644
+index 0000000..d2480e8
+--- /dev/null
++++ b/Server-Infinite/Lobbies/MatchmakerBootId.cs
+@@ -0,0 +1,29 @@
++using System.Text.Json;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>[exvs2-lobbies 2026-11-17] Reading the matchmaker's boot id from its public GET /status.</summary>
++public static class MatchmakerBootId
++{
++    /// <summary>http://host:28090/match -> http://host:28090/status. Null for an empty / invalid MatchUrl (in-process matchmaker).</summary>
++    public static string? StatusUrlFor(string? matchUrl)
++    {
++        if (string.IsNullOrWhiteSpace(matchUrl)) return null;
++        var s = matchUrl.Trim();
++        if (!s.Contains("://")) s = "http://" + s;
++        return Uri.TryCreate(s, UriKind.Absolute, out var u) && (u.Scheme == "http" || u.Scheme == "https")
++            ? new Uri(u, "/status").ToString() : null;
++    }
++
++    /// <summary>The "boot" value of a /status reply, or null.</summary>
++    public static string? ParseBoot(string json)
++    {
++        try
++        {
++            using var doc = JsonDocument.Parse(json);
++            return doc.RootElement.TryGetProperty("boot", out var b) && b.ValueKind == JsonValueKind.String &&
++                   EventIds.IsBootId(b.GetString()) ? b.GetString() : null;
++        }
++        catch (Exception) { return null; }
++    }
++}
+diff --git a/Server-Infinite/Lobbies/StructuredEvents.cs b/Server-Infinite/Lobbies/StructuredEvents.cs
+new file mode 100644
+index 0000000..9645de2
+--- /dev/null
++++ b/Server-Infinite/Lobbies/StructuredEvents.cs
+@@ -0,0 +1,224 @@
++using System.Buffers;
++using System.Security.Cryptography;
++using System.Text;
++using System.Text.Json;
++using System.Text.RegularExpressions;
++
++namespace ServerInfinite.Lobbies;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-17] Structured match events (docs/EVENTS.md, schema v1): one JSON object per line in
++/// <c>Logs/events/events-YYYYMMDD.jsonl</c>, next to (not instead of) the text logs. Logging only: no reply to a
++/// cabinet changes.
++///
++/// Privacy rules (enforced here and by Tests/Matchmaking.Tests/StructuredEventTests.cs):
++/// * never card ids, chip ids, access codes, session ids, tokens, tag secrets, partner codes, am ids / pilot ids;
++/// * a cabinet is <c>cab</c> = short hash of its pcb serial (same on every component, so events can be joined);
++/// * an IP address is only ever a short salted hash (<c>ip</c>); free text is scrubbed of IPv4 addresses and
++///   card fields before it is written.
++/// </summary>
++public sealed class EventRecord
++{
++    public const int SchemaVersion = 1;
++
++    public EventRecord(string src, string ev)
++    {
++        Src = src;
++        Ev = ev;
++    }
++
++    /// <summary>"mm" (matchmaker), "card" (card server), "tool".</summary>
++    public string Src { get; }
++    /// <summary>Event name, see <see cref="EventNames"/>.</summary>
++    public string Ev { get; }
++    /// <summary>Wall-clock time; set by the sink when null.</summary>
++    public DateTimeOffset? At { get; set; }
++    public List<KeyValuePair<string, object?>> Fields { get; } = new(8);
++
++    public EventRecord With(string key, object? value)
++    {
++        if (value is null) return this;
++        if (value is string s && s.Length == 0) return this;
++        Fields.Add(new(key, value));
++        return this;
++    }
++
++    public object? Get(string key)
++    {
++        foreach (var kv in Fields)
++            if (kv.Key == key) return kv.Value;
++        return null;
++    }
++}
++
++/// <summary>Where events go. Implementations must never block the caller on disk.</summary>
++public interface IEventSink
++{
++    bool Enabled { get; }
++    void Emit(EventRecord e);
++}
++
++public sealed class NullEventSink : IEventSink
++{
++    public static readonly NullEventSink Instance = new();
++    public bool Enabled => false;
++    public void Emit(EventRecord e) { }
++}
++
++/// <summary>Collects events in memory (tests, the overhead benchmark).</summary>
++public sealed class ListEventSink : IEventSink
++{
++    private readonly object _gate = new();
++    public List<EventRecord> Events { get; } = new();
++    public bool Enabled => true;
++    public void Emit(EventRecord e)
++    {
++        e.At ??= DateTimeOffset.Now;
++        lock (_gate) Events.Add(e);
++    }
++    public List<EventRecord> Snapshot() { lock (_gate) return Events.ToList(); }
++}
++
++/// <summary>Ids that are safe to log: short hashes and the match id.</summary>
++public static class EventIds
++{
++    private static byte[] _ipSalt = RandomNumberGenerator.GetBytes(16);
++
++    /// <summary>
++    /// Salt for IP hashes. Each server keeps its own (Logs/events/.salt), so an IP hash only matches within one
++    /// server's logs and can't be looked up in a table of all IPv4 addresses without that file.
++    /// </summary>
++    public static void SetIpSalt(byte[] salt)
++    {
++        if (salt is { Length: >= 8 }) _ipSalt = salt.ToArray();
++    }
++
++    /// <summary>
++    /// Cabinet key: "c" + 8 hex of SHA-256("exvs2-ev1|cab|" + serial). Unsalted on purpose so the matchmaker, the card
++    /// server and the launcher (which knows its own cabs' serials) compute the same key. Serials are not secrets
++    /// (the text logs already print their last 4 characters).
++    /// </summary>
++    public static string? Cab(string? pcbSerial)
++    {
++        if (string.IsNullOrWhiteSpace(pcbSerial)) return null;
++        if (CabCache.TryGetValue(pcbSerial, out var known)) return known;
++        var s = pcbSerial.Trim();
++        Span<byte> hash = stackalloc byte[32];
++        SHA256.HashData(Encoding.UTF8.GetBytes("exvs2-ev1|cab|" + s.ToUpperInvariant()), hash);
++        var key = "c" + Convert.ToHexString(hash[..4]).ToLowerInvariant();
++        if (CabCache.Count > 10000) CabCache.Clear();
++        CabCache[pcbSerial] = key;
++        return key;
++    }
++
++    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CabCache = new(StringComparer.Ordinal);
++
++    /// <summary>IP key: "i" + 8 hex of HMAC-SHA-256(salt, ip). Null / empty / 0.0.0.0 = null.</summary>
++    public static string? Ip(string? ip)
++    {
++        var s = (ip ?? "").Trim();
++        if (s.StartsWith("::ffff:", StringComparison.OrdinalIgnoreCase)) s = s[7..];
++        if (s.Length == 0 || s == "0.0.0.0") return null;
++        Span<byte> hash = stackalloc byte[32];
++        HMACSHA256.HashData(_ipSalt, Encoding.UTF8.GetBytes(s), hash);
++        return "i" + Convert.ToHexString(hash[..4]).ToLowerInvariant();
++    }
++
++    /// <summary>Matchmaker boot id: base36 of the start time in seconds (sortable, 6-7 chars).</summary>
++    public static string NewBootId(DateTimeOffset? at = null)
++    {
++        var v = (ulong)Math.Max(1, (at ?? DateTimeOffset.UtcNow).ToUnixTimeSeconds());
++        const string digits = "0123456789abcdefghijklmnopqrstuvwxyz";
++        var sb = new StringBuilder();
++        while (v > 0) { sb.Insert(0, digits[(int)(v % 36)]); v /= 36; }
++        return sb.ToString();
++    }
++
++    /// <summary>One id per match across every log: "m-&lt;matchmaker boot&gt;-&lt;room&gt;".</summary>
++    public static string? MatchId(string? boot, ulong room) =>
++        string.IsNullOrWhiteSpace(boot) || room == 0 ? null : $"m-{boot.Trim()}-{room}";
++
++    private static readonly Regex BootPattern = new("^[0-9a-z]{1,13}$", RegexOptions.Compiled);
++    public static bool IsBootId(string? s) => s != null && BootPattern.IsMatch(s);
++}
++
++/// <summary>Serializes an <see cref="EventRecord"/> to one JSON line, scrubbing anything that could leak.</summary>
++public static class EventJson
++{
++    /// <summary>Field names that must never appear in an event (compared case-insensitively, ignoring _ and -).</summary>
++    public static readonly HashSet<string> ForbiddenKeys = new(StringComparer.OrdinalIgnoreCase)
++    {
++        "accesscode", "chipid", "cardid", "card", "sessionid", "token", "boottoken", "uploadtoken", "tagsecret",
++        "secret", "password", "amid", "banapassportamid", "pilotid", "pcbserial", "serial", "ipaddress", "globalip",
++        "globalipaddress", "localip", "localipaddress", "sourceip", "src_ip", "code_raw", "invitecode", "tagcode",
++    };
++
++    private static readonly JsonWriterOptions WriterOptions = new() { Indented = false, SkipValidation = true };
++
++    public static bool IsForbiddenKey(string key) =>
++        ForbiddenKeys.Contains(key.Replace("_", "").Replace("-", ""));
++
++    public static string Serialize(EventRecord e, DateTimeOffset at)
++    {
++        var buffer = new ArrayBufferWriter<byte>(256);
++        using (var w = new Utf8JsonWriter(buffer, WriterOptions))
++        {
++            w.WriteStartObject();
++            w.WriteNumber("v", EventRecord.SchemaVersion);
++            w.WriteString("ts", at.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz", System.Globalization.CultureInfo.InvariantCulture));
++            w.WriteString("src", e.Src);
++            w.WriteString("ev", e.Ev);
++            foreach (var (key, value) in e.Fields)
++            {
++                if (IsForbiddenKey(key)) continue;   // defence in depth: callers never pass these
++                WriteValue(w, key, value);
++            }
++            w.WriteEndObject();
++        }
++        return Encoding.UTF8.GetString(buffer.WrittenSpan);
++    }
++
++    private static void WriteValue(Utf8JsonWriter w, string key, object? value)
++    {
++        switch (value)
++        {
++            case null: return;
++            case string s: w.WriteString(key, Scrub(s)); return;
++            case bool b: w.WriteBoolean(key, b); return;
++            case int i: w.WriteNumber(key, i); return;
++            case uint u: w.WriteNumber(key, u); return;
++            case long l: w.WriteNumber(key, l); return;
++            case ulong ul: w.WriteNumber(key, ul); return;
++            case float f: w.WriteNumber(key, Math.Round(f, 3)); return;
++            case double d: w.WriteNumber(key, Math.Round(d, 3)); return;
++            case IEnumerable<string> list:
++                w.WriteStartArray(key);
++                foreach (var x in list) w.WriteStringValue(Scrub(x));
++                w.WriteEndArray();
++                return;
++            case IEnumerable<uint> nums:
++                w.WriteStartArray(key);
++                foreach (var x in nums) w.WriteNumberValue(x);
++                w.WriteEndArray();
++                return;
++            default: w.WriteString(key, Scrub(value.ToString() ?? "")); return;
++        }
++    }
++
++    private static readonly Regex Ipv4 = new(@"(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d])", RegexOptions.Compiled);
++
++    /// <summary>Free text: card fields masked, IPv4 addresses replaced by their hash, partner codes masked.</summary>
++    public static string Scrub(string s)
++    {
++        if (string.IsNullOrEmpty(s)) return s;
++        if (s.Length > 300) s = s[..300] + "…";
++        s = LogMask.Mask(s);
++        s = Ipv4.Replace(s, m =>
++        {
++            for (var i = 1; i <= 4; i++)
++                if (!int.TryParse(m.Groups[i].Value, out var o) || o > 255) return m.Value;
++            return EventIds.Ip(m.Value) ?? m.Value;
++        });
++        return LogMask.MaskNetwork(s);
++    }
++}
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index 5e1a661..c303c82 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -520,6 +520,119 @@ public sealed class Matchmaker
+     // cabinets placed in a room (until they search again or the in-match window passes). Never exposed one by one.
+     private readonly Dictionary<string, double> _statusSeen = new();
+     private readonly Dictionary<string, (uint Room, double At)> _statusInMatch = new();
++
++    // ---- [exvs2-lobbies 2026-11-17] structured match events (Lobbies/StructuredEvents.cs, docs EVENTS.md) ----
++    /// <summary>Structured event sink (null = off). Called under the matchmaker lock; must not block (EventLogWriter only enqueues).</summary>
++    public Action<ServerInfinite.Lobbies.EventRecord>? Events { get; set; }
++    /// <summary>This run's id, part of every match id ("m-&lt;boot&gt;-&lt;room&gt;"). Also served by GET /status.</summary>
++    public string BootId { get; init; } = ServerInfinite.Lobbies.EventIds.NewBootId();
++    /// <summary>gap_warning when a human cabinet has not fetched its new room after this many seconds (0 = off).</summary>
++    public double RoomFetchWarnSeconds { get; set; } = 10;
++    public string? MatchIdOf(uint room) => ServerInfinite.Lobbies.EventIds.MatchId(BootId, room);
++
++    private sealed class EvRoom
++    {
++        public double At;
++        public string World = "";
++        public readonly Dictionary<uint, string?> CabByNode = new();
++        public readonly HashSet<uint> Pending = new();
++        public bool Warned;
++    }
++    private readonly Dictionary<uint, EvRoom> _evRooms = new();
++
++    private ServerInfinite.Lobbies.EventRecord Ev(string name) => new("mm", name);
++
++    private void Emit(ServerInfinite.Lobbies.EventRecord e)
++    {
++        try { Events?.Invoke(e); } catch (Exception) { /* logging only */ }
++    }
++
++    private static string? CabOf(Client c) => ServerInfinite.Lobbies.EventIds.Cab(c.PcbSerial);
++
++    private void EvQueueStart(Unit t, string? sourceIp)
++    {
++        if (Events == null) return;
++        var leader = t.Clients[0];
++        Emit(Ev(ServerInfinite.Lobbies.EventNames.QueueStart)
++            .With("cab", CabOf(leader)).With("node", leader.NodeId).With("apply", t.ApplyId).With("world", t.WorldName)
++            .With("slots", t.Slots).With("team", t.Humans.Count() > 1 ? t.Humans.Select(CabOf).OfType<string>().ToList() : null)
++            .With("cpu_partner", t.HasCpuPartner ? true : null)
++            .With("ip", ServerInfinite.Lobbies.EventIds.Ip(sourceIp)));
++    }
++
++    private void EvQueueStop(Unit t, double? now, string reason)
++    {
++        if (Events == null || t.Room != null || t.Clients.Count == 0) return;
++        var leader = t.Clients[0];
++        Emit(Ev(ServerInfinite.Lobbies.EventNames.QueueStop)
++            .With("cab", CabOf(leader)).With("node", leader.NodeId).With("apply", t.ApplyId).With("world", t.WorldName)
++            .With("reason", reason).With("waited_s", now is double n ? Math.Round(n - t.Created, 1) : null));
++    }
++
++    private void EvRoomCreated(Unit u, Room room)
++    {
++        if (Events == null || _evRooms.ContainsKey(room.RoomId)) return;
++        var ev = new EvRoom { At = room.At, World = u.WorldName };
++        foreach (var rc in room.Clients)
++            if (Unit.IsHuman(rc.Client))
++            {
++                ev.CabByNode[rc.Client.NodeId] = CabOf(rc.Client);
++                ev.Pending.Add(rc.Client.NodeId);
++            }
++        _evRooms[room.RoomId] = ev;
++        if (_evRooms.Count > 2048)
++            foreach (var k in _evRooms.OrderBy(kv => kv.Value.At).Take(_evRooms.Count - 1024).Select(kv => kv.Key).ToList())
++                _evRooms.Remove(k);
++        var humans = room.Clients.Where(rc => Unit.IsHuman(rc.Client)).ToList();
++        Emit(Ev(ServerInfinite.Lobbies.EventNames.RoomCreated)
++            .With("match", MatchIdOf(room.RoomId)).With("room", room.RoomId).With("world", u.WorldName)
++            .With("humans", humans.Count).With("seats", room.Clients.Count).With("cpu", room.Clients.Count - humans.Count)
++            .With("cabs", humans.Select(rc => CabOf(rc.Client) ?? "-").ToList())
++            .With("groups", humans.Select(rc => rc.GroupId).ToList())
++            .With("nodes", humans.Select(rc => rc.Client.NodeId).ToList()));
++    }
++
++    private void EvFetch(Unit t, uint nodeId, double now)
++    {
++        if (Events == null || t.Room == null || !_evRooms.TryGetValue(t.Room.RoomId, out var ev) || !ev.Pending.Remove(nodeId)) return;
++        var cab = ev.CabByNode.TryGetValue(nodeId, out var c) ? c : null;
++        var match = MatchIdOf(t.Room.RoomId);
++        Emit(Ev(ServerInfinite.Lobbies.EventNames.MatchFound)
++            .With("match", match).With("room", t.Room.RoomId).With("cab", cab).With("node", nodeId).With("apply", t.ApplyId)
++            .With("world", ev.World).With("wait_s", Math.Round(t.Room.At - t.Created, 1)).With("fetch_s", Math.Round(now - t.Room.At, 1)));
++        Emit(Ev(ServerInfinite.Lobbies.EventNames.LoadStart)
++            .With("match", match).With("room", t.Room.RoomId).With("cab", cab).With("node", nodeId));
++    }
++
++    private void EvRoomEnd(uint roomId, Client h, double sinceMatch, bool fetched, string reason)
++    {
++        if (Events == null) return;
++        var kind = reason.Split(' ')[0];
++        var match = MatchIdOf(roomId);
++        Emit(Ev(ServerInfinite.Lobbies.EventNames.RoomEnded)
++            .With("match", match).With("room", roomId).With("cab", CabOf(h)).With("node", h.NodeId)
++            .With("reason", kind).With("since_s", Math.Round(sinceMatch, 1)).With("fetched", fetched));
++        // a cancel right after the match, or no sign of life for RoomEndTimeoutSeconds, is how a drop looks from here
++        if (kind is "cancel-after-match" or "timeout")
++            Emit(Ev(ServerInfinite.Lobbies.EventNames.Disconnect)
++                .With("match", match).With("room", roomId).With("cab", CabOf(h)).With("node", h.NodeId)
++                .With("reason", kind).With("since_s", Math.Round(sinceMatch, 1)));
++    }
++
++    private void EvSweep(double now)
++    {
++        if (Events == null || RoomFetchWarnSeconds <= 0) return;
++        foreach (var (roomId, ev) in _evRooms)
++        {
++            if (ev.Warned || ev.Pending.Count == 0 || now - ev.At < RoomFetchWarnSeconds) continue;
++            ev.Warned = true;
++            foreach (var n in ev.Pending)
++                Emit(Ev(ServerInfinite.Lobbies.EventNames.GapWarning)
++                    .With("match", MatchIdOf(roomId)).With("room", roomId).With("cab", ev.CabByNode.GetValueOrDefault(n)).With("node", n)
++                    .With("stage", "fetch").With("after", ServerInfinite.Lobbies.EventNames.RoomCreated)
++                    .With("waited_s", Math.Round(now - ev.At, 1)).With("limit_s", RoomFetchWarnSeconds));
++        }
++    }
+     private const int StatusTrackMax = 8192;
+     private const int RoomTrackMax = 1024;
+ 
+@@ -731,6 +844,7 @@ public sealed class Matchmaker
+                 Drop(old, now, reason: "same cabinet entered again");
+             foreach (var n in t.NodeIds) _byNode[n] = t;
+             _queue.Add(t);
++            EvQueueStart(t, sourceIp);
+             ReleaseQuarantineIfNewNode(t, now);
+             if (IsQuarantinedUnit(t, now) && !t.QuarantineHoldLogged)
+             {
+@@ -809,6 +923,7 @@ public sealed class Matchmaker
+             if (t.Room != null)
+             {
+                 NoteFetch(t.Room.RoomId, nodeId, now);
++                EvFetch(t, nodeId, now);
+                 return (ErrorCode.Success, t.Room, t.ApplyId);
+             }
+             if (!_byNode.ContainsKey(nodeId))            // TryMatch dropped it (continue pair, no stand-in id): say so now
+@@ -1331,6 +1446,7 @@ public sealed class Matchmaker
+         if (!RoomEndLog || !_rooms.TryGetValue(roomId, out var tr) || tr.Ended.ContainsKey(node)) return;
+         if (!tr.Humans.Any(h => h.NodeId == node)) return;
+         tr.Ended[node] = (now, reason);
++        EvRoomEnd(roomId, tr.Humans.First(h => h.NodeId == node), now - tr.Room.At, tr.Fetched.ContainsKey(node), reason);
+         var serial = tr.Humans.First(h => h.NodeId == node).PcbSerial;
+         Log?.Invoke($"ROOM-END room={roomId} {tr.WorldName} node={node} serial={serial} reason={reason} " +
+                     $"+{now - tr.Room.At:0.#}s since match fetched={FetchText(tr, node)} order={tr.Ended.Count}/{tr.Humans.Count}");
+@@ -1641,6 +1757,7 @@ public sealed class Matchmaker
+ 
+     private void RememberRoom(Unit u, Room room)
+     {
++        EvRoomCreated(u, room);
+         TrackRoom(u, room);
+         foreach (var rc in room.Clients)
+             if (Unit.IsHuman(rc.Client))
+@@ -1911,6 +2028,7 @@ public sealed class Matchmaker
+     {
+         if (now != null) MaybeQuarantineDroppedDuo(t, now.Value, reason);
+         if (reason != null) Log?.Invoke($"drop nodes=[{string.Join(",", t.NodeIds)}] reason={reason}");
++        if (reason != null) EvQueueStop(t, now, reason);
+         if (WantPairSearchLog(t))
+         {
+             var at = now ?? t.LastSeen;
+@@ -1938,6 +2056,7 @@ public sealed class Matchmaker
+     {
+         ExpireQuarantine(now);
+         SweepRooms(now);
++        EvSweep(now);
+         foreach (var t in _byNode.Values.Distinct().ToList())
+         {
+             // load test 2026-11-13: was LastSeen > StaleAfter + Timeout, so a cabinet that stopped polling stayed
+diff --git a/Server-Infinite/Matchmaking/MatchmakerStatus.cs b/Server-Infinite/Matchmaking/MatchmakerStatus.cs
+index d9442b5..326fccc 100644
+--- a/Server-Infinite/Matchmaking/MatchmakerStatus.cs
++++ b/Server-Infinite/Matchmaking/MatchmakerStatus.cs
+@@ -14,7 +14,9 @@ public sealed record MatchmakerStatusReply(
+     [property: JsonPropertyName("inMatch")] int InMatch,
+     [property: JsonPropertyName("matches")] int Matches,
+     [property: JsonPropertyName("updatedAt")] DateTime UpdatedAt,
+-    [property: JsonPropertyName("cacheSeconds")] int CacheSeconds);
++    [property: JsonPropertyName("cacheSeconds")] int CacheSeconds,
++    // [exvs2-lobbies 2026-11-17] this run's id (start time, base36): card servers build the shared match id from it
++    [property: JsonPropertyName("boot"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Boot = null);
+ 
+ /// <summary>
+ /// [exvs2-lobbies 2026-11-16] Builds <see cref="MatchmakerStatusReply"/> from the matchmaker at most once per
+@@ -51,6 +53,9 @@ public sealed class MatchmakerStatus
+ 
+     public int CacheSeconds => _cacheSeconds;
+ 
++    /// <summary>Matchmaker boot id served as "boot" (null = omitted).</summary>
++    public string? Boot { get; init; }
++
+     public MatchmakerStatusReply Get()
+     {
+         lock (_gate)
+@@ -60,7 +65,7 @@ public sealed class MatchmakerStatus
+             var c = _counts(now);
+             var at = _utcNow();
+             _cached = new MatchmakerStatusReply(ServiceName, _version, c.Online, c.Searching, c.InMatch, c.Matches,
+-                new DateTime(at.Ticks - at.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc), _cacheSeconds);
++                new DateTime(at.Ticks - at.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc), _cacheSeconds, Boot);
+             _cachedAt = now;
+             return _cached;
+         }
+diff --git a/Server-Infinite/Models/Config/CardServerConfig.cs b/Server-Infinite/Models/Config/CardServerConfig.cs
+index c42fca4..71fcaff 100644
+--- a/Server-Infinite/Models/Config/CardServerConfig.cs
++++ b/Server-Infinite/Models/Config/CardServerConfig.cs
+@@ -54,6 +54,9 @@ public class CardServerConfig
+     // exvs2-lobbies: public read-only matchmaker status (GET /status, totals only), 2026-11-16
+     public StatusConfigurations Status { get; set; } = new();
+ 
++    // exvs2-lobbies: structured match events (JSON lines, background writer), 2026-11-17
++    public StructuredLogConfigurations StructuredLog { get; set; } = new();
++
+     public override string ToString()
+     {
+         var options = new JsonSerializerOptions
+diff --git a/Server-Infinite/Models/Config/StructuredLogConfigurations.cs b/Server-Infinite/Models/Config/StructuredLogConfigurations.cs
+new file mode 100644
+index 0000000..fabdd5e
+--- /dev/null
++++ b/Server-Infinite/Models/Config/StructuredLogConfigurations.cs
+@@ -0,0 +1,33 @@
++namespace ServerInfinite.Models.Config;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-17] Structured match events (JSON lines, docs in ONLINE_MATCHMAKING.md "Structured events").
++/// Written next to the text logs, through a background queue, so a request never waits on the disk. Logging only.
++/// </summary>
++public class StructuredLogConfigurations
++{
++    /// <summary>On by default. false = no events file, no extra work per request (text logs are unchanged either way).</summary>
++    public bool Enabled { get; set; } = true;
++
++    /// <summary>Folder for events-YYYYMMDD.jsonl (relative to the server folder).</summary>
++    public string Directory { get; set; } = "./Logs/events";
++
++    /// <summary>Days of event files to keep.</summary>
++    public int RetentionDays { get; set; } = 14;
++
++    /// <summary>Total size cap for the folder; the oldest files are deleted first.</summary>
++    public int MaxTotalMegabytes { get; set; } = 200;
++
++    /// <summary>Events waiting for the disk; when full, events are dropped (and counted) instead of slowing requests.</summary>
++    public int QueueCapacity { get; set; } = 20000;
++
++    /// <summary>
++    /// Card server only: read the matchmaker's boot id from GET {MatchUrl host}/status every minute so result and
++    /// disconnect events carry the same match id as the matchmaker's ("m-&lt;boot&gt;-&lt;room&gt;"). One small GET per
++    /// minute, off the request path. false = events carry the room id only.
++    /// </summary>
++    public bool FetchMatchmakerBootId { get; set; } = true;
++
++    /// <summary>Thresholds for gap_warning events (seconds, 0 = that check off).</summary>
++    public ServerInfinite.Lobbies.GapThresholds Gaps { get; set; } = new();
++}
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index c7cb142..0e7298f 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -239,9 +239,29 @@ try
+             StaleAfter = Math.Max(3 * Math.Max(1u, mm.PollingIntervalSeconds), mm.StaleAfterSeconds),
+             PostMatchWindow = mm.LogPostMatchTraffic ? 1800 : 0,
+             FirstNodeThisRun = (alloc as ServerInfinite.Matchmaking.FileNodeIdAllocator)?.FirstThisRun ?? 0,
+-            BindNodesToSource = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Security.BindMatchNodesToSourceIp
++            BindNodesToSource = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Security.BindMatchNodesToSourceIp,
++            Events = sp.GetRequiredService<ServerInfinite.Lobbies.IEventSink>() is { Enabled: true } sink ? sink.Emit : null,
++            RoomFetchWarnSeconds = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.StructuredLog.Gaps.RoomFetchSeconds,
+         };
+     });
++    // exvs2-lobbies 2026-11-17: structured match events (JSON lines through a background writer), StructuredLog.*
++    builder.Services.AddSingleton<ServerInfinite.Lobbies.IEventSink>(sp =>
++    {
++        var sl = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.StructuredLog;
++        if (!sl.Enabled) return ServerInfinite.Lobbies.NullEventSink.Instance;
++        return new ServerInfinite.Lobbies.EventLogWriter(new ServerInfinite.Lobbies.EventLogOptions
++        {
++            Directory = string.IsNullOrWhiteSpace(sl.Directory) ? "./Logs/events" : sl.Directory,
++            RetentionDays = Math.Max(1, sl.RetentionDays),
++            MaxTotalBytes = Math.Max(1, sl.MaxTotalMegabytes) * 1024L * 1024L,
++            QueueCapacity = sl.QueueCapacity,
++        });
++    });
++    builder.Services.AddSingleton(sp => new ServerInfinite.Lobbies.CardEventTracker(
++        sp.GetRequiredService<ServerInfinite.Lobbies.IEventSink>(),
++        sp.GetRequiredService<IOptions<CardServerConfig>>().Value.StructuredLog.Gaps));
++    builder.Services.AddHttpClient("mm-status");
++    builder.Services.AddHostedService<ServerInfinite.Lobbies.Hosting.StructuredEventsService>();
+     // exvs2-lobbies 2026-11-16: public read-only GET /status (totals only, cached), Status.*
+     builder.Services.AddSingleton(sp =>
+     {
+@@ -249,7 +269,10 @@ try
+         return new ServerInfinite.Matchmaking.MatchmakerStatus(
+             sp.GetRequiredService<ServerInfinite.Matchmaking.Matchmaker>(),
+             () => System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency,
+-            st.OnlineWindowSeconds, st.InMatchWindowSeconds, st.Version, st.CacheSeconds);
++            st.OnlineWindowSeconds, st.InMatchWindowSeconds, st.Version, st.CacheSeconds)
++        {
++            Boot = sp.GetRequiredService<ServerInfinite.Matchmaking.Matchmaker>().BootId,
++        };
+     });
+     // exvs2-lobbies post-match trace (logging only, default on): OnlineMatching.LogPostMatchTraffic
+     builder.Services.AddSingleton(sp => new ServerInfinite.Matchmaking.MmsTrace
+@@ -288,6 +311,12 @@ try
+         config.Leaderboard.SubmitAfterResultSeconds, string.IsNullOrEmpty(inviteUrl) ? "in-process" : "http /tag/leaderboard",
+         config.Leaderboard.AcceptSubmissions, config.Leaderboard.MinMatches, config.Leaderboard.PublicPage,
+         string.IsNullOrWhiteSpace(config.Leaderboard.RegionName) ? "-" : config.Leaderboard.RegionName);
++    Log.Information("StructuredLog: Enabled={Enabled} Directory={Dir} keep {Days} days / {Mb} MB, FetchMatchmakerBootId={Fetch}, " +
++                    "gaps fetch {Fetch2}s connect {Connect}s loading {Loading}s battle {Battle}s results {Results}s",
++        config.StructuredLog.Enabled, config.StructuredLog.Directory, config.StructuredLog.RetentionDays,
++        config.StructuredLog.MaxTotalMegabytes, config.StructuredLog.FetchMatchmakerBootId,
++        config.StructuredLog.Gaps.RoomFetchSeconds, config.StructuredLog.Gaps.ConnectSeconds,
++        config.StructuredLog.Gaps.LoadingSeconds, config.StructuredLog.Gaps.BattleSeconds, config.StructuredLog.Gaps.ResultsSeconds);
+     Log.Information("Status: PublicStatus={Public} cache {Cache}s rate {Rate}/min burst {Burst} windows online {Online}s / in match {InMatch}s",
+         config.Status.PublicStatus, config.Status.CacheSeconds, config.Status.RequestsPerMinute, config.Status.Burst,
+         config.Status.OnlineWindowSeconds, config.Status.InMatchWindowSeconds);
+diff --git a/Tests/Matchmaking.Tests/StructuredEventBench.cs b/Tests/Matchmaking.Tests/StructuredEventBench.cs
+new file mode 100644
+index 0000000..5e8235d
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/StructuredEventBench.cs
+@@ -0,0 +1,65 @@
++using System.Diagnostics;
++using ServerInfinite.Lobbies;
++using Xunit;
++using Xunit.Abstractions;
++using G = nue.protocol.exvs;
++
++namespace Matchmaking.Tests;
++
++// exvs2-lobbies 2026-11-17: opt-in micro benchmark of the card-server side (not run by default).
++//   SL_BENCH=1 dotnet test Tests/Matchmaking.Tests --filter StructuredEventBench --logger "console;verbosity=detailed"
++public class StructuredEventBench(ITestOutputHelper output)
++{
++    [Fact]
++    public async Task CardTrackerCostPerRequest()
++    {
++        if (Environment.GetEnvironmentVariable("SL_BENCH") != "1") return;
++        var dir = Path.Combine(Path.GetTempPath(), "sl-bench-" + Guid.NewGuid().ToString("N"));
++        using var writer = new EventLogWriter(new EventLogOptions { Directory = dir, QueueCapacity = 1_000_000, MaxTotalBytes = 1L << 31 });
++        var ok = new G.Response { Error = G.Error.Success };
++        G.Request Mk(G.MethodType t, string serial) => new() { Type = t, RequestId = "1", PcbSerial = serial, LocId = "JPN0JPN1" };
++        // one match cycle per cab: LoadCard, CheckCommunication, SaveBattleLogOn, SaveVsmOnResult, plus 6 unrelated requests
++        G.Request[] Cycle(int i, string serial)
++        {
++            var cc = Mk(G.MethodType.MthdCheckCommunication, serial);
++            cc.check_communication = new G.Request.CheckCommunication { StartDate = 1794730093, EndDate = 1794730115, ApplyId = (uint)i, FoundPlayerFlag = true, UdpHpResult = G.UdpHpResultType.UdphpSuccess, MatchingTryNum = 1, stun_result = new() };
++            cc.check_communication.Players.Add(new() { PcbSerial = "OTHER" + i, Rtt = 16 });
++            var bl = Mk(G.MethodType.MthdSaveBattleLogOn, serial);
++            bl.save_battle_log_on = new() { BattleLog = new() { OnlineMatchingMode = G.OnlineMatchingMode.OmmFes } };
++            var rs = Mk(G.MethodType.MthdSaveVsmOnResult, serial);
++            rs.save_vsm_on_result = new() { Result = new() { RoomId = (uint)i, WinFlag = true, VsElapsedTime = 150 }, NetworkReport = new() };
++            var lc = Mk(G.MethodType.MthdLoadCard, serial);
++            lc.load_card = new() { PilotId = 1 };
++            var other = Mk(G.MethodType.MthdLoadGameData, serial);
++            return new[] { lc, other, other, cc, other, bl, other, rs, other, other };
++        }
++        var serials = Enumerable.Range(0, 100).Select(i => $"2895{i:D8}").ToArray();
++        var cycles = Enumerable.Range(0, 2000).Select(i => Cycle(i, serials[i % 100])).ToArray();
++
++        double Run(CardEventTracker? t)
++        {
++            var sw = Stopwatch.StartNew();
++            foreach (var c in cycles) foreach (var r in c) t?.Observe(r, ok);
++            return sw.Elapsed.TotalMilliseconds * 1e6 / (cycles.Length * 10);   // ns per request
++        }
++        for (var w = 0; w < 3; w++) { Run(new CardEventTracker(new CountSink())); Run(new CardEventTracker(writer) { MatchmakerBoot = () => "t3k9qa" }); }
++        await writer.FlushAsync(TimeSpan.FromSeconds(30));
++        var b0 = writer.BytesWritten; var n0 = writer.Written;
++        var off = Enumerable.Range(0, 5).Select(_ => Run(null)).Min();
++        var nul = Enumerable.Range(0, 5).Select(_ => Run(new CardEventTracker(new CountSink()))).Min();
++        var on = Enumerable.Range(0, 5).Select(_ => Run(new CardEventTracker(writer) { MatchmakerBoot = () => "t3k9qa" })).Min();
++        await writer.FlushAsync(TimeSpan.FromSeconds(30));
++        var lines = writer.Written - n0; var bytes = writer.BytesWritten - b0;
++        var sample = new List<EventRecord>(); var cs = new CardEventTracker(new ListSink(sample)) { MatchmakerBoot = () => "t3k9qa" };
++        foreach (var c in cycles.Take(500)) foreach (var r in c) cs.Observe(r, ok);
++        var sw2 = Stopwatch.StartNew(); var reps = 0;
++        for (var k = 0; k < 20; k++) foreach (var e in sample) { EventJson.Serialize(e, e.At ?? DateTimeOffset.Now); reps++; }
++        var serNs = sw2.Elapsed.TotalMilliseconds * 1e6 / reps;
++        output.WriteLine($"writer thread: mask+JSON {serNs:F0} ns/event");
++        output.WriteLine($"ns/request (caller thread): off={off:F0} tracker-only={nul:F0} tracker+writer(enqueue)={on:F0}; per cab-match cycle {lines / (5.0 * cycles.Length):F1} events, {bytes / (5.0 * cycles.Length):F0} bytes; avg line {bytes / (double)lines:F0} B; dropped {writer.Dropped}");
++        Directory.Delete(dir, true);
++    }
++
++    private sealed class CountSink : IEventSink { public int N; public bool Enabled => true; public void Emit(EventRecord e) { e.At ??= DateTimeOffset.Now; N++; } }
++    private sealed class ListSink(List<EventRecord> l) : IEventSink { public bool Enabled => true; public void Emit(EventRecord e) { e.At ??= DateTimeOffset.Now; l.Add(e); } }
++}
+diff --git a/Tests/Matchmaking.Tests/StructuredEventTests.cs b/Tests/Matchmaking.Tests/StructuredEventTests.cs
+new file mode 100644
+index 0000000..138210d
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/StructuredEventTests.cs
+@@ -0,0 +1,529 @@
++using System.Text.Json;
++using ServerInfinite.Lobbies;
++using ServerInfinite.Matchmaking;
++using Xunit;
++using G = nue.protocol.exvs;
++using M = nue.protocol.mms;
++
++namespace Matchmaking.Tests;
++
++// exvs2-lobbies 2026-11-17: structured match events (schema v1), the background writer, masking and the timeline.
++// All ids, serials and IPs below are fake (documentation ranges 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24).
++public class StructuredEventTests
++{
++    private const string SerialA = "289500000001", SerialB = "28950000TEST";
++    private const string IpA = "203.0.113.77", IpB = "198.51.100.23";
++    private const string AccessCode = "01234567890123456789", ChipId = "CHIP0123456789AB", Secret = "tag-secret-XYZ123";
++    private static readonly string[] Secrets = { SerialA, SerialB, IpA, IpB, AccessCode, ChipId, Secret, "8000111", "8000222" };
++
++    // ---------------------------------------------------------------- helpers
++
++    private static M.Client Cl(uint node, string serial, string ip)
++    {
++        var c = new M.Client
++        {
++            NodeId = node, PcbSerial = serial, LocId = "JPN0JPN1", PrefCode = 13, GlobalIpaddress = ip,
++            NatMappingType = M.NatMappingType.NmEndpointIndependent, NatFilteringType = M.NatFilteringType.NfEndpointIndependent,
++        };
++        c.Properties.Add(new M.Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        return c;
++    }
++
++    private static M.Request.EntryMatching Entry(uint node, string serial, string ip, uint am, uint apply = 6, uint world = 20)
++    {
++        var e = new M.Request.EntryMatching
++        {
++            ApplyId = apply, Myclient = Cl(node, serial, ip), MatchingTimeout = 150,
++            Myplayer = new M.Player { BanapassportAmId = am },
++            World = new M.World { MuchaGameId = "GIB1", Version = 1, WorldId = world },
++        };
++        e.Myplayer.Parameters.Add(new M.Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new M.Player.Parameter { AttributeId = 2, parameter = 0 });
++        return e;
++    }
++
++    private static Matchmaker NewMm(ListEventSink sink, bool roomEnd = true) =>
++        new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1)
++        {
++            StaleAfter = 1e6, RoomEndLog = roomEnd, Events = sink.Emit, BootId = "t3k9qa",
++        };
++
++    private static G.Request Game(G.MethodType t, string serial) => new()
++    {
++        Type = t, RequestId = t + "-1", PcbSerial = serial, LocId = "JPN0JPN1", Token = AccessCode,
++    };
++
++    private static G.Request CheckComm(string serial, uint apply, G.UdpHpResultType udp = G.UdpHpResultType.UdphpSuccess, string otherSerial = SerialB)
++    {
++        var r = Game(G.MethodType.MthdCheckCommunication, serial);
++        r.check_communication = new G.Request.CheckCommunication
++        {
++            StartDate = 1794730093, EndDate = 1794730135, ApplyId = apply, MatchingTryNum = 1, FoundPlayerFlag = true,
++            UdpHpResult = udp, PilotId = 8000111,
++            stun_result = new G.Request.CheckCommunication.StunResult(),
++        };
++        r.check_communication.Players.Add(new G.Request.CheckCommunication.OtherPlayerInfo
++        {
++            LocId = "JPN0JPN1", PcbSerial = otherSerial, PilotId = 8000222, Rtt = 16,
++        });
++        return r;
++    }
++
++    private static G.Request BattleLog(string serial)
++    {
++        var r = Game(G.MethodType.MthdSaveBattleLogOn, serial);
++        r.save_battle_log_on = new G.Request.SaveBattleLogOn
++        {
++            SessionId = AccessCode,
++            BattleLog = new G.Request.SaveBattleLogOn.BattleLogGroup { OnlineMatchingMode = G.OnlineMatchingMode.OmmFes },
++        };
++        r.save_battle_log_on.BattleLog.Pilots.Add(new G.Request.SaveBattleLogOn.BattleLogGroup.PilotGroup { IsHuman = true, PilotId = 8000111 });
++        r.save_battle_log_on.BattleLog.Pilots.Add(new G.Request.SaveBattleLogOn.BattleLogGroup.PilotGroup { IsHuman = true, PilotId = 8000222 });
++        return r;
++    }
++
++    private static G.Request Result(string serial, uint room)
++    {
++        var r = Game(G.MethodType.MthdSaveVsmOnResult, serial);
++        r.save_vsm_on_result = new G.Request.SaveVsmOnResult
++        {
++            PilotId = 8000111, SessionId = AccessCode,
++            Result = new G.Request.SaveVsmOnResult.PlayResultGroup { RoomId = room, WinFlag = true, VsElapsedTime = 150, PlayedAt = 1794730300 },
++            NetworkReport = new G.NetworkReport(),
++        };
++        r.save_vsm_on_result.NetworkReport.PcbDatas.Add(new G.NetworkReport.NetworkReportPcbData { PcbSerial = SerialB, LocId = IpB, Rtt = 20, MaxRtt = 33, PacketLostRate = 0.01f });
++        return r;
++    }
++
++    private static G.Request LoadCard(string serial)
++    {
++        var r = Game(G.MethodType.MthdLoadCard, serial);
++        r.load_card = new G.Request.LoadCard { SessionId = AccessCode, PilotId = 8000111 };
++        return r;
++    }
++
++    private static string Json(EventRecord e) => EventJson.Serialize(e, e.At ?? DateTimeOffset.Now);
++
++    private static void AssertNoSecrets(IEnumerable<string> lines)
++    {
++        foreach (var line in lines)
++        {
++            foreach (var s in Secrets)
++                Assert.DoesNotContain(s, line, StringComparison.OrdinalIgnoreCase);
++            Assert.DoesNotMatch(@"(?<![\d.])\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d])", line);   // no IPv4 at all
++            using var doc = JsonDocument.Parse(line);                                                   // valid JSON
++            foreach (var p in doc.RootElement.EnumerateObject())
++                Assert.False(EventJson.IsForbiddenKey(p.Name), $"forbidden key {p.Name} in {line}");
++        }
++    }
++
++    private sealed class Clock
++    {
++        public DateTimeOffset Now = new(2026, 11, 17, 2, 0, 0, TimeSpan.FromHours(-8));
++        public DateTimeOffset Get() => Now;
++    }
++
++    // ---------------------------------------------------------------- masking
++
++    [Fact]
++    public void SerializerDropsForbiddenKeysAndScrubsFreeText()
++    {
++        var e = new EventRecord("card", "card_insert")
++            .With("cab", EventIds.Cab(SerialA))
++            .With("access_code", AccessCode).With("chipId", ChipId).With("pcb_serial", SerialA).With("tagSecret", Secret)
++            .With("pilotId", 8000111u).With("ip", IpA)                     // raw IP under a wrong key is still scrubbed
++            .With("note", $"from {IpB} access_code={AccessCode} ChipId: {ChipId} /tag/invites/ABCD2345");
++        var line = Json(e);
++        AssertNoSecrets(new[] { line });
++        Assert.Contains("\"ev\":\"card_insert\"", line);
++        Assert.Contains("\"v\":1", line);
++        Assert.Contains(EventIds.Ip(IpB)!, line);
++        Assert.Contains("AB******", line);
++    }
++
++    [Fact]
++    public void CabKeyIsStableShortAndNotTheSerial()
++    {
++        var a = EventIds.Cab(SerialA)!;
++        Assert.Equal(a, EventIds.Cab(" " + SerialA.ToLowerInvariant() + " "));
++        Assert.Matches("^c[0-9a-f]{8}$", a);
++        Assert.NotEqual(a, EventIds.Cab(SerialB));
++        Assert.Null(EventIds.Cab(""));
++        // the launcher computes the same key from the profile's serial: pin the algorithm
++        Assert.Equal("c" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
++            System.Text.Encoding.UTF8.GetBytes("exvs2-ev1|cab|" + SerialA)))[..8].ToLowerInvariant(), a);
++    }
++
++    [Fact]
++    public void IpKeyIsSaltedHash()
++    {
++        var before = EventIds.Ip(IpA)!;
++        Assert.Matches("^i[0-9a-f]{8}$", before);
++        Assert.Equal(before, EventIds.Ip("::ffff:" + IpA));
++        Assert.Null(EventIds.Ip("0.0.0.0"));
++        EventIds.SetIpSalt(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
++        var other = EventIds.Ip(IpA);
++        Assert.NotEqual(before, other);
++        Assert.DoesNotContain("203", other);
++    }
++
++    [Fact]
++    public void MatchIdAndBootId()
++    {
++        Assert.Equal("m-t3k9qa-17", EventIds.MatchId("t3k9qa", 17));
++        Assert.Null(EventIds.MatchId(null, 17));
++        Assert.Null(EventIds.MatchId("t3k9qa", 0));
++        var boot = EventIds.NewBootId(DateTimeOffset.FromUnixTimeSeconds(1794730093));
++        Assert.True(EventIds.IsBootId(boot));
++        Assert.False(EventIds.IsBootId("Bad Id"));
++        Assert.Equal("http://mm.example:28090/status", MatchmakerBootId.StatusUrlFor("http://mm.example:28090/match"));
++        Assert.Equal("http://mm.example/status", MatchmakerBootId.StatusUrlFor("mm.example/match"));
++        Assert.Null(MatchmakerBootId.StatusUrlFor(""));
++        Assert.Equal("t3k9qa", MatchmakerBootId.ParseBoot("{\"service\":\"exvs2-matchmaking\",\"boot\":\"t3k9qa\"}"));
++        Assert.Null(MatchmakerBootId.ParseBoot("{\"service\":\"exvs2-matchmaking\"}"));     // older matchmaker
++        Assert.Null(MatchmakerBootId.ParseBoot("{\"boot\":\"<script>\"}"));
++    }
++
++    [Fact]
++    public void StatusReplyCarriesBootOnlyWhenSet()
++    {
++        var withBoot = new MatchmakerStatus(_ => new Matchmaker.StatusCounts(1, 0, 0, 0), () => 0) { Boot = "t3k9qa" }.Get();
++        Assert.Contains("\"boot\":\"t3k9qa\"", JsonSerializer.Serialize(withBoot));
++        var without = new MatchmakerStatus(_ => new Matchmaker.StatusCounts(1, 0, 0, 0), () => 0).Get();
++        Assert.DoesNotContain("boot", JsonSerializer.Serialize(without));
++    }
++
++    // ---------------------------------------------------------------- matchmaker events
++
++    [Fact]
++    public void MatchmakerEmitsQueueRoomAndFetchEventsWithTheMatchId()
++    {
++        var sink = new ListEventSink();
++        var mm = NewMm(sink);
++        var a = Entry(1310, SerialA, IpA, 8000111);
++        var b = Entry(1314, SerialB, IpB, 8000222, apply: 9);
++        mm.Entry(a, 0, IpA);
++        mm.Entry(b, 1, IpB);
++        var room = mm.Check(1310, 2, IpA).Room!;
++        mm.Check(1314, 3, IpB);
++        mm.Check(1314, 4, IpB);   // a repeated poll is not a second match_found
++
++        var evs = sink.Snapshot();
++        var names = evs.Select(e => e.Ev).ToList();
++        Assert.Equal(2, names.Count(n => n == "queue_start"));
++        Assert.Single(evs, e => e.Ev == "room_created");
++        Assert.Equal(2, names.Count(n => n == "match_found"));
++        Assert.Equal(2, names.Count(n => n == "load_start"));
++        var match = "m-t3k9qa-" + room.RoomId;
++        Assert.All(evs.Where(e => e.Ev is "room_created" or "match_found" or "load_start"), e => Assert.Equal(match, e.Get("match")));
++        var found = evs.Where(e => e.Ev == "match_found").ToList();
++        Assert.Equal(EventIds.Cab(SerialA), found[0].Get("cab"));
++        Assert.Equal(6u, found[0].Get("apply"));
++        Assert.Equal(9u, found[1].Get("apply"));
++        Assert.Equal(EventIds.Ip(IpA), evs.First(e => e.Ev == "queue_start").Get("ip"));
++        AssertNoSecrets(evs.Select(Json));
++    }
++
++    [Fact]
++    public void QueueStopAndRoomEndAndDisconnectFromTheMatchmaker()
++    {
++        var sink = new ListEventSink();
++        var mm = NewMm(sink);
++        mm.Entry(Entry(1400, SerialA, IpA, 8000111, world: 23), 0, IpA);
++        mm.Cancel(1400, 5, 6, IpA);
++        Assert.Contains(sink.Snapshot(), e => e.Ev == "queue_stop" && ((string)e.Get("reason")!).Contains("cancelled"));
++
++        mm.Entry(Entry(1310, SerialA, IpA, 8000111, apply: 7), 10, IpA);
++        mm.Entry(Entry(1314, SerialB, IpB, 8000222), 11, IpB);
++        var room = mm.Check(1310, 12, IpA).Room!;
++        mm.Check(1314, 12, IpB);
++        mm.Cancel(1314, 20, 6, IpB);                       // cancel after the match = drop while loading
++        mm.Entry(Entry(1310, SerialA, IpA, 8000111, apply: 8), 200, IpA);   // normal re-entry after results
++        var evs = sink.Snapshot();
++        var ended = evs.Where(e => e.Ev == "room_ended").ToList();
++        Assert.Equal(2, ended.Count);
++        Assert.Contains(ended, e => (string)e.Get("reason")! == "cancel-after-match");
++        Assert.Contains(ended, e => (string)e.Get("reason")! == "reentry");
++        var drop = Assert.Single(evs, e => e.Ev == "disconnect");
++        Assert.Equal("m-t3k9qa-" + room.RoomId, drop.Get("match"));
++        Assert.Equal(EventIds.Cab(SerialB), drop.Get("cab"));
++        AssertNoSecrets(evs.Select(Json));
++    }
++
++    [Fact]
++    public void RoomNotFetchedInTimeIsAGapWarning()
++    {
++        var sink = new ListEventSink();
++        var mm = NewMm(sink);
++        mm.Entry(Entry(1310, SerialA, IpA, 8000111), 0, IpA);
++        mm.Entry(Entry(1314, SerialB, IpB, 8000222), 1, IpB);
++        mm.Check(1310, 2, IpA);
++        mm.Check(1310, 15, IpA);   // node 1314 never polls again
++        var w = Assert.Single(sink.Snapshot(), e => e.Ev == "gap_warning");
++        Assert.Equal("fetch", w.Get("stage"));
++        Assert.Equal(EventIds.Cab(SerialB), w.Get("cab"));
++    }
++
++    [Fact]
++    public void NoSinkMeansNoEventsAndSameMatching()
++    {
++        var mm = new Matchmaker(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1) { StaleAfter = 1e6 };
++        mm.Entry(Entry(1310, SerialA, IpA, 8000111), 0, IpA);
++        mm.Entry(Entry(1314, SerialB, IpB, 8000222), 1, IpB);
++        Assert.NotNull(mm.Check(1310, 2, IpA).Room);
++    }
++
++    // ---------------------------------------------------------------- card server events
++
++    [Fact]
++    public void CardServerEmitsStagesWithTheSharedMatchIdAndNoSecrets()
++    {
++        var sink = new ListEventSink();
++        var clock = new Clock();
++        var t = new CardEventTracker(sink, now: clock.Get) { MatchmakerBoot = () => "t3k9qa" };
++        var ok = new G.Response { Error = G.Error.Success };
++        t.Observe(LoadCard(SerialA), ok);
++        clock.Now = clock.Now.AddSeconds(60);
++        t.Observe(CheckComm(SerialA, 6), ok);
++        clock.Now = clock.Now.AddSeconds(15);
++        t.Observe(BattleLog(SerialA), ok);
++        clock.Now = clock.Now.AddSeconds(150);
++        t.Observe(Result(SerialA, 17), ok);
++        var evs = sink.Snapshot();
++        Assert.Equal(new[] { "card_insert", "peer_connect", "load_end", "battle_start", "result_saved" }, evs.Select(e => e.Ev));
++        Assert.All(evs, e => Assert.Equal(EventIds.Cab(SerialA), e.Get("cab")));
++        var pc = evs[1];
++        Assert.Equal(true, pc.Get("ok"));
++        Assert.Equal(42L, pc.Get("search_s"));
++        Assert.Equal(16u, pc.Get("rtt_max"));
++        Assert.Equal(15.0, (double)evs[2].Get("load_s")!, 1);
++        var res = evs[4];
++        Assert.Equal("m-t3k9qa-17", res.Get("match"));
++        Assert.Equal(17u, Convert.ToUInt32(res.Get("room")));
++        Assert.Equal(6u, res.Get("apply"));
++        AssertNoSecrets(evs.Select(Json));
++    }
++
++    [Fact]
++    public void CardServerFlagsLoadingAndResultsGapsOnce()
++    {
++        var sink = new ListEventSink();
++        var clock = new Clock();
++        var t = new CardEventTracker(sink, new GapThresholds { LoadingSeconds = 20, ResultsSeconds = 60 }, clock.Get);
++        var ok = new G.Response { Error = G.Error.Success };
++        t.Observe(CheckComm(SerialA, 6), ok);
++        clock.Now = clock.Now.AddSeconds(19);
++        t.Sweep();
++        Assert.DoesNotContain(sink.Snapshot(), e => e.Ev == "gap_warning");
++        clock.Now = clock.Now.AddSeconds(5);
++        t.Sweep();
++        t.Sweep();
++        var w = Assert.Single(sink.Snapshot(), e => e.Ev == "gap_warning");
++        Assert.Equal("loading", w.Get("stage"));
++        Assert.True((double)w.Get("waited_s")! >= 24);
++        t.Observe(BattleLog(SerialA), ok);
++        t.Observe(Result(SerialA, 3), ok);
++        clock.Now = clock.Now.AddSeconds(61);
++        t.Sweep();
++        Assert.Contains(sink.Snapshot(), e => e.Ev == "gap_warning" && (string)e.Get("stage")! == "results");
++        // without a boot id the result carries the room only
++        Assert.Null(sink.Snapshot().First(e => e.Ev == "result_saved").Get("match"));
++    }
++
++    [Fact]
++    public void CardServerReportsDrops()
++    {
++        var sink = new ListEventSink();
++        var t = new CardEventTracker(sink) { MatchmakerBoot = () => "t3k9qa" };
++        var ok = new G.Response { Error = G.Error.Success };
++        t.Observe(CheckComm(SerialA, 6, G.UdpHpResultType.UdphpFailTimeout), ok);
++        var udp = Assert.Single(sink.Snapshot(), e => e.Ev == "disconnect");
++        Assert.Equal("udp-fail-timeout", udp.Get("reason"));
++        Assert.Equal("connect", udp.Get("stage"));
++
++        var f = Game(G.MethodType.MthdSaveFailedBattleLogOn, SerialA);
++        f.save_failed_battle_log_on = new G.Request.SaveFailedBattleLogOn { RoomId = 21, MyFaultFlag = false, PilotId = 8000111, LocId = "JPN0JPN1" };
++        t.Observe(f, new G.Response { Error = G.Error.ErrServer });
++        var failed = sink.Snapshot().Last();
++        Assert.Equal("disconnect", failed.Ev);
++        Assert.Equal("m-t3k9qa-21", failed.Get("match"));
++        Assert.Equal(false, failed.Get("my_fault"));
++        AssertNoSecrets(sink.Snapshot().Select(Json));
++    }
++
++    [Fact]
++    public void TrackerNeverThrowsOnOddRequests()
++    {
++        var t = new CardEventTracker(new ListEventSink());
++        t.Observe(null, null);
++        t.Observe(new G.Request { Type = G.MethodType.MthdCheckCommunication, PcbSerial = SerialA }, null);   // no body
++        t.Observe(new G.Request { Type = G.MethodType.MthdSaveVsmOnResult, PcbSerial = SerialA }, null);
++        t.Observe(new G.Request { Type = G.MethodType.MthdLoadCard }, null);                                   // no serial
++    }
++
++    // ---------------------------------------------------------------- writer
++
++    private static string TempDir()
++    {
++        var d = Path.Combine(Path.GetTempPath(), "exvs2-ev-" + Guid.NewGuid().ToString("N")[..8]);
++        Directory.CreateDirectory(d);
++        return d;
++    }
++
++    [Fact]
++    public async Task WriterAppendsJsonLinesAndRotatesDaily()
++    {
++        var dir = TempDir();
++        var clock = new Clock();
++        using (var w = new EventLogWriter(new EventLogOptions { Directory = dir }, clock.Get))
++        {
++            w.Emit(new EventRecord("card", "card_insert").With("cab", "c00000001"));
++            await w.FlushAsync();
++            clock.Now = clock.Now.AddDays(1);
++            w.Emit(new EventRecord("card", "card_insert").With("cab", "c00000002"));
++            await w.FlushAsync();
++            Assert.Equal(2, w.Written);
++        }
++        var files = Directory.GetFiles(dir, "events-*.jsonl").Select(Path.GetFileName).OrderBy(x => x).ToList();
++        Assert.Equal(new[] { "events-20261117.jsonl", "events-20261118.jsonl" }, files);
++        var line = File.ReadAllLines(Path.Combine(dir, files[0]!)).Single();
++        Assert.StartsWith("{\"v\":1,\"ts\":\"2026-11-17T02:00:00.000-08:00\",\"src\":\"card\",\"ev\":\"card_insert\"", line);
++        Assert.True(File.Exists(Path.Combine(dir, ".salt")));
++        Directory.Delete(dir, true);
++    }
++
++    [Fact]
++    public async Task WriterDeletesFilesPastRetentionAndOverTheSizeCap()
++    {
++        var dir = TempDir();
++        for (var d = 1; d <= 20; d++)
++            File.WriteAllText(Path.Combine(dir, $"events-202611{d:00}.jsonl"), new string('x', 100_000) + "\n");
++        var clock = new Clock();   // 2026-11-17
++        using (var w = new EventLogWriter(new EventLogOptions { Directory = dir, RetentionDays = 14, MaxTotalBytes = 1_000_000 }, clock.Get))
++        {
++            w.Emit(new EventRecord("mm", "queue_start"));
++            await w.FlushAsync();
++        }
++        var names = Directory.GetFiles(dir, "events-*.jsonl").Select(Path.GetFileName).OrderBy(x => x).ToList();
++        Assert.DoesNotContain("events-20261103.jsonl", names);          // older than 14 days
++        Assert.Contains("events-20261117.jsonl", names);
++        Assert.True(Directory.GetFiles(dir, "events-*.jsonl").Sum(f => new FileInfo(f).Length) <= 1_000_000);
++        Assert.Contains("events-20261116.jsonl", names);                 // newest kept, oldest went first
++        Directory.Delete(dir, true);
++    }
++
++    [Fact]
++    public async Task WriterRollsToANewPartWhenOneDayIsTooBig()
++    {
++        var dir = TempDir();
++        var clock = new Clock();
++        using (var w = new EventLogWriter(new EventLogOptions { Directory = dir, MaxTotalBytes = 400_000 }, clock.Get))
++        {
++            var big = new string('a', 250);
++            for (var i = 0; i < 2000; i++) w.Emit(new EventRecord("mm", "queue_start").With("world", big));
++            await w.FlushAsync();
++        }
++        var names = Directory.GetFiles(dir, "events-*.jsonl").Select(Path.GetFileName).ToList();
++        Assert.Contains(names, n => n!.StartsWith("events-20261117-0"));
++        Assert.True(Directory.GetFiles(dir, "events-*.jsonl").Sum(f => new FileInfo(f).Length) <= 400_000 + 110_000);
++        Directory.Delete(dir, true);
++    }
++
++    [Fact]
++    public async Task FullQueueDropsInsteadOfBlockingAndReportsIt()
++    {
++        var dir = TempDir();
++        using (var w = new EventLogWriter(new EventLogOptions { Directory = dir, QueueCapacity = 100 }))
++        {
++            var sw = System.Diagnostics.Stopwatch.StartNew();
++            for (var i = 0; i < 200_000; i++) w.Emit(new EventRecord("mm", "queue_start").With("node", (uint)i));
++            sw.Stop();
++            Assert.True(sw.Elapsed < TimeSpan.FromSeconds(10), "Emit must not wait for the disk");
++            await w.FlushAsync();
++            Assert.Equal(200_000, w.Accepted + w.Dropped);
++            Assert.True(w.Written >= w.Accepted, $"written {w.Written} accepted {w.Accepted} dropped {w.Dropped}");
++        }
++        var all = Directory.GetFiles(dir, "events-*.jsonl").SelectMany(File.ReadAllLines).ToList();
++        if (all.Count < 200_000) Assert.Contains(all, l => l.Contains("\"ev\":\"log_dropped\""));
++        Directory.Delete(dir, true);
++    }
++
++    // ---------------------------------------------------------------- timeline
++
++    [Fact]
++    public void TimelineJoinsMatchmakerAndCardServerEventsAndFlagsTheLoadingGap()
++    {
++        var mmSink = new ListEventSink();
++        var cardSink = new ListEventSink();
++        var mm = NewMm(mmSink);
++        var clock = new Clock();
++        var card = new CardEventTracker(cardSink, now: clock.Get) { MatchmakerBoot = () => mm.BootId };
++        var ok = new G.Response { Error = G.Error.Success };
++
++        mmSink.Emit(new EventRecord("x", "noise") { At = clock.Now });
++        // matchmaker events get wall times from the sink; pin them to the fake clock instead
++        void MmAt(double s, Action a) { var n = mmSink.Events.Count; a(); foreach (var e in mmSink.Snapshot().Skip(n)) e.At = clock.Now.AddSeconds(s); }
++        MmAt(0, () => mm.Entry(Entry(1310, SerialA, IpA, 8000111), 0, IpA));
++        MmAt(1, () => mm.Entry(Entry(1314, SerialB, IpB, 8000222, apply: 9), 1, IpB));
++        MmAt(2, () => mm.Check(1310, 2, IpA));
++        MmAt(3, () => mm.Check(1314, 3, IpB));
++        var match = "m-" + mm.BootId + "-1";
++
++        clock.Now = clock.Now.AddSeconds(22);
++        card.Observe(CheckComm(SerialA, 6), ok);
++        card.Observe(CheckComm(SerialB, 9, otherSerial: SerialA), ok);
++        clock.Now = clock.Now.AddSeconds(16);
++        card.Observe(BattleLog(SerialA), ok);
++        clock.Now = clock.Now.AddSeconds(14);        // cab B loads for 30 s
++        card.Observe(BattleLog(SerialB), ok);
++        clock.Now = clock.Now.AddSeconds(150);
++        card.Observe(Result(SerialA, 1), ok);
++        card.Observe(Result(SerialB, 1), ok);
++
++        var lines = mmSink.Snapshot().Concat(cardSink.Snapshot()).Select(Json).ToList();
++        var events = MatchTimeline.ParseLines(lines);
++        var list = MatchTimeline.ListMatches(events);
++        Assert.Equal(match, list.First().MatchId);
++        var r = MatchTimeline.Build(events, match, new GapThresholds { LoadingSeconds = 20 });
++        Assert.True(r.Found);
++        Assert.Equal(2, r.Cabs.Count);
++        var cabB = EventIds.Cab(SerialB)!;
++        var bStages = r.Entries.Where(e => e.Cab == cabB).Select(e => e.Ev).ToList();
++        // gap_warning = the card server's own live warning (loading over 20 s), logged when the next request came in
++        Assert.Equal(new[] { "queue_start", "room_created", "match_found", "load_start", "peer_connect", "load_end", "battle_start", "gap_warning", "result_saved" }, bStages);
++        var gap = Assert.Single(r.Gaps);
++        Assert.Equal(cabB, gap.Cab);
++        Assert.Equal("loading", gap.Stage);
++        Assert.InRange(gap.Seconds, 29, 31);
++        var text = MatchTimeline.Render(r);
++        Assert.Contains("loading peer_connect -> battle_start took 30.0s (limit 20s)", text);
++        AssertNoSecrets(new[] { text.Replace("\n", " ") }.Select(t => JsonSerializer.Serialize(new { t })));
++    }
++
++    [Fact]
++    public void TimelineWorksFromCardServerEventsAlone()
++    {
++        var sink = new ListEventSink();
++        var clock = new Clock();
++        var card = new CardEventTracker(sink, now: clock.Get) { MatchmakerBoot = () => "t3k9qa" };
++        var ok = new G.Response { Error = G.Error.Success };
++        card.Observe(CheckComm(SerialA, 6), ok);
++        clock.Now = clock.Now.AddSeconds(15);
++        card.Observe(BattleLog(SerialA), ok);
++        clock.Now = clock.Now.AddSeconds(150);
++        card.Observe(Result(SerialA, 5), ok);
++        var events = MatchTimeline.ParseLines(sink.Snapshot().Select(Json));
++        var r = MatchTimeline.Build(events, "m-t3k9qa-5");
++        Assert.Equal(new[] { "peer_connect", "load_end", "battle_start", "result_saved" }, r.Entries.Select(e => e.Ev));
++        Assert.Empty(r.Gaps);
++    }
++
++    [Fact]
++    public void TimelineParserSkipsJunk()
++    {
++        var events = MatchTimeline.ParseLines(new[] { "", "not json", "{\"v\":1}", "{\"ev\":\"x\",\"ts\":\"bad\"}",
++            "{\"v\":1,\"ts\":\"2026-11-17T02:00:00.000-08:00\",\"src\":\"mm\",\"ev\":\"room_created\",\"match\":\"m-a-1\",\"room\":1}" });
++        Assert.Single(events);
++        Assert.False(MatchTimeline.Build(events, "m-zz-9").Found);
++    }
++}
+diff --git a/tools/match-timeline/Program.cs b/tools/match-timeline/Program.cs
+new file mode 100644
+index 0000000..43b5312
+--- /dev/null
++++ b/tools/match-timeline/Program.cs
+@@ -0,0 +1,42 @@
++using ServerInfinite.Lobbies;
++
++// exvs2-lobbies 2026-11-17: match-timeline [--list] [--match <id>] [--loading N --connect N --fetch N --battle N] <files or folders...>
++// Reads structured event files (events-*.jsonl) from the matchmaker and/or card servers and prints one match's
++// timeline, with stage gaps over the thresholds. Read-only.
++var files = new List<string>();
++string? match = null;
++var list = false;
++var gaps = new GapThresholds();
++for (var i = 0; i < args.Length; i++)
++{
++    var a = args[i];
++    double Num() => double.Parse(args[++i], System.Globalization.CultureInfo.InvariantCulture);
++    switch (a)
++    {
++        case "--match": match = args[++i]; break;
++        case "--list": list = true; break;
++        case "--fetch": gaps.RoomFetchSeconds = Num(); break;
++        case "--connect": gaps.ConnectSeconds = Num(); break;
++        case "--loading": gaps.LoadingSeconds = Num(); break;
++        case "--battle": gaps.BattleSeconds = Num(); break;
++        case "-h" or "--help":
++            Console.WriteLine("usage: match-timeline [--list] [--match m-<boot>-<room>] [--loading 20] [--connect 40] [--fetch 10] [--battle 480] <events files or folders>");
++            return 0;
++        default:
++            if (Directory.Exists(a)) files.AddRange(Directory.GetFiles(a, "events-*.jsonl").OrderBy(x => x));
++            else files.Add(a);
++            break;
++    }
++}
++if (files.Count == 0) files.AddRange(Directory.Exists("Logs/events") ? Directory.GetFiles("Logs/events", "events-*.jsonl") : Array.Empty<string>());
++var events = MatchTimeline.ParseLines(MatchTimeline.ReadFiles(files));
++if (events.Count == 0) { Console.Error.WriteLine("No structured events found."); return 1; }
++var matches = MatchTimeline.ListMatches(events);
++if (list || match == null)
++{
++    foreach (var m in matches.Take(50))
++        Console.WriteLine($"{m.At:yyyy-MM-dd HH:mm:ss}  {m.MatchId,-22} room {m.Room,-5} {m.World,-14} humans {m.Humans}/{m.Seats}");
++    if (match == null) return 0;
++}
++Console.Write(MatchTimeline.Render(MatchTimeline.Build(events, match!, gaps)));
++return 0;
+diff --git a/tools/match-timeline/match-timeline.csproj b/tools/match-timeline/match-timeline.csproj
+new file mode 100644
+index 0000000..8f63063
+--- /dev/null
++++ b/tools/match-timeline/match-timeline.csproj
+@@ -0,0 +1,16 @@
++<Project Sdk="Microsoft.NET.Sdk">
++  <!-- exvs2-lobbies 2026-11-17: rebuild one match's stage timeline from structured event files (Logs/events/*.jsonl). -->
++  <PropertyGroup>
++    <OutputType>Exe</OutputType>
++    <TargetFramework>net9.0</TargetFramework>
++    <Nullable>enable</Nullable>
++    <ImplicitUsings>enable</ImplicitUsings>
++    <AssemblyName>match-timeline</AssemblyName>
++    <RootNamespace>MatchTimelineTool</RootNamespace>
++  </PropertyGroup>
++  <ItemGroup>
++    <Compile Include="..\..\Server-Infinite\Lobbies\MatchTimeline.cs" Link="Lobbies\MatchTimeline.cs" />
++    <Compile Include="..\..\Server-Infinite\Lobbies\GapThresholds.cs" Link="Lobbies\GapThresholds.cs" />
++    <Compile Include="..\..\Server-Infinite\Lobbies\EventNames.cs" Link="Lobbies\EventNames.cs" />
++  </ItemGroup>
++</Project>
+-- 
+2.47.3
+
+
+From 40ff9caaa977b90b00fda239bb8c5aeb42e1b644 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Tue, 17 Nov 2026 04:28:08 -0800
+Subject: [PATCH 2/2] Docs: structured events, match id, timeline tool and
+ measured cost.
+
+Describes the events each component writes, how the card server
+rebuilds the matchmaker's match id without changing any reply, gap
+limits, privacy rules, config, and the load-test numbers with logging
+on and off.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md | 78 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index e14c689..1acb8d5 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -700,6 +700,84 @@ Both are untested on a cabinet. The cabinet's own formula has not been reverse e
+   PublicMatchmaker build: `/status` 200 from a non-LAN source address, `/status/x`, `/`, `/ui` 403, 429 after the
+   burst; a 16-cabinet fake load test showed searching / in-match moving as rooms formed.
+ 
++## Structured events (2026-11-17, branch `structured-logging`): unit and local load tests only, not yet tried on cabinets
++
++The card server and the matchmaker also write one JSON line per match step to `Logs/events/events-YYYYMMDD.jsonl`. The text logs (`Logs/log-*.txt`) don't change. The launcher's Health tab, presence and match timeline read the events first and fall back to the text rules. The full schema, shared with the clean-room card server, is in exvs2-card-server `docs/EVENTS.md`.
++
++```json
++{"v":1,"ts":"2026-11-17T03:59:16.624-08:00","src":"mm","ev":"match_found","match":"m-tonamp-1","room":1,"cab":"c4975ea73","node":1000,"apply":27994062,"world":"mix-match","wait_s":0.2,"fetch_s":2.7}
++{"v":1,"ts":"2026-11-17T02:00:45.000-08:00","src":"card","ev":"gap_warning","cab":"c9fbd99da","apply":9,"stage":"loading","waited_s":20.5,"limit_s":20,"after":"peer_connect"}
++{"v":1,"ts":"2026-11-17T04:00:57.354-08:00","src":"mm","ev":"disconnect","match":"m-tonamp-49","room":49,"cab":"cf973b159","node":1408,"reason":"cancel-after-match","since_s":3}
++```
++
++* **Events.**
++  * Matchmaker: `queue_start` and `queue_stop`; `room_created`, one per room, with the cab keys; `match_found` and `load_start` when the cab fetches its room; `room_ended`; and `disconnect` when a room ends with cancel-after-match or timeout.
++  * Card server:
++    * `card_insert` on LoadCard.
++    * `peer_connect` on CheckCommunication, with the UDP result, RTT, NAT type and search seconds.
++    * `load_end` and `battle_start` on SaveBattleLogOn.
++    * `result_saved` on SaveVsmOnResult or SaveVsmResult.
++    * `disconnect` on a hole-punch failure, or on SaveFailedBattleLogOn with `my_fault`.
++  * Both: `gap_warning`, and `log_dropped` if the queue ever overflows.
++  * 21-01 is never sent to a server, so `disconnect` has a `code` only when one is known.
++* **One match ID: `m-<boot>-<room>`.**
++  * The matchmaker makes a boot ID when it starts (base 36 of its start time) and numbers its rooms.
++  * The cabinet repeats the room ID in its result and failed-battle requests, so the card server rebuilds the same match ID.
++  * The card server gets the boot ID from the new optional `"boot"` field in the matchmaker's `GET /status`. It reads it once a minute in the background, never during a request. With the in-process matchmaker it reads the boot ID directly.
++  * No matchmaking or card reply changes, because the game reads those bytes.
++  * With an older matchmaker that has no `boot` field, card events carry only `room`. The timeline then joins on room + cab + time, or on cab + apply ID.
++* **Timeline.**
++  * Each stage is timed per cab. A `gap_warning` is logged once per stage when a stage passes its limit:
++
++    | Stage | Limit |
++    |---|---|
++    | Room fetch | 10 s |
++    | Room to peer connect | 40 s |
++    | Loading (peer connect to battle start) | 20 s |
++    | Battle | 480 s |
++    | Results to next request | 60 s |
++
++  * On real cabinets, room to CheckCommunication took 19–23 s. CheckCommunication to battle log took 14–19 s with two humans, and 30 s once with four.
++  * `tools/match-timeline` rebuilds a match from any events files or folders:
++    * List matches: `dotnet run --project tools/match-timeline -- --list Logs/events`
++    * Show one match: `dotnet run --project tools/match-timeline -- --match m-tonamp-1 Logs/events /copy/of/vps/events`
++    * Change limits with `--fetch`, `--connect`, `--loading` and `--battle`.
++  * The launcher has the same view under Health → **Match timeline…**.
++* **Privacy.** Tests push fake secrets through every event to enforce this.
++  * Events never contain card IDs, chip IDs, access codes, session IDs, pilot or am IDs, tag secrets, serials or IPs.
++  * A cabinet is `cab` = `c` + 8 hex characters of SHA-256("exvs2-ev1|cab|" + serial). It is the same on every server and in the launcher.
++  * An IP appears only as `ip` = `i` + 8 hex characters of an HMAC-SHA-256 with a random per-install salt (`Logs/events/.salt`).
++  * Forbidden keys are dropped. Free text goes through the text-log masking, IPv4 addresses become hashes, and values are cut at 300 characters.
++* **Cost.**
++  * A request only stamps a time and adds the event to the queue, about 0.6 µs.
++  * Masking, JSON (about 4 µs per event) and disk writes run on one background writer thread.
++  * The queue holds 20000 events. When it is full, events are dropped and counted, and requests never wait.
++* **Size.**
++  * One file per day, plus a `-002` part when a file passes a quarter of the cap.
++  * Files older than 14 days are deleted first, then the oldest files above 200 MB total. This runs at start and as files grow.
++* **Config** is `CardServerConfig.StructuredLog`. The section may be missing; these are the defaults:
++  * `Enabled` true. false means no file and no per-request work.
++  * `Directory` `./Logs/events`.
++  * `RetentionDays` 14.
++  * `MaxTotalMegabytes` 200.
++  * `QueueCapacity` 20000.
++  * `FetchMatchmakerBootId` true.
++  * `Gaps`: `RoomFetchSeconds` 10, `ConnectSeconds` 40, `LoadingSeconds` 20, `BattleSeconds` 480, `ResultsSeconds` 60. 0 turns that check off.
++* **Remote matchmaker.** A card server that points at a VPS matchmaker never sees queue events, so its own file starts at `peer_connect`, about 20 s after the match. Copy the VPS `Logs/events` next to it to get the full timeline.
++* **Measured.** 100-person load test on `/match` on a Linux box (240 s plus arrivals, 4 runs on and 4 off; rounds 1–2 used an earlier build that serialized events on the request thread). Client-side latency over all requests:
++
++  | Run | p50 on / off (ms) | p99 on / off (ms) | Server CPU mean on / off | Events | Text log |
++  |---|---|---|---|---|---|
++  | 1 | 1.51 / 1.24 | 5.01 / 4.81 | 2.3 / 1.9 % | 207 KB, 85 rooms | 2.5 MB |
++  | 2 | 1.28 / 1.33 | 4.93 / 3.98 | 2.0 / 2.0 % | 193 KB, 77 rooms | 2.4 MB |
++  | 5 | 1.46 / 1.50 | 4.77 / 5.05 | 2.3 / 2.3 % | 209 KB, 84 rooms | 2.6 MB |
++  | 6 | 1.57 / 1.55 | 9.29 / 6.50 | 3.2 / 2.6 % | 213 KB, 86 rooms | 2.5 MB |
++
++  * The on/off difference is within run-to-run noise. Mean p50 was 1.46 ms on and 1.41 ms off, and p99 went both ways. RSS was the same (about 255 MB).
++  * The card-side micro benchmark (`SL_BENCH=1 dotnet test Tests/Matchmaking.Tests --filter StructuredEventBench`) measured 0.6 µs per request on the request thread.
++  * Size: about 182 bytes per line and about 2.5 KB per room on the matchmaker (queue churn included). On the card server, 5 events and about 0.8 KB per cab per match. That is about 8 % of the text log for the same run.
++  * Per day: the 100-cab non-stop load pace is about 18,500 rooms and about 46 MB a day, so the 200 MB cap would keep about 4 days. A realistic LA day of a few hundred rooms is under 1 MB a day; 4 local cabs playing about 60 matches each is about 0.2 MB.
++
+ ## Known gaps / risks
+ * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
+   (`BindMatchNodesToSourceIp` limits Check/Cancel to the IP that entered, but is not a login.)
+-- 
+2.47.3
+

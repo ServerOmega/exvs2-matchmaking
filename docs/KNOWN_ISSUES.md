@@ -1,6 +1,6 @@
 # Known issues
 
-Experimental matchmaker, last updated **16 November 2026** (America/Los_Angeles). These are problems seen
+Experimental matchmaker, last updated **17 November 2026** (America/Los_Angeles). These are problems seen
 on real cabinets or that follow from how the game and this server work. Longer background:
 [MATCHMAKING-BEHAVIOUR.md](MATCHMAKING-BEHAVIOUR.md). Setup: [SETUP.md](SETUP.md).
 
@@ -203,3 +203,31 @@ likely two game instances on one OS interfering. A solo route battle versus CPU 
 goes away on separate machines.
 
 **Status.** Open, documented in [the 13 November 2026 test report](../analysis/real-game-test-2026-11-13.md).
+
+## Custom Match: cab says "searching" but nothing happens
+
+**Symptoms.** A cabinet shows searching in the bottom-right, but the matchmaker never sees it, or two players in
+the same room never meet.
+
+**Causes and fixes.**
+
+* **The card has no room picked.** Joining a room is not enough on older builds; the cab only sends the room tag
+  when the card has a *selected* room. With this release, creating or joining on the web picks it; with several
+  rooms press **Use this room** (last pick wins). Then touch the card again.
+* **The cab's `IpAddress` is a VPN-only address** (for example N2N) with no internet route. The cab can reach an LM
+  over the VPN but its match requests go nowhere. Keep cabs on a LAN address with internet access.
+* **Dual Select rooms are 2v2.** Two solo players wait for 4 humans. Use a **One** rule for 1v1.
+* After a card-server update, press **Ctrl+F5** on the Rooms page.
+
+See [CUSTOM_ROOMS.md](CUSTOM_ROOMS.md).
+
+## Two LMs on one LAN (21-11) and DisableSocketHook (21-32)
+
+Two Live Monitors on the same LAN conflict with error **21-11**. Run one LM per LAN; it can serve cabinets that use
+different card servers. POC `DisableSocketHook = True` gives **21-32**; leave it `False`.
+
+## 4 cabinets plus an LM on one PC can crash the PC at match load
+
+Each game copy (the LM is one too) commits about 4–5 GB of memory and renders. On 17 Nov 2026 a PC running four
+cabinets plus an LM crashed while all four loaded a match. Use several PCs for big local tests. Background:
+[FINDINGS-2026-11-17.md](FINDINGS-2026-11-17.md) §6.

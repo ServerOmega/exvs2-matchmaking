@@ -106,8 +106,14 @@ Box, fake cabinets + fake cards (2026-11-14): 7 unit tests (`HangFixTests`) + `s
 - [ ] Same layout in LM mode, chosen by hand (teammates)
 - [ ] During a hang: card key on one cabinet, then the other (card-reader symptom)
 
-## Custom Match
-- [ ] Press Custom Match with the LM running and log what the game requests
+## Custom Match (branch `feature/custom-rooms`, 2026-11-17)
+- [x] Press Custom Match with the LM running and log what the game requests — LoadRoom (418) / RegisterRoom (419) on the LM, `matching_tag` in PreLoadCard on the cab ([docs/CUSTOM_ROOMS.md](docs/CUSTOM_ROOMS.md))
+- [x] LM lists rooms after a card touch (`status = 1`, `tag_type` 2/4)
+- [x] Web create/join auto-selects the room for the cab; a card with a pick sends `matching_tag`
+- [x] **Cross-server room, 4 cabinets, 2 card servers, 1 LM: 4-human 2v2, no CPU, all `match_found` within ~3 s — 12:33 PM PT 17 Nov 2026**
+- [ ] One (0–4) / One XU rule room: two solo cabinets pair 1v1 with no CPU (commit 60; unit tests only)
+- [ ] Match in a custom room loads and the results save (the 12:33 PM test PC crashed at load with 4 cabs + LM on one PC)
+- [ ] Room open/close window and daily reset in the configured `CustomRooms.TimeZone` on real cabinets
 
 ## Housekeeping
 - [ ] Log-capture script for the user's launch method

@@ -25,6 +25,15 @@ Build the zip: `release/make-release.sh v0.5.0` → `release/dist/` (not committ
 
 ## Changelog
 
+* **v0.6.0-pre (2026-11-17)** — **Custom Match rooms across card servers**, the **server player count**
+  (`GET /status`), structured match events (rebuild required on every card server and the matchmaker). The patch is
+  60 commits on Chiang-17/EXVS2-IB-Server @ `7f4b280` (**545** matchmaker + **72** card-server tests). Adds
+  online battle results, the Stats tab, rematch cooldown, global Class / Mix leaderboards and `/status` from the
+  unreleased branches. Custom rooms: LM LoadRoom/RegisterRoom, a shared room registry on the matchmaker
+  (`CustomRooms.LocalStore=false`), one queue per room, `CustomRooms.TimeZone`, a web Rooms page that picks the
+  room for the cab, and 1v1 pairing for One fes rules. Confirmed 17 Nov 2026, 12:33 PM PT: 4 cabinets on 2 card
+  servers formed a 4-human 2v2 in one room. Docs: [docs/CUSTOM_ROOMS.md](../docs/CUSTOM_ROOMS.md),
+  [docs/FINDINGS-2026-11-17.md](../docs/FINDINGS-2026-11-17.md).
 * **v0.5.0 (2026-11-16)** — pair-cancel guard, ContinuePair at 18 s, and a fast CPU room after a CPU loss
   (rebuild required). Replaces the short-lived `v0.5.0-pre` tag from earlier the same day. The patch is
   46 commits on Chiang-17/EXVS2-IB-Server @ `7f4b280` (**423** unit tests). `ContinuePairMode=VsCpu` at the

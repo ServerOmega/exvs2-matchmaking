@@ -18,7 +18,7 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save`, `suit-stats-page`, `rematch-cooldown`, `global-leaderboards` and `status-endpoint` commits, 52 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47). Commit 49 is the `rematch-cooldown` commit — see [Rematch cooldown](#rematch-cooldown-and-room-end-log-branch-rematch-cooldown); also kept alone as [`rematch-cooldown.patch`](rematch-cooldown.patch). Commit 50 (branch `global-leaderboards`, not released yet) adds global Class / Mix leaderboards through the matchmaker and sends the IB Class rate tables — see [Global leaderboards](#global-leaderboards-branch-global-leaderboards); also kept alone as [`global-leaderboards.patch`](global-leaderboards.patch) (apply on top of commit 49). Commit 51 points the card-server homepage's update notice at this repository. Commit 52 (branch `status-endpoint`, not released yet) adds a public read-only `GET /status` with cabinet totals for launchers — see [Public status endpoint](#public-status-endpoint-branch-status-endpoint); also kept alone as [`status-endpoint.patch`](status-endpoint.patch) (apply on top of commit 51).
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save`, `suit-stats-page`, `rematch-cooldown`, `global-leaderboards`, `status-endpoint`, `structured-logging` and `feature/custom-rooms` commits, 60 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47). Commit 49 is the `rematch-cooldown` commit — see [Rematch cooldown](#rematch-cooldown-and-room-end-log-branch-rematch-cooldown); also kept alone as [`rematch-cooldown.patch`](rematch-cooldown.patch). Commit 50 (branch `global-leaderboards`, not released yet) adds global Class / Mix leaderboards through the matchmaker and sends the IB Class rate tables — see [Global leaderboards](#global-leaderboards-branch-global-leaderboards); also kept alone as [`global-leaderboards.patch`](global-leaderboards.patch) (apply on top of commit 49). Commit 51 points the card-server homepage's update notice at this repository. Commit 52 (branch `status-endpoint`, not released yet) adds a public read-only `GET /status` with cabinet totals for launchers — see [Public status endpoint](#public-status-endpoint-branch-status-endpoint); also kept alone as [`status-endpoint.patch`](status-endpoint.patch) (apply on top of commit 51). Commits 53–54 (branch `structured-logging`) add structured match events with one match id per room and stage timing, plus a `tools/match-timeline` reader; also kept alone as [`structured-logging.patch`](structured-logging.patch) (apply on top of commit 52). Commits 55–60 (branch `feature/custom-rooms`) add **Custom Match rooms**: LM LoadRoom (418) / RegisterRoom (419), a shared room registry on the matchmaker, one matchmaker bucket per room, the web Rooms page with auto-select for the cab, and 1v1 pairing for One fes rules — see [Custom Match rooms](#custom-match-rooms-branch-featurecustom-rooms) and [`docs/CUSTOM_ROOMS.md`](../../docs/CUSTOM_ROOMS.md); also kept alone as [`custom-rooms.patch`](custom-rooms.patch) (apply on top of commit 54).
 The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
@@ -29,15 +29,15 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 52 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 60 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
 # or Linux server:
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
-# matchmaker unit tests (472 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, security, rematch cooldown, the leaderboard store and /status):
+# matchmaker unit tests (545 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, security, rematch cooldown, the leaderboard store, /status, structured events and custom rooms):
 dotnet test Tests/Matchmaking.Tests
-# card-server DB tests (31: online battle results, card stats page, leaderboard snapshots + Class rate tables; in-memory SQLite; on Windows drop -p:LinuxHost=true):
+# card-server tests (72: online battle results, card stats page, leaderboard snapshots + Class rate tables, custom room registry over real Kestrel, Rooms web UI; in-memory SQLite; on Windows drop -p:LinuxHost=true):
 dotnet test Tests/Server.Tests -p:LinuxHost=true
 ```
 Copy your existing `ServerInfinite.db` next to the new build if you want to keep cards; the new migration
@@ -184,7 +184,8 @@ Both are untested on a cabinet.
 * Cross-server e2e 103/103.
 
 ## Public status endpoint (branch `status-endpoint`)
-> Unit tests and a local Linux e2e only; not on a VPS yet.
+> This is the **server player count** the launcher (v0.5.0+) shows in its matchmaking server list. Included in the
+> 60-commit series; the LA matchmaker runs it since 17 Nov 2026.
 
 `GET /status` on the matchmaker returns totals only, for the launcher's server list (player count and ping):
 
@@ -319,3 +320,27 @@ the duo then queued Mix Match and waited for two more humans (`NoCpuPartner`).
   servers, shared `/tag` partner code, world-5 pair). A completed 4-human 2v2 after the duo forms is
   still untested. Same-server WebUI invite (User ID + Invitation Code) and partner recruit still need a
   real-game pass.
+
+## Custom Match rooms (branch `feature/custom-rooms`)
+> Confirmed on real cabinets on 17 Nov 2026, 12:33 PM PT: four cabinets on **two different card servers** queued in
+> the same custom room and the matchmaker built a 4-human 2v2 (no CPU); all four got `match_found` within ~3 s.
+> One-rule 1v1 rooms (commit 60) are unit-tested and running on LA, but not yet tried on real cabinets.
+
+Full guide, problems we hit and their fixes: [`docs/CUSTOM_ROOMS.md`](../../docs/CUSTOM_ROOMS.md) and
+[`docs/FINDINGS-2026-11-17.md`](../../docs/FINDINGS-2026-11-17.md). Reference inside the patch: `CUSTOM_ROOMS.md`,
+`CUSTOM_ROOM_OPTIONS.md` (every LM/cab room field), `CUSTOM_ROOM_VSMOBILE.md` (comparison with official VS.Mobile).
+
+* **LM:** `LoadRoom` (418) lists the card's rooms; the reply needs `status = 1`, and only `tag_type` 2 (private list,
+  up to 7) and 4 (the single public slot) are shown. `RegisterRoom` (419, `status = 0` = OK) stores the room the card
+  picked.
+* **Cab:** `PreLoadCard` sends `matching_tag` only when the card has a selected room; without one, Custom Match is skipped.
+* **Shared registry:** the matchmaker hosts `/tag/rooms` (create / join / leave / close / lookup / select; lookup is a
+  POST so room codes never appear in URLs). Card servers use it with `CustomRooms.LocalStore=false` (default when
+  `MatchUrl` / `InviteUrl` is set), so rooms work across card servers.
+* **Matchmaker:** custom-room worlds (6–9, 24, 26–33) are keyed on the room id, so each room is its own queue.
+  `CustomRooms.TimeZone` / `DayResetHour` set when rooms open, close and reset.
+* **Web Rooms page** (`/Cards/Rooms/{chip}` on the card server): create or join a room and it becomes the card's
+  pick for the cab — no LM card touch needed. **Use this room** picks between several rooms; the last pick wins
+  (web or LM). Leaving or closing clears the pick.
+* **One fes rules** (10–14 One, 20–24 One XU): two solo entries in such a room are paired 1v1 right away with no CPU.
+  **Dual Select is still a 2v2 rule** and waits for 4 humans with `NoCpuPartner`.

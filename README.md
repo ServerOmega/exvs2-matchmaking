@@ -20,6 +20,8 @@
 
 ## 🔒 [Security: access modes, the `/tag` shared secret, log masking, known risks](docs/SECURITY.md)
 
+## 🏠 [Custom Match rooms](docs/CUSTOM_ROOMS.md) — private rooms across card servers, web room maker, 1v1 One rules · [17 Nov findings](docs/FINDINGS-2026-11-17.md)
+
 ## ⚠️ [Known issues](docs/KNOWN_ISSUES.md) — long waits, pair re-queue after a CPU loss (mitigated), class-match queues, 21-01 causes, startup order
 
 ## 📖 [Matchmaking behaviour](docs/MATCHMAKING-BEHAVIOUR.md) — pair timer, ContinuePair at 18 s, ContinuePairAfterCpuSeconds, official cabinets, what we tested

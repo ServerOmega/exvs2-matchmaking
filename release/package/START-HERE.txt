@@ -1,4 +1,4 @@
-EXVS2 Infinite Boost - online matchmaking server  (v0.5.0, EXPERIMENTAL)
+EXVS2 Infinite Boost - online matchmaking server  (v0.6.0-pre, EXPERIMENTAL)
 =======================================================================
 
 What is this?
@@ -27,7 +27,16 @@ IMPORTANT - 2v2 matches:
   Match. The server matches instantly once four compatible humans are in the same queue; long
   waits usually mean someone is in a different mode, still on the title or results screen, or
   held after a pair cancel. Known issues:
-  https://github.com/ServerOmega/exvs2-matchmaking/blob/release/v0.5.0/docs/KNOWN_ISSUES.md
+  https://github.com/ServerOmega/exvs2-matchmaking/blob/feature/custom-rooms/docs/KNOWN_ISSUES.md
+
+NEW in v0.6.0-pre - Custom Match rooms, server player count:
+  Make a private room on the card website (card -> Custom Match Rooms), share the code, and friends
+  on ANY card server that uses the same matchmaker meet in that room. Creating or joining picks the
+  room for your cab; with several rooms press "Use this room". On the cab: touch the card, choose
+  Custom Match. Dual Select is a 2v2 rule (needs 4 players); One rules are 1v1. The matchmaker hosting
+  the rooms should set CustomRooms.TimeZone. The launcher's server list shows the player count from
+  the matchmaker's /status page. Every card server and the matchmaker need this build. Guide:
+  https://github.com/ServerOmega/exvs2-matchmaking/blob/feature/custom-rooms/docs/CUSTOM_ROOMS.md
 
 NEW in v0.5.0 - pair-cancel guard, ContinuePair at 18 s, fast CPU room after a CPU loss:
   After a pair cancels, those cabinets are held out of new human rooms until a clean restart (or
