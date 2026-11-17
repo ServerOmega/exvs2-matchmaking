@@ -58,6 +58,11 @@ QUICK START (Windows)
 
   4. Set up the game:  read  Connect-Your-Game.txt
 
+  5. (Optional) Double-click  4-Patch-Game.bat   to patch the game exe (pairs keep searching,
+     no GAME OVER on free play). Needs the separate patch pack from the Discord
+     (https://discord.gg/YENXAmjkYX). Without it, it just says so. Guide:
+     https://github.com/ServerOmega/exvs2-matchmaking/blob/main/docs/PATCHING.md
+
 -------------------------------------------------------------------------------------
 QUICK START (Linux PC or rented VPS - no GPU needed)
 -------------------------------------------------------------------------------------
@@ -81,6 +86,7 @@ Other files
   test-tools\             read-only test scripts (check-debugparam.ps1, hang-probe.ps1)
   LICENSE.txt             GPL-3.0 for our scripts/docs (NOT the card server or the patch)
   Import-Images.bat / linux/import-images.sh   helper to copy only the picture folder
+  4-Patch-Game.bat        optional: runs the separate patch pack if you put it next to this file
   scripts\                the PowerShell scripts the .bat files run (you can read them)
   linux\                  the Linux scripts + a systemd service example
   files\online-matchmaking.patch   our changes to the card server (source code, readable)

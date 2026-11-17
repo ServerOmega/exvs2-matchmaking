@@ -19,6 +19,11 @@ echo "$VERSION" > "$STAGE/files/VERSION"
 # never ship anything that isn't ours
 if find "$STAGE" -iname '*.exe' -o -iname '*.dll' -o -iname '*.db' -o -iname '*.pfx' | grep -q .; then
   echo "binary/data file in package - refusing" >&2; exit 1; fi
+# never ship the private patch pack (or anything that looks like it: patch engine, exe hash table, SHA-256 strings;
+# the only allowed SHA-256 is the MinGit download checksum in build-server.ps1)
+if find "$STAGE" -ipath '*patch-pack*' -o -iname 'patch-common.ps1' -o -iname 'hashes.json' | grep -q . \
+   || grep -rqiE '\b[0-9a-f]{64}\b' --exclude='*.patch' --exclude='build-server.ps1' "$STAGE"; then
+  echo "patch pack / exe hash material in package - refusing" >&2; exit 1; fi
 (cd "$OUT" && zip -qr -X "$NAME.zip" "$NAME")
 (cd "$OUT" && sha256sum "$NAME.zip" > "$NAME.zip.sha256")
 echo "$OUT/$NAME.zip"; cat "$OUT/$NAME.zip.sha256"

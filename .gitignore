@@ -25,3 +25,9 @@ lmnfig.ini
 # Matchmaker runtime data (may hold player am_ids)
 mms_ratings.json
 *.tmp
+
+# Private exe patch pack - never commit (contains patch bytes and exe hashes)
+patch-pack/
+exvs2-patch-pack-*
+patch-common.ps1
+hashes.json
