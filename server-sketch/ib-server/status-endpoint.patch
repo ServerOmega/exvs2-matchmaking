@@ -1,0 +1,670 @@
+From f874e5df9e115c08c96c08888057a093b8c4a092 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 16:07:56 -0800
+Subject: [PATCH] Matchmaker: public read-only GET /status with cabinet totals
+
+GET /status returns {"service","version","online","searching","inMatch",
+"matches","updatedAt","cacheSeconds"} for launchers (player count + ping).
+Totals only: no card ids, access codes, chip ids, names, serials, node ids
+or IP addresses. Cabinets are counted by pcb serial + public IP; searching =
+in the queue now, inMatch = placed in a room within InMatchWindowSeconds and
+not searching again, online = seen within OnlineWindowSeconds.
+
+Security: under PublicMatchmaker the internet may reach exactly /status
+(not sub-paths, which would hit the WebUI fallback); own per-IP token bucket
+(Status.RequestsPerMinute / Burst) and a CacheSeconds reply cache.
+Status.PublicStatus=false answers 404. Defaults apply without config.
+
+Tests: Matchmaking.Tests +15 (472/472).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  26 +++
+ Server-Infinite/Configurations/server.json    |   9 +
+ .../Controllers/StatusController.cs           |  35 ++++
+ Server-Infinite/Lobbies/NetworkAccess.cs      |  11 +-
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  67 +++++++
+ .../Matchmaking/MatchmakerStatus.cs           |  68 +++++++
+ .../Middlewares/SecurityGuardMiddleware.cs    |  13 +-
+ .../Models/Config/CardServerConfig.cs         |   3 +
+ .../Models/Config/StatusConfigurations.cs     |  29 +++
+ Server-Infinite/Program.cs                    |  12 ++
+ .../Matchmaking.Tests.csproj                  |   1 +
+ .../Matchmaking.Tests/StatusEndpointTests.cs  | 170 ++++++++++++++++++
+ 12 files changed, 439 insertions(+), 5 deletions(-)
+ create mode 100644 Server-Infinite/Controllers/StatusController.cs
+ create mode 100644 Server-Infinite/Matchmaking/MatchmakerStatus.cs
+ create mode 100644 Server-Infinite/Models/Config/StatusConfigurations.cs
+ create mode 100644 Tests/Matchmaking.Tests/StatusEndpointTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index c5b313f..e14c689 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -674,6 +674,32 @@ Both are untested on a cabinet. The cabinet's own formula has not been reverse e
+   on A, HTML page, secret required, 413 / stale / 400s, WebUI proxy, hide / show name, and no access code / chip id /
+   salt / key in A's public output, files or logs.
+ 
++## Public status endpoint (2026-11-16, branch `status-endpoint`) — unit + local e2e tests, not yet on a VPS
++
++`GET /status` on the matchmaker returns totals only, for launchers and status pages:
++
++```json
++{"service":"exvs2-matchmaking","version":"0.6.0-dev","online":16,"searching":14,"inMatch":2,"matches":1,
++ "updatedAt":"2026-11-17T00:06:39Z","cacheSeconds":5}
++```
++
++* `searching`: human cabinets in the queue now. `inMatch`: cabinets placed in a room in the last
++  `InMatchWindowSeconds` (480) that have not searched again. `matches`: rooms with at least one of those cabinets.
++  `online`: cabinets that searched, polled or were matched in the last `OnlineWindowSeconds` (600), plus the two
++  above. A cabinet is counted by pcb serial + public IP, so a restart on a new node id is not counted twice.
++  These are estimates: a cabinet in menus or practice does not talk to the matchmaker.
++* **Never** in the reply: card ids, access codes, chip ids, names, serials, node ids, IP addresses.
++* Access: with `Security.AccessMode = PublicMatchmaker` the internet may reach exactly `/status` (and `/status/`);
++  `/status/anything` and every other WebUI path stay LAN-only (403). `LanOnly` card servers answer the LAN only.
++* Cost: the totals are computed at most once per `CacheSeconds` (5; `Cache-Control: public, max-age=5`), and each
++  source IP has its own bucket (`RequestsPerMinute` 60, `Burst` 20, 429 above it; loopback exempt like `/match`).
++* `CardServerConfig.Status`: `PublicStatus` (true; false = 404), `CacheSeconds`, `RequestsPerMinute`, `Burst`,
++  `OnlineWindowSeconds`, `InMatchWindowSeconds`, `Version` (empty = built-in `0.6.0-dev`). No config change is
++  needed on an existing VPS: the defaults apply when the section is missing.
++* Tests: Matchmaking.Tests +15 (counts, cache, JSON fields, exact-path access); local e2e on Linux with a
++  PublicMatchmaker build: `/status` 200 from a non-LAN source address, `/status/x`, `/`, `/ui` 403, 429 after the
++  burst; a 16-cabinet fake load test showed searching / in-match moving as rooms formed.
++
+ ## Known gaps / risks
+ * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
+   (`BindMatchNodesToSourceIp` limits Check/Cancel to the IP that entered, but is not a login.)
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index dac6d12..97c8231 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -126,6 +126,15 @@
+       "MinMatches": 5,
+       "MaxRows": 100,
+       "PublicPage": true
++    },
++    "Status": {
++      "PublicStatus": true,
++      "CacheSeconds": 5,
++      "RequestsPerMinute": 60,
++      "Burst": 20,
++      "OnlineWindowSeconds": 600,
++      "InMatchWindowSeconds": 480,
++      "Version": ""
+     }
+   }
+ }
+diff --git a/Server-Infinite/Controllers/StatusController.cs b/Server-Infinite/Controllers/StatusController.cs
+new file mode 100644
+index 0000000..241de17
+--- /dev/null
++++ b/Server-Infinite/Controllers/StatusController.cs
+@@ -0,0 +1,35 @@
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.Extensions.Options;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++
++namespace ServerInfinite.Controllers;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] Public read-only matchmaker status for launchers: GET /status returns
++/// <c>{"service","version","online","searching","inMatch","matches","updatedAt","cacheSeconds"}</c>, totals only.
++/// Reachable from the internet under Security.AccessMode = PublicMatchmaker when Status.PublicStatus is on (exact
++/// path only), rate-limited per source IP (Status.RequestsPerMinute / Burst) and cached (Status.CacheSeconds).
++/// </summary>
++[ApiController]
++[Route("status")]
++public class StatusController : ControllerBase
++{
++    private readonly MatchmakerStatus _status;
++    private readonly StatusConfigurations _cfg;
++
++    public StatusController(MatchmakerStatus status, IOptions<CardServerConfig> options)
++    {
++        _status = status;
++        _cfg = options.Value.Status;
++    }
++
++    [HttpGet]
++    public IActionResult Get()
++    {
++        if (!_cfg.PublicStatus) return NotFound();
++        var reply = _status.Get();
++        Response.Headers.CacheControl = $"public, max-age={Math.Max(0, reply.CacheSeconds)}";
++        return Ok(reply);
++    }
++}
+diff --git a/Server-Infinite/Lobbies/NetworkAccess.cs b/Server-Infinite/Lobbies/NetworkAccess.cs
+index 4a51844..9ff4f32 100644
+--- a/Server-Infinite/Lobbies/NetworkAccess.cs
++++ b/Server-Infinite/Lobbies/NetworkAccess.cs
+@@ -77,6 +77,12 @@ public static class NetworkAccess
+     /// <summary>[exvs2-lobbies 2026-11-16] The read-only global leaderboard page and its JSON (Leaderboard.PublicPage).</summary>
+     public static bool IsLeaderboardPath(string? path) => Under(path, "/leaderboard");
+ 
++    /// <summary>[exvs2-lobbies 2026-11-16] The read-only status reply (Status.PublicStatus). Exactly <c>/status</c> or
++    /// <c>/status/</c>: sub-paths would reach the WebUI's index.html fallback, so they are not public.</summary>
++    public static bool IsStatusPath(string? path) =>
++        string.Equals(path, "/status", StringComparison.OrdinalIgnoreCase) ||
++        string.Equals(path, "/status/", StringComparison.OrdinalIgnoreCase);
++
+     private static bool Under(string? path, string prefix)
+     {
+         if (string.IsNullOrEmpty(path)) return false;
+@@ -86,12 +92,13 @@ public static class NetworkAccess
+ 
+     /// <summary>Whether a request from <paramref name="ip"/> to <paramref name="path"/> may be served at all.</summary>
+     public static bool IsAllowed(AccessMode mode, string? path, IPAddress? ip, IReadOnlyList<IPNetwork>? extra = null,
+-        bool publicLeaderboard = false)
++        bool publicLeaderboard = false, bool publicStatus = false)
+     {
+         if (mode == AccessMode.Open) return true;
+         if (IsLan(ip, extra)) return true;
+         return mode == AccessMode.PublicMatchmaker &&
+-               (IsMatchPath(path) || IsTagPath(path) || (publicLeaderboard && IsLeaderboardPath(path)));
++               (IsMatchPath(path) || IsTagPath(path) || (publicLeaderboard && IsLeaderboardPath(path)) ||
++                (publicStatus && IsStatusPath(path)));
+     }
+ 
+     /// <summary>
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index d7e1ec7..5e1a661 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -515,6 +515,12 @@ public sealed class Matchmaker
+         public readonly Dictionary<uint, (double At, string Reason)> Ended = new();
+     }
+     private readonly Dictionary<uint, RoomTrack> _rooms = new();
++
++    // [exvs2-lobbies 2026-11-16] public /status totals: per cabinet (pcb serial + public IP) last contact, and the
++    // cabinets placed in a room (until they search again or the in-match window passes). Never exposed one by one.
++    private readonly Dictionary<string, double> _statusSeen = new();
++    private readonly Dictionary<string, (uint Room, double At)> _statusInMatch = new();
++    private const int StatusTrackMax = 8192;
+     private const int RoomTrackMax = 1024;
+ 
+     public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0,
+@@ -694,6 +700,7 @@ public sealed class Matchmaker
+                 done.LastSeen = now;
+                 return ErrorCode.Success;                              // next CheckMatching returns the same room
+             }
++            foreach (var c in t.Humans) StatusContact(c, now, searching: true);
+             foreach (var n in t.NodeIds)
+             {
+                 _ended.Remove(n);
+@@ -788,6 +795,8 @@ public sealed class Matchmaker
+             {
+                 seen.LastSeen = now;                                        // before Sweep: the poller is alive
+                 if (seen.NodeIds.Contains(nodeId)) seen.SeenByNode[nodeId] = now;
++                var me = seen.Humans.FirstOrDefault(c => c.NodeId == nodeId);
++                if (me != null) StatusContact(me, now, searching: false);
+             }
+             Sweep(now);
+             if (!_byNode.TryGetValue(nodeId, out var t))
+@@ -1633,6 +1642,13 @@ public sealed class Matchmaker
+     private void RememberRoom(Unit u, Room room)
+     {
+         TrackRoom(u, room);
++        foreach (var rc in room.Clients)
++            if (Unit.IsHuman(rc.Client))
++            {
++                var key = StatusKey(rc.Client);
++                _statusInMatch[key] = (room.RoomId, room.At);
++                _statusSeen[key] = Math.Max(room.At, _statusSeen.TryGetValue(key, out var was) ? was : 0);
++            }
+         foreach (var rc in room.Clients)
+             if (Unit.IsHuman(rc.Client)) _lastSideByNode[rc.Client.NodeId] = (room.RoomId, rc.GroupId, room.At);
+         if (_lastSideByNode.Count > LastRoomMax)
+@@ -1838,6 +1854,57 @@ public sealed class Matchmaker
+             _quarantine.Remove(k);
+     }
+ 
++    /// <summary>[exvs2-lobbies 2026-11-16] Totals for the public GET /status (no ids of any kind).</summary>
++    public readonly record struct StatusCounts(int Online, int Searching, int InMatch, int Matches);
++
++    private static string StatusKey(Client c) =>
++        (string.IsNullOrEmpty(c.PcbSerial) ? "node:" + c.NodeId : c.PcbSerial) + "|" + NetDiag.Norm(c.GlobalIpaddress);
++
++    /// <summary>Call under _gate. A search (EntryMatching) ends the cabinet's previous match.</summary>
++    private void StatusContact(Client c, double now, bool searching)
++    {
++        var key = StatusKey(c);
++        _statusSeen[key] = now;
++        if (searching) _statusInMatch.Remove(key);
++        if (_statusSeen.Count > StatusTrackMax)
++            foreach (var k in _statusSeen.OrderBy(kv => kv.Value).Take(_statusSeen.Count - StatusTrackMax / 2)
++                         .Select(kv => kv.Key).ToList())
++                _statusSeen.Remove(k);
++        if (_statusInMatch.Count > StatusTrackMax)
++            foreach (var k in _statusInMatch.OrderBy(kv => kv.Value.At).Take(_statusInMatch.Count - StatusTrackMax / 2)
++                         .Select(kv => kv.Key).ToList())
++                _statusInMatch.Remove(k);
++    }
++
++    /// <summary>
++    /// [exvs2-lobbies 2026-11-16] Cabinet totals for GET /status. Searching = human cabinets in the queue right now;
++    /// in match = cabinets placed in a room within <paramref name="inMatchWindow"/> seconds that have not searched
++    /// again; online = cabinets that searched, polled or were matched within <paramref name="onlineWindow"/> seconds
++    /// (plus the two above). Matches = rooms with at least one cabinet still counted in match. Estimates: a cabinet
++    /// in menus or practice does not talk to the matchmaker.
++    /// </summary>
++    public StatusCounts GetStatusCounts(double now, double onlineWindow = 600, double inMatchWindow = 480)
++    {
++        lock (_gate)
++        {
++            Sweep(now);
++            var searching = new HashSet<string>();
++            foreach (var u in _queue)
++                if (u.Room == null)
++                    foreach (var c in u.Humans) searching.Add(StatusKey(c));
++            foreach (var k in _statusInMatch.Where(kv => now - kv.Value.At > inMatchWindow).Select(kv => kv.Key).ToList())
++                _statusInMatch.Remove(k);
++            foreach (var k in _statusSeen.Where(kv => now - kv.Value > Math.Max(onlineWindow, inMatchWindow)).Select(kv => kv.Key).ToList())
++                _statusSeen.Remove(k);
++            var inMatch = _statusInMatch.Where(kv => !searching.Contains(kv.Key)).ToList();
++            var online = new HashSet<string>(searching);
++            foreach (var kv in _statusSeen)
++                if (now - kv.Value <= onlineWindow) online.Add(kv.Key);
++            foreach (var kv in inMatch) online.Add(kv.Key);
++            return new StatusCounts(online.Count, searching.Count, inMatch.Count, inMatch.Select(kv => kv.Value.Room).Distinct().Count());
++        }
++    }
++
+     /// <summary>Remove a unit. With <paramref name="now"/>, its other human nodes (e.g. the partner of a
+     /// fixed pair) get MATCH_CANCELED on their next poll instead of ERR_MATCH_NOENTRY.</summary>
+     private void Drop(Unit t, double? now = null, uint? except = null, string? reason = null)
+diff --git a/Server-Infinite/Matchmaking/MatchmakerStatus.cs b/Server-Infinite/Matchmaking/MatchmakerStatus.cs
+new file mode 100644
+index 0000000..d9442b5
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/MatchmakerStatus.cs
+@@ -0,0 +1,68 @@
++using System.Text.Json.Serialization;
++
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] The public GET /status reply. Totals only: never card ids, access codes, chip ids,
++/// names, pcb serials, node ids or IP addresses.
++/// </summary>
++public sealed record MatchmakerStatusReply(
++    [property: JsonPropertyName("service")] string Service,
++    [property: JsonPropertyName("version")] string Version,
++    [property: JsonPropertyName("online")] int Online,
++    [property: JsonPropertyName("searching")] int Searching,
++    [property: JsonPropertyName("inMatch")] int InMatch,
++    [property: JsonPropertyName("matches")] int Matches,
++    [property: JsonPropertyName("updatedAt")] DateTime UpdatedAt,
++    [property: JsonPropertyName("cacheSeconds")] int CacheSeconds);
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] Builds <see cref="MatchmakerStatusReply"/> from the matchmaker at most once per
++/// <c>cacheSeconds</c> (callers in between get the cached reply), so /status costs one lock per few seconds.
++/// </summary>
++public sealed class MatchmakerStatus
++{
++    /// <summary>Matchmaker add-on version reported when Status.Version is empty.</summary>
++    public const string BuiltInVersion = "0.6.0-dev";
++    public const string ServiceName = "exvs2-matchmaking";
++
++    private readonly object _gate = new();
++    private readonly Func<double, Matchmaker.StatusCounts> _counts;
++    private readonly Func<double> _clock;
++    private readonly Func<DateTime> _utcNow;
++    private readonly string _version;
++    private readonly int _cacheSeconds;
++    private MatchmakerStatusReply? _cached;
++    private double _cachedAt;
++
++    public MatchmakerStatus(Func<double, Matchmaker.StatusCounts> counts, Func<double> clock, Func<DateTime>? utcNow = null,
++        string? version = null, int cacheSeconds = 5)
++    {
++        _counts = counts;
++        _clock = clock;
++        _utcNow = utcNow ?? (() => DateTime.UtcNow);
++        _version = string.IsNullOrWhiteSpace(version) ? BuiltInVersion : version.Trim();
++        _cacheSeconds = Math.Max(0, cacheSeconds);
++    }
++
++    public MatchmakerStatus(Matchmaker mm, Func<double> clock, double onlineWindow, double inMatchWindow,
++        string? version = null, int cacheSeconds = 5)
++        : this(now => mm.GetStatusCounts(now, onlineWindow, inMatchWindow), clock, null, version, cacheSeconds) { }
++
++    public int CacheSeconds => _cacheSeconds;
++
++    public MatchmakerStatusReply Get()
++    {
++        lock (_gate)
++        {
++            var now = _clock();
++            if (_cached != null && now - _cachedAt < _cacheSeconds) return _cached;
++            var c = _counts(now);
++            var at = _utcNow();
++            _cached = new MatchmakerStatusReply(ServiceName, _version, c.Online, c.Searching, c.InMatch, c.Matches,
++                new DateTime(at.Ticks - at.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc), _cacheSeconds);
++            _cachedAt = now;
++            return _cached;
++        }
++    }
++}
+diff --git a/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs b/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+index 81331f5..5152f05 100644
+--- a/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
++++ b/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+@@ -28,6 +28,8 @@ public sealed class SecurityGuardMiddleware
+     private readonly IpRateLimiter _tagLimiter;
+     private readonly IpRateLimiter _leaderboardLimiter;
+     private readonly bool _publicLeaderboard;
++    private readonly IpRateLimiter _statusLimiter;
++    private readonly bool _publicStatus;
+     private readonly IpRateLimiter _warnLimiter = new(6, 3);   // at most a few "refused" lines per source per minute
+ 
+     public SecurityGuardMiddleware(RequestDelegate next, IOptions<CardServerConfig> options, ILogger<SecurityGuardMiddleware> log)
+@@ -44,6 +46,9 @@ public sealed class SecurityGuardMiddleware
+         // exvs2-lobbies 2026-11-16: public read-only leaderboard page (Leaderboard.PublicPage) and its own bucket
+         _publicLeaderboard = cfg.Leaderboard.Enabled && cfg.Leaderboard.PublicPage;
+         _leaderboardLimiter = new IpRateLimiter(cfg.Leaderboard.PublicRequestsPerMinute, cfg.Leaderboard.PublicBurst);
++        // exvs2-lobbies 2026-11-16: public read-only GET /status (totals only) and its own bucket
++        _publicStatus = cfg.Status.PublicStatus;
++        _statusLimiter = new IpRateLimiter(cfg.Status.RequestsPerMinute, cfg.Status.Burst);
+     }
+ 
+     public AccessMode Mode => _mode;
+@@ -54,7 +59,7 @@ public sealed class SecurityGuardMiddleware
+         var path = context.Request.Path.Value ?? "/";
+         var now = System.Diagnostics.Stopwatch.GetTimestamp() / TickFreq;
+ 
+-        if (!NetworkAccess.IsAllowed(_mode, path, ip, _extra, _publicLeaderboard))
++        if (!NetworkAccess.IsAllowed(_mode, path, ip, _extra, _publicLeaderboard, _publicStatus))
+         {
+             Refuse(context, StatusCodes.Status403Forbidden, ip, "not allowed from this network", now);
+             return;
+@@ -72,13 +77,15 @@ public sealed class SecurityGuardMiddleware
+         }
+ 
+         var limiter = isTag ? _tagLimiter : NetworkAccess.IsMatchPath(path) ? _matchLimiter
+-            : NetworkAccess.IsLeaderboardPath(path) ? _leaderboardLimiter : null;
++            : NetworkAccess.IsLeaderboardPath(path) ? _leaderboardLimiter
++            : NetworkAccess.IsStatusPath(path) ? _statusLimiter : null;
+         if (limiter != null && !(_exemptLoopback && NetworkAccess.IsLoopback(ip)) &&
+             !limiter.TryAcquire(ip?.ToString() ?? "?", now))
+         {
+             context.Response.Headers["Retry-After"] = "5";
+             Refuse(context, StatusCodes.Status429TooManyRequests, ip,
+-                isTag ? "/tag rate limit" : NetworkAccess.IsLeaderboardPath(path) ? "/leaderboard rate limit" : "/match rate limit", now);
++                isTag ? "/tag rate limit" : NetworkAccess.IsLeaderboardPath(path) ? "/leaderboard rate limit"
++                    : NetworkAccess.IsStatusPath(path) ? "/status rate limit" : "/match rate limit", now);
+             return;
+         }
+ 
+diff --git a/Server-Infinite/Models/Config/CardServerConfig.cs b/Server-Infinite/Models/Config/CardServerConfig.cs
+index 7832b25..c42fca4 100644
+--- a/Server-Infinite/Models/Config/CardServerConfig.cs
++++ b/Server-Infinite/Models/Config/CardServerConfig.cs
+@@ -51,6 +51,9 @@ public class CardServerConfig
+     // exvs2-lobbies: source filtering, rate limits and log masking (security hardening 2026-11-15)
+     public SecurityConfigurations Security { get; set; } = new();
+ 
++    // exvs2-lobbies: public read-only matchmaker status (GET /status, totals only), 2026-11-16
++    public StatusConfigurations Status { get; set; } = new();
++
+     public override string ToString()
+     {
+         var options = new JsonSerializerOptions
+diff --git a/Server-Infinite/Models/Config/StatusConfigurations.cs b/Server-Infinite/Models/Config/StatusConfigurations.cs
+new file mode 100644
+index 0000000..214bdea
+--- /dev/null
++++ b/Server-Infinite/Models/Config/StatusConfigurations.cs
+@@ -0,0 +1,29 @@
++namespace ServerInfinite.Models.Config;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] Public read-only matchmaker status (GET /status) for launchers and status pages.
++/// The reply holds totals only (cabinets online / searching / in a match, matches, version): no card ids, access
++/// codes, chip ids, names, serials, node ids or IP addresses. With Security.AccessMode = PublicMatchmaker the
++/// internet may reach exactly <c>/status</c> (not sub-paths) when <see cref="PublicStatus"/> is on.
++/// </summary>
++public class StatusConfigurations
++{
++    /// <summary>Serve GET /status. false = 404 (and the path stays LAN-only like the WebUI).</summary>
++    public bool PublicStatus { get; set; } = true;
++
++    /// <summary>The totals are computed at most once per this many seconds; repeated requests get the cached reply.</summary>
++    public int CacheSeconds { get; set; } = 5;
++
++    /// <summary>Per source IP token bucket for /status (0 = off). A launcher refreshes about every 15 s.</summary>
++    public int RequestsPerMinute { get; set; } = 60;
++    public int Burst { get; set; } = 20;
++
++    /// <summary>A cabinet counts as online for this many seconds after its last search / poll / match.</summary>
++    public double OnlineWindowSeconds { get; set; } = 600;
++
++    /// <summary>A matched cabinet counts as "in a match" for at most this many seconds, or until it searches again.</summary>
++    public double InMatchWindowSeconds { get; set; } = 480;
++
++    /// <summary>Version text in the reply. Empty = the built-in matchmaker version.</summary>
++    public string Version { get; set; } = "";
++}
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 7684453..c7cb142 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -242,6 +242,15 @@ try
+             BindNodesToSource = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Security.BindMatchNodesToSourceIp
+         };
+     });
++    // exvs2-lobbies 2026-11-16: public read-only GET /status (totals only, cached), Status.*
++    builder.Services.AddSingleton(sp =>
++    {
++        var st = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Status;
++        return new ServerInfinite.Matchmaking.MatchmakerStatus(
++            sp.GetRequiredService<ServerInfinite.Matchmaking.Matchmaker>(),
++            () => System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency,
++            st.OnlineWindowSeconds, st.InMatchWindowSeconds, st.Version, st.CacheSeconds);
++    });
+     // exvs2-lobbies post-match trace (logging only, default on): OnlineMatching.LogPostMatchTraffic
+     builder.Services.AddSingleton(sp => new ServerInfinite.Matchmaking.MmsTrace
+     {
+@@ -279,6 +288,9 @@ try
+         config.Leaderboard.SubmitAfterResultSeconds, string.IsNullOrEmpty(inviteUrl) ? "in-process" : "http /tag/leaderboard",
+         config.Leaderboard.AcceptSubmissions, config.Leaderboard.MinMatches, config.Leaderboard.PublicPage,
+         string.IsNullOrWhiteSpace(config.Leaderboard.RegionName) ? "-" : config.Leaderboard.RegionName);
++    Log.Information("Status: PublicStatus={Public} cache {Cache}s rate {Rate}/min burst {Burst} windows online {Online}s / in match {InMatch}s",
++        config.Status.PublicStatus, config.Status.CacheSeconds, config.Status.RequestsPerMinute, config.Status.Burst,
++        config.Status.OnlineWindowSeconds, config.Status.InMatchWindowSeconds);
+     Log.Information("Security: AccessMode={Mode} ExtraAllowedCidrs={Extra} rate /match={MatchRate}/min burst {MatchBurst}, " +
+                     "/tag={TagRate}/min burst {TagBurst}, BindMatchNodesToSourceIp={Bind}, MaskNetworkInLog={Mask}, " +
+                     "partner codes expire open {OpenDays}d / joined idle {JoinedDays}d",
+diff --git a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+index 823ad34..79283e3 100644
+--- a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
++++ b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+@@ -14,6 +14,7 @@
+     <Compile Include="..\..\Server-Infinite\Models\Config\OnlineTagConfigurations.cs" Link="Config\OnlineTagConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\SecurityConfigurations.cs" Link="Config\SecurityConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\OnlineMatchingConfigurations.cs" Link="Config\OnlineMatchingConfigurations.cs" />
++    <Compile Include="..\..\Server-Infinite\Models\Config\StatusConfigurations.cs" Link="Config\StatusConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Lobbies\Serilog\*.cs" Link="Lobbies\Serilog\%(Filename)%(Extension)" />
+     <!-- exvs2-lobbies 2026-11-15: WebUI Teams tab helpers (pure, no Blazor) -->
+     <Compile Include="..\..\WebUIInfinite\Shared\Dto\Common\Team.cs" Link="WebUI\Team.cs" />
+diff --git a/Tests/Matchmaking.Tests/StatusEndpointTests.cs b/Tests/Matchmaking.Tests/StatusEndpointTests.cs
+new file mode 100644
+index 0000000..496dd3f
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/StatusEndpointTests.cs
+@@ -0,0 +1,170 @@
++using System.Net;
++using System.Text.Json;
++using nue.protocol.mms;
++using ServerInfinite.Lobbies;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// exvs2-lobbies 2026-11-16: public GET /status (totals only). All data is fake (documentation IP ranges).
++public class StatusEndpointTests
++{
++    private uint _node = 500;
++
++    private static Client Cl(uint node, string ip, string? serial = null)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = serial ?? $"P{node}", LocId = $"L{node}", PrefCode = 13, GlobalIpaddress = ip,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        return c;
++    }
++
++    private Request.EntryMatching Entry(uint world, string ip = "203.0.113.5", string? serial = null, uint? node = null)
++    {
++        var me = node ?? ++_node;
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me, ip, serial), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = 0 });
++        return e;
++    }
++
++    private static Matchmaker New() => new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1) { StaleAfter = 1e6 };
++
++    [Fact]
++    public void EmptyMatchmakerReportsZeros()
++    {
++        var c = New().GetStatusCounts(0);
++        Assert.Equal(new Matchmaker.StatusCounts(0, 0, 0, 0), c);
++    }
++
++    [Fact]
++    public void SearchingCabinetsAreCountedAndOnline()
++    {
++        var mm = New();
++        mm.Entry(Entry(23), 0);
++        mm.Entry(Entry(23), 0);
++        var c = mm.GetStatusCounts(1);
++        Assert.Equal(2, c.Searching);
++        Assert.Equal(0, c.InMatch);
++        Assert.Equal(2, c.Online);
++    }
++
++    [Fact]
++    public void MatchedCabinetsMoveToInMatchUntilTheySearchAgainOrTheWindowPasses()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 4).Select(_ => Entry(23)).ToList();
++        es.ForEach(e => mm.Entry(e, 0));
++        Assert.NotNull(mm.Check(es[0].Myclient.NodeId, 1).Room);
++        var c = mm.GetStatusCounts(2);
++        Assert.Equal(0, c.Searching);
++        Assert.Equal(4, c.InMatch);
++        Assert.Equal(1, c.Matches);
++        Assert.Equal(4, c.Online);
++
++        // one cabinet searches again after its match (new apply id): it is searching, the others stay in the match
++        var again = Entry(23, serial: es[0].Myclient.PcbSerial, node: es[0].Myclient.NodeId);
++        again.ApplyId = 2;
++        mm.Entry(again, 200);
++        c = mm.GetStatusCounts(201, onlineWindow: 600, inMatchWindow: 480);
++        Assert.Equal(1, c.Searching);
++        Assert.Equal(3, c.InMatch);
++        Assert.Equal(4, c.Online);
++
++        // after the in-match window the three are just "online" (seen recently), then gone after the online window
++        c = mm.GetStatusCounts(500, onlineWindow: 600, inMatchWindow: 480);
++        Assert.Equal(0, c.InMatch);
++        Assert.Equal(0, c.Matches);
++        Assert.True(c.Online >= 3);
++        c = mm.GetStatusCounts(5000, onlineWindow: 600, inMatchWindow: 480);
++        Assert.Equal(0, c.InMatch);
++        Assert.Equal(0, c.Online - c.Searching);
++    }
++
++    [Fact]
++    public void ACabinetOnANewNodeIdIsCountedOnce()
++    {
++        var mm = New();
++        mm.Entry(Entry(23, serial: "PCB_X", node: 900), 0);
++        mm.Cancel(900, 1);
++        mm.Entry(Entry(23, serial: "PCB_X", node: 901), 2);
++        var c = mm.GetStatusCounts(3);
++        Assert.Equal(1, c.Online);
++        Assert.Equal(1, c.Searching);
++    }
++
++    [Fact]
++    public void TheSameSerialAtTwoSitesIsTwoCabinets()
++    {
++        var mm = New();
++        mm.Entry(Entry(23, ip: "203.0.113.5", serial: "PCB_03"), 0);
++        mm.Entry(Entry(23, ip: "198.51.100.7", serial: "PCB_03"), 0);
++        Assert.Equal(2, mm.GetStatusCounts(1).Searching);
++    }
++
++    [Fact]
++    public void ReplyIsCachedForCacheSeconds()
++    {
++        var calls = 0;
++        double clock = 100;
++        var st = new MatchmakerStatus(_ => { calls++; return new Matchmaker.StatusCounts(calls, 0, 0, 0); },
++            () => clock, () => new DateTime(2026, 11, 16, 12, 0, 0, DateTimeKind.Utc), version: null, cacheSeconds: 5);
++        Assert.Equal(1, st.Get().Online);
++        clock = 104;
++        Assert.Equal(1, st.Get().Online);
++        Assert.Equal(1, calls);
++        clock = 105.5;
++        Assert.Equal(2, st.Get().Online);
++        Assert.Equal(MatchmakerStatus.BuiltInVersion, st.Get().Version);
++    }
++
++    [Fact]
++    public void ReplyJsonHasTotalsOnly()
++    {
++        var mm = New();
++        mm.Entry(Entry(23, ip: "203.0.113.77", serial: "PCB_SECRET1"), 0);
++        var st = new MatchmakerStatus(mm, () => 1, 600, 480, version: "test-1", cacheSeconds: 5);
++        var json = JsonSerializer.Serialize(st.Get());
++        using var doc = JsonDocument.Parse(json);
++        var names = doc.RootElement.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
++        Assert.Equal(new[] { "cacheSeconds", "inMatch", "matches", "online", "searching", "service", "updatedAt", "version" }, names);
++        Assert.DoesNotContain("203.0.113", json);
++        Assert.DoesNotContain("PCB_SECRET1", json);
++        Assert.Equal("test-1", doc.RootElement.GetProperty("version").GetString());
++        Assert.Equal(1, doc.RootElement.GetProperty("searching").GetInt32());
++    }
++
++    // ---- access: exactly /status is public on a PublicMatchmaker, nothing else new ----
++
++    [Theory]
++    [InlineData("/status", true)]
++    [InlineData("/STATUS", true)]
++    [InlineData("/status/", true)]
++    [InlineData("/status/x", false)]
++    [InlineData("/statusx", false)]
++    [InlineData("/", false)]
++    [InlineData("/ui", false)]
++    [InlineData("/index.html", false)]
++    public void OnlyTheExactStatusPathIsPublic(string path, bool allowed)
++    {
++        var internet = IPAddress.Parse("203.0.113.9");
++        Assert.Equal(allowed, NetworkAccess.IsAllowed(AccessMode.PublicMatchmaker, path, internet, null,
++            publicLeaderboard: true, publicStatus: true));
++        // switched off: LAN-only like the WebUI
++        if (NetworkAccess.IsStatusPath(path))
++            Assert.False(NetworkAccess.IsAllowed(AccessMode.PublicMatchmaker, path, internet, null, true, publicStatus: false));
++        // a LanOnly card server never serves it to the internet
++        Assert.False(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, internet, null, true, publicStatus: true));
++        Assert.True(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, IPAddress.Parse("192.168.1.72"), null, true, true));
++    }
++}
+-- 
+2.47.3
+

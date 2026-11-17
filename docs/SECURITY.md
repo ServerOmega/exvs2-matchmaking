@@ -14,7 +14,7 @@ everything below is about limiting *who can reach what* and *what ends up in log
 | Mode | Use it for | Who may reach what |
 |---|---|---|
 | `LanOnly` (default) | a card server whose cabinets are in the same home / shop (or on your VPN) | every path answers only loopback and private sources: `127/8`, `10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `::1`, `fc00::/7`, `fe80::/10`, plus `ExtraAllowedCidrs` |
-| `PublicMatchmaker` | a shared matchmaker on a VPS or a port-forwarded PC | internet sources may reach **only** `/match`, `/mms` (matchmaking) and `/tag` (partner codes). The card website, card APIs (`/ui`, `/game`, …) and static files answer loopback/LAN only (403 from the internet) |
+| `PublicMatchmaker` | a shared matchmaker on a VPS or a port-forwarded PC | internet sources may reach **only** `/match`, `/mms` (matchmaking), `/tag` (partner codes), the read-only `/leaderboard` page (`Leaderboard.PublicPage`) and exactly `/status` (totals only, `Status.PublicStatus`, `status-endpoint` branch). The card website, card APIs (`/ui`, `/game`, …) and static files answer loopback/LAN only (403 from the internet) |
 | `Open` | upstream behaviour, nothing filtered | not recommended: card data, access codes and the card website become reachable from the internet over plain HTTP |
 
 STUN (UDP 3478/3479, built-in) is not HTTP and is always open on a matchmaker; it only reflects addresses.

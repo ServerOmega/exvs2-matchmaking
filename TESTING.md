@@ -49,6 +49,12 @@ Tick items off as they're verified, and note results/captures next to them. Firs
 - [x] Box: local Linux server + fake cards + headless browser: the Stats tab renders mode cards, totals, the suit table and recent battles; wrong access code / another card's chip id gets no data
 - [ ] Real game: View Card → Stats on a card with online Class and Mix matches; numbers match the matches played; mode drop-down and column sorting work
 
+## Public status endpoint (branch `status-endpoint`, 2026-11-16)
+- [x] Box: `Matchmaking.Tests` 472/472 (15 new: counts, cache, reply fields, exact-path access)
+- [x] Box e2e (Linux build, `PublicMatchmaker`, request from a non-LAN source address on the box): `/status` 200 with totals only; `/status/x`, `/`, `/ui` 403; 429 after the burst; 16 fake cabinets: `searching` / `inMatch` / `matches` follow the rooms
+- [ ] VPS: `/status` answers from the internet; `/` and `/ui` still 403
+- [ ] Real game: counts look right while cabinets search and play (menus / practice are not counted)
+
 ## Global leaderboards + Class rate tables (branch `global-leaderboards`, 2026-11-16)
 - [x] Box: `Server.Tests` 31/31 (7 new), `Matchmaking.Tests` 457/457 (19 new); leaderboard e2e 44/44 and cross-server e2e 103/103 (two local servers, fake cards)
 - [ ] VPS: `/leaderboard` page loads from the internet; `/tag/leaderboard/submit` without the secret gets 401

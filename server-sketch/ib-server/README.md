@@ -18,7 +18,7 @@ server, v1.2.0, commit `7f4b280`) so that it:
 * can be built and run **on Linux** (`-p:LinuxHost=true`) as well as Windows.
 
 Upstream has **no license**, so it is not forked or redistributed here — only our changes, as a patch
-(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save`, `suit-stats-page`, `rematch-cooldown` and `global-leaderboards` commits, 50 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47). Commit 49 is the `rematch-cooldown` commit — see [Rematch cooldown](#rematch-cooldown-and-room-end-log-branch-rematch-cooldown); also kept alone as [`rematch-cooldown.patch`](rematch-cooldown.patch). Commit 50 (branch `global-leaderboards`, not released yet) adds global Class / Mix leaderboards through the matchmaker and sends the IB Class rate tables — see [Global leaderboards](#global-leaderboards-branch-global-leaderboards); also kept alone as [`global-leaderboards.patch`](global-leaderboards.patch) (apply on top of commit 49).
+(`online-matchmaking.patch`, a `git format-patch 7f4b280..HEAD` of the release/v0.5.0 series plus the `online-results-save`, `suit-stats-page`, `rematch-cooldown`, `global-leaderboards` and `status-endpoint` commits, 52 commits; the published series uses `<VPS_IP>` in the VPS tools commits and never includes a public VPS address). Commits 27–28 add security hardening — see [`docs/SECURITY.md`](../../docs/SECURITY.md). Later commits add friend requests, Teams pages, ContinuePair VsCpu at 18 s, the pair-cancel quarantine, and ContinuePairAfterCpuSeconds (fast CPU room after a CPU loss). Commit 47 (branch `online-results-save`, not released yet) stores online battle results like offline ones — see [Online battle results](#online-battle-results-branch-online-results-save); it is also kept alone as [`online-results-save.patch`](online-results-save.patch) (apply on top of the 46-commit v0.5.0 series). Commit 48 (branch `suit-stats-page`, not released yet) adds a Stats tab to View Card — see [Card stats page](#card-stats-page-branch-suit-stats-page); also kept alone as [`suit-stats-page.patch`](suit-stats-page.patch) (apply on top of commit 47). Commit 49 is the `rematch-cooldown` commit — see [Rematch cooldown](#rematch-cooldown-and-room-end-log-branch-rematch-cooldown); also kept alone as [`rematch-cooldown.patch`](rematch-cooldown.patch). Commit 50 (branch `global-leaderboards`, not released yet) adds global Class / Mix leaderboards through the matchmaker and sends the IB Class rate tables — see [Global leaderboards](#global-leaderboards-branch-global-leaderboards); also kept alone as [`global-leaderboards.patch`](global-leaderboards.patch) (apply on top of commit 49). Commit 51 points the card-server homepage's update notice at this repository. Commit 52 (branch `status-endpoint`, not released yet) adds a public read-only `GET /status` with cabinet totals for launchers — see [Public status endpoint](#public-status-endpoint-branch-status-endpoint); also kept alone as [`status-endpoint.patch`](status-endpoint.patch) (apply on top of commit 51).
 The last ten commits are also kept as a standalone series in [`results-gap-and-rolling-fill/`](results-gap-and-rolling-fill/) (apply on top of the earlier 14-commit patch, tip `79b9fb4`); see [`RESULTS-GAP-AND-ROLLING-FILL.md`](RESULTS-GAP-AND-ROLLING-FILL.md).
 Full change list and config reference: `ONLINE_MATCHMAKING.md` inside the patch.
 
@@ -29,13 +29,13 @@ Needs the .NET 9 SDK (`yay -S dotnet-sdk` on Arch; on Windows install .NET 9 SDK
 ```bash
 git clone https://github.com/Chiang-17/EXVS2-IB-Server && cd EXVS2-IB-Server
 git checkout 7f4b280
-git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 50 commits
+git am /path/to/exvs2-matchmaking/server-sketch/ib-server/online-matchmaking.patch    # creates 52 commits
 
 # Windows server (like upstream's release):
 dotnet publish Server-Infinite -c Release -r win-x64
 # or Linux server:
 dotnet build Server-Infinite -c Release -p:LinuxHost=true -o out
-# matchmaker unit tests (457 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, security, rematch cooldown, and the leaderboard store):
+# matchmaker unit tests (472 passing, including NoCpuPartner, ContinuePair, ContinuePairAfterCpu, pair-cancel quarantine, friends, Teams pages, security, rematch cooldown, the leaderboard store and /status):
 dotnet test Tests/Matchmaking.Tests
 # card-server DB tests (31: online battle results, card stats page, leaderboard snapshots + Class rate tables; in-memory SQLite; on Windows drop -p:LinuxHost=true):
 dotnet test Tests/Server.Tests -p:LinuxHost=true
@@ -182,6 +182,29 @@ Both are untested on a cabinet.
   answers, hide / show name, and no access code / chip id / salt / card key in the matchmaker's public output, files
   or logs.
 * Cross-server e2e 103/103.
+
+## Public status endpoint (branch `status-endpoint`)
+> Unit tests and a local Linux e2e only; not on a VPS yet.
+
+`GET /status` on the matchmaker returns totals only, for the launcher's server list (player count and ping):
+
+```json
+{"service":"exvs2-matchmaking","version":"0.6.0-dev","online":16,"searching":14,"inMatch":2,"matches":1,
+ "updatedAt":"2026-11-17T00:06:39Z","cacheSeconds":5}
+```
+
+* `searching` = human cabinets in the queue now; `inMatch` = cabinets placed in a room within the last 8 minutes
+  (`InMatchWindowSeconds`) that have not searched again; `matches` = rooms with at least one of those; `online` =
+  cabinets that searched, polled or were matched within the last 10 minutes (`OnlineWindowSeconds`), plus the two
+  above. Counted per cabinet (pcb serial + public IP). Estimates: a cabinet in menus or practice does not talk to
+  the matchmaker.
+* The reply **never** holds card ids, access codes, chip ids, names, serials, node ids or IP addresses.
+* With `Security.AccessMode = PublicMatchmaker` the internet may reach exactly `/status` (not `/status/...`); the
+  WebUI and every other path stay LAN-only. Own per-IP limit (`Status.RequestsPerMinute` 60, `Burst` 20, then 429)
+  and a reply cache (`Status.CacheSeconds` 5).
+* `CardServerConfig.Status`: `PublicStatus` (true; false = 404), `CacheSeconds`, `RequestsPerMinute`, `Burst`,
+  `OnlineWindowSeconds`, `InMatchWindowSeconds`, `Version`. Missing section = defaults, so an existing VPS config
+  does not need editing.
 
 ## Configure
 In `Configurations/server.json` under `CardServerConfig` → `OnlineMatching`:

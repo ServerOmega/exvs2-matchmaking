@@ -1,7 +1,7 @@
 From 58436463f241170ac529ecfada6feb000956ca98 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 07:32:41 -0800
-Subject: [PATCH 01/50] Online matchmaking (experimental): STUN+MMS in
+Subject: [PATCH 01/52] Online matchmaking (experimental): STUN+MMS in
  RegisterPcb, Entry/Check/Cancel matchmaker, IB class-match tables, ranked
  result persistence, Linux build option; load-test fixes
 
@@ -2328,7 +2328,7 @@ index 0000000..3b81d9a
 From 7a3c26384d31ec100b6b4581f7c5b7c9bc751908 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:24:50 -0800
-Subject: [PATCH 02/50] RegisterCard: fall back to pending card by access code
+Subject: [PATCH 02/52] RegisterCard: fall back to pending card by access code
  when SessionId is empty (POC clients)
 
 ---
@@ -2366,7 +2366,7 @@ index da8f5ea..3029cb0 100644
 From f8f01b271dedf9b45acbf900a593cc9ef797393b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 14:38:55 -0800
-Subject: [PATCH 03/50] Built-in RFC 5389/5780 STUN server (BuiltinStun),
+Subject: [PATCH 03/52] Built-in RFC 5389/5780 STUN server (BuiltinStun),
  single-IP or two-IP
 
 ---
@@ -2598,7 +2598,7 @@ index bda49e2..a9c56ab 100644
 From 61fc5597c2944500b61f371fb3729b968df41ca6 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 04/50] Built-in STUN: bind to StunHost when it is a local
+Subject: [PATCH 04/52] Built-in STUN: bind to StunHost when it is a local
  address
 
 On a multi-homed Windows PC (Ethernet + N2N/VPN adapter) a socket bound to
@@ -2657,7 +2657,7 @@ index 872d2b3..4ef4c22 100644
 From d1af4e24edec918b2f68555b413240b4b0fe5dab Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 05/50] SaveBadge: clamp badge exp at 0
+Subject: [PATCH 05/52] SaveBadge: clamp badge exp at 0
 
 A lost online match reported a negative badge point and the badge exp went
 0 -> -20 in the real game (2026-11-13). Clamp the stored value to >= 0.
@@ -2685,7 +2685,7 @@ index 90e35a8..5fad533 100644
 From c4762478861c878fa91c7e4975a865db1a676763 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:25 -0800
-Subject: [PATCH 06/50] Matchmaker: optional CPU stand-in seats;
+Subject: [PATCH 06/52] Matchmaker: optional CPU stand-in seats;
  FillAfterSeconds default 15
 
 CpuStandInSeats (default false, experimental): in a short-handed room each
@@ -3036,7 +3036,7 @@ index 3b81d9a..b5b7cbb 100644
 From e920930e51110200b6e5dc834a4419576c3ce556 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 18:53:49 -0800
-Subject: [PATCH 07/50] ONLINE_MATCHMAKING.md: first real-game results
+Subject: [PATCH 07/52] ONLINE_MATCHMAKING.md: first real-game results
  (2026-11-13), BuiltinStun / CpuStandInSeats / FillAfterSeconds config
 
 ---
@@ -3110,7 +3110,7 @@ index 2a72884..65ee897 100644
 From 659ac09d77d23cd2c31429652e6f6518f8d2857c Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:08:01 -0800
-Subject: [PATCH 08/50] Matchmaker: pair worlds for online tag (5, pair key)
+Subject: [PATCH 08/52] Matchmaker: pair worlds for online tag (5, pair key)
  and partner recruit (21 casual, 22 by class)
 
 Exactly two solo cabinets per room, both group 0, fixed order (world 5: lower am_id = game's leader first;
@@ -3601,7 +3601,7 @@ index 0000000..f7c4beb
 From ad835e49a31dfadb2b65c9b0cb6d932190f7187d Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:11:51 -0800
-Subject: [PATCH 09/50] Online tag: send tag teams in LoadCard (36); WebUI
+Subject: [PATCH 09/52] Online tag: send tag teams in LoadCard (36); WebUI
  invite checks the partner's code server-side
 
 * LoadCard.MobileUserGroup.tag_teams: every team the card leads or partners, partner_id = partner's pilot id
@@ -4043,7 +4043,7 @@ index 27c6cb7..94b83aa 100644
 From 949c5974ad51f17c6cb3aebf74964da7ae8e3fd5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:16:15 -0800
-Subject: [PATCH 10/50] WebUI: re-enable the Teams tab (online-tag invite) and
+Subject: [PATCH 10/52] WebUI: re-enable the Teams tab (online-tag invite) and
  fix its crash on a new team
 
 Upstream hid the Teams tab; creating a team there (partner's user id + invitation code) is how a player
@@ -4139,7 +4139,7 @@ index 3709ff7..f37e4f8 100644
 From c2b491d4fcc669c5ae2f12841de562d328758b31 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 19:17:13 -0800
-Subject: [PATCH 11/50] ONLINE_MATCHMAKING.md: online tag / partner recruit
+Subject: [PATCH 11/52] ONLINE_MATCHMAKING.md: online tag / partner recruit
  (pair worlds, LoadCard tag_teams, WebUI invite, OnlineTag config)
 
 ---
@@ -4219,7 +4219,7 @@ index 65ee897..81e88cd 100644
 From c508468e5e7f6ea448f4791c8793231dd79d15cd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 02:52:18 -0800
-Subject: [PATCH 12/50] Results-hang fixes (experimental): HumansTeamVsCpu
+Subject: [PATCH 12/52] Results-hang fixes (experimental): HumansTeamVsCpu
  rooms, PostMatchStubs for 205/211/225/306/406/407, NETREPORT log of
  SaveVsmOnResult.network_report
 
@@ -4749,7 +4749,7 @@ index 0000000..a4934f4
 From 394ae1877ca4cca968446dc3e037e20e480a5fdc Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:07:10 -0800
-Subject: [PATCH 13/50] Results-hang simulation drafts: PostMatchWatchdogMs
+Subject: [PATCH 13/52] Results-hang simulation drafts: PostMatchWatchdogMs
  (off), MaskCardSecretsInLog (on, logging only), configurable LoadBlackList
  (upstream defaults), HangSim + HumansVsCpu many-cabinet sim tests
 
@@ -5398,7 +5398,7 @@ index b5b7cbb..74e757b 100644
 From ec16db942ce77186cefba8b17badc94bdcb27db3 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 05:36:15 -0800
-Subject: [PATCH 14/50] Post-match trace (logging only, default on): MMS-POST /
+Subject: [PATCH 14/52] Post-match trace (logging only, default on): MMS-POST /
  STUN-POST lines for matchmaker and STUN traffic from recently matched
  cabinets, MMS-UNHANDLED warning; LogPostMatchTraffic config; 7 tests
 
@@ -5884,7 +5884,7 @@ index 0000000..310cbdf
 From cbf7863e0de83af50113a8add2c053c5121ddaaf Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 10:09:10 -0800
-Subject: [PATCH 15/50] Results-hang timing (logging only, default on):
+Subject: [PATCH 15/52] Results-hang timing (logging only, default on):
  RESULT-SAVE / RESULT-WAIT / RESULT-GAP lines per cabinet from the result save
  to its next request; LogResultGap config; 5 tests
 
@@ -6127,7 +6127,7 @@ index 0000000..e276bd6
 From cdf85bb96ca809c69b24a3f6b92984b11b9c5c12 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 22:31:13 -0800
-Subject: [PATCH 16/50] Rolling fill timer: FillAfter restarts on each new
+Subject: [PATCH 16/52] Rolling fill timer: FillAfter restarts on each new
  compatible joiner
 
 FillTimerMode=Rolling (default) or FromFirst (pre-v8). MaxFillWaitSeconds
@@ -6551,7 +6551,7 @@ index 9942148..f189356 100644
 From da15c04b39ea29bd3f5d558538000889050ee787 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:10:30 -0800
-Subject: [PATCH 17/50] In-store fill override: InStoreFillAfterSeconds (60) /
+Subject: [PATCH 17/52] In-store fill override: InStoreFillAfterSeconds (60) /
  InStoreMaxFillWaitSeconds (120) for worlds 15/16
 
 2026-11-14 23:00 PT offline in-store shuffle: cab3+cab2 joined at t=0/2, cab1+cab4 at t=42/45.
@@ -6768,7 +6768,7 @@ index 0000000..1eb99cd
 From 5280f532a3ef35ef27594ff96910351f62ed4641 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sat, 14 Nov 2026 23:17:43 -0800
-Subject: [PATCH 18/50] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
+Subject: [PATCH 18/52] No-CPU 1v1: OneOnOneWorlds (default 20 = Fes 1on1) ->
  2-client rooms, group 0 vs 1, matched at once
 
 Every results hang tonight was 2 humans + 2 game-made CPU seats in a 2v2-rule room (the server
@@ -7067,7 +7067,7 @@ index 0000000..d09631a
 From 91d9a2317f2867e459be42fc9491f7f73000b909 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 01:51:07 -0800
-Subject: [PATCH 19/50] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
+Subject: [PATCH 19/52] LoneTeamVsCpu: a lone 2-human Teamplay entry gets its
  own room after the fill timer
 
 After FillAfter (rolling, capped by MaxFillWait) a 2-human team with no compatible
@@ -7210,7 +7210,7 @@ index a4934f4..f4c137c 100644
 From 30ad35b01478cc16ce0d72c60823d580d9ff8ef5 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 02:22:56 -0800
-Subject: [PATCH 20/50] NoCpuPartner: 2v2 worlds only form full 4-human rooms
+Subject: [PATCH 20/52] NoCpuPartner: 2v2 worlds only form full 4-human rooms
  (no solo ever gets a CPU partner)
 
 3-cab test 2026-11-15 02:18 PT: the results screen hangs on a cabinet whose partner
@@ -7622,7 +7622,7 @@ index 0000000..dc76a5d
 From 8c3c081ddc0d71670e9822a7bfe86e6035fa52e2 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:45 -0800
-Subject: [PATCH 21/50] SoftWait no longer delays a complete 4-human room
+Subject: [PATCH 21/52] SoftWait no longer delays a complete 4-human room
  (v12-softfull)
 
 Same-flag (veteran / win-rate) 4-human rooms are still preferred. If none
@@ -7935,7 +7935,7 @@ index dc76a5d..43a422b 100644
 From eb4b86f6af8288838cfff5530866896d592026d1 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:50 -0800
-Subject: [PATCH 22/50] Ship 3-second fill timers as the default (NoCpuPartner
+Subject: [PATCH 22/52] Ship 3-second fill timers as the default (NoCpuPartner
  stays on)
 
 FillAfterSeconds, MaxFillWaitSeconds, InStoreFillAfterSeconds and
@@ -8002,7 +8002,7 @@ index 545589a..04d3865 100644
 From 1f4a569550700df3fed366cb4ec69d4d47f4edd4 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:31:55 -0800
-Subject: [PATCH 23/50] Add tools/vps: deploy the matchmaker to a Linux VPS
+Subject: [PATCH 23/52] Add tools/vps: deploy the matchmaker to a Linux VPS
 
 deploy.sh builds a committed ref for linux-x64 (self-contained, throwaway
 worktree) and installs it as systemd service exvs2-mm. Existing VPS
@@ -8317,7 +8317,7 @@ index 0000000..294f8aa
 From 7e42418ebebc8c6e3c755cc424a93e76da59bee7 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:32:01 -0800
-Subject: [PATCH 24/50] Disclaimer: 2v2 matches only form with at least 4 human
+Subject: [PATCH 24/52] Disclaimer: 2v2 matches only form with at least 4 human
  players
 
 In 2v2 modes the matchmaker never adds CPU partners. With fewer than 4
@@ -8367,7 +8367,7 @@ index 0b51d79..5aa47c4 100644
 From 167469851cbb5e8740b32e3c6aa1469a47d5362f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 04:41:12 -0800
-Subject: [PATCH 25/50] Redact the VPS public IP from tools/vps
+Subject: [PATCH 25/52] Redact the VPS public IP from tools/vps
 
 Replace <VPS_IP> with the <VPS_IP> placeholder in the VPS README.
 deploy.sh no longer defaults to a public address; pass --host <VPS_IP>.
@@ -8417,7 +8417,7 @@ index 5ad2617..365c1cc 100755
 From 831c2f93243f23790e2a55b710410030dd864260 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 26/50] Add cross-server online tag with shared partner codes
+Subject: [PATCH 26/52] Add cross-server online tag with shared partner codes
  and settings sync
 
 Players on different card servers can form an online-tag team by exchanging
@@ -11465,7 +11465,7 @@ index b6da67c..7a7a67f 100644
 From 3bc1cba2f92b537cca1a46275dc77ad51d569364 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 06:00:52 -0800
-Subject: [PATCH 27/50] Default OnlineTag.TagStatus to 1 so the in-game list is
+Subject: [PATCH 27/52] Default OnlineTag.TagStatus to 1 so the in-game list is
  selectable
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11571,7 +11571,7 @@ index 0000000..8d2841f
 From 8a9daa146a8fafa977a6e9266beff574d11e4497 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 07:36:31 -0800
-Subject: [PATCH 28/50] Security hardening: public allowlist, /tag shared
+Subject: [PATCH 28/52] Security hardening: public allowlist, /tag shared
  secret, source binding, expiry, rate limits, masking
 
 - SecurityGuardMiddleware (Security.AccessMode): PublicMatchmaker answers
@@ -13580,7 +13580,7 @@ index 294f8aa..b2ab9da 100644
 From acca6a87fb5f2e263b254045ea7b8e6c21aa6aa9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 07:36:40 -0800
-Subject: [PATCH 29/50] WebUI single-card login, card secrets masked in request
+Subject: [PATCH 29/52] WebUI single-card login, card secrets masked in request
  paths, TAG-WAIT partner log
 
 - WebUI saves the access code together with its chip id (one card at a
@@ -14253,7 +14253,7 @@ index 574e323..e460e11 100644
 From 524090dfdf01297d5e25e847bc7d896d8e565168 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 10:09:15 -0800
-Subject: [PATCH 30/50] Online tag: renames reach the partner's server,
+Subject: [PATCH 30/52] Online tag: renames reach the partner's server,
  cross-server team delete, last-team delete
 
 Renames: every tag-team sync (LoadCard / card insert and the WebUI Teams
@@ -15065,7 +15065,7 @@ index a231388..46243aa 100644
 From 9f064ba30f2f246ab6fee2d79a16ad510062ba4f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 11:27:25 -0800
-Subject: [PATCH 31/50] Friends: results-screen friend requests, block (NG)
+Subject: [PATCH 31/52] Friends: results-screen friend requests, block (NG)
  lists, Friends page
 
 RegisterOption (306) is now always answered (empty success) when
@@ -19189,7 +19189,7 @@ index fa24352..cc69dd6 100755
 From 2c809f5cbf96e608b527f99d0f157cc52b447141 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 11:50:57 -0800
-Subject: [PATCH 32/50] Friends: last played from real match results; WebUI
+Subject: [PATCH 32/52] Friends: last played from real match results; WebUI
  survives a dropped startup fetch
 
 Last played: when a card server saves a versus result (SaveVsmOnResult
@@ -19800,7 +19800,7 @@ index 0000000..2d64ab7
 From 28205ab9d9749415e38ea23f1af3d7a48aa14f97 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 13:44:53 -0800
-Subject: [PATCH 33/50] WebUI: Teams tab next to Friends, friend rows link to
+Subject: [PATCH 33/52] WebUI: Teams tab next to Friends, friend rows link to
  their tag team, clickable Teams list
 
 - Card menu: Teams button next to Friends -> new /Cards/Teams/{chip} page
@@ -20810,7 +20810,7 @@ index 87af860..c9c4ce6 100644
 From 6861fc064982525703839d0bbd7ac9c466abcf8d Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 13:57:34 -0800
-Subject: [PATCH 34/50] Matchmaker: continue-pair fix (VsCpu, 18 s) and fast
+Subject: [PATCH 34/52] Matchmaker: continue-pair fix (VsCpu, 18 s) and fast
  cancel for CPU-partner entries under NoCpuPartner
 
 4-cab tests 12:45 / 13:19 / 13:49 PT: two idle teammates are auto-continued by the game as a pair after the
@@ -21334,7 +21334,7 @@ index b2ab9da..d56992b 100644
 From 9c73f17e698af624772e34fa63dba9da0568d83f Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 14:24:06 -0800
-Subject: [PATCH 35/50] Matchmaker: duo vs 2 CPU stand-ins after 12s (AnyDuo
+Subject: [PATCH 35/52] Matchmaker: duo vs 2 CPU stand-ins after 12s (AnyDuo
  scope), place CPU-partner teams in full rooms
 
 - ContinuePairScope AnyDuo (default): any 2-human team entry gets the VsCpu room, not only recent
@@ -21876,7 +21876,7 @@ index d56992b..179a2d7 100644
 From 17990783204cfe3b5e3f1e682ff63d3e99702b54 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 14:54:56 -0800
-Subject: [PATCH 36/50] Matchmaker: two lone solos vs 2 CPU stand-ins after
+Subject: [PATCH 36/52] Matchmaker: two lone solos vs 2 CPU stand-ins after
  12s, waiting first for a running CPU room's players
 
 22:32-22:47Z retest: after each 4-human room the winners continue as a duo (CPU room via ContinuePair), while
@@ -22303,7 +22303,7 @@ index 179a2d7..ba8286d 100644
 From 73c6f19453d144e6b676d9c37b234ae2e2757084 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 15:08:22 -0800
-Subject: [PATCH 37/50] WebUI: Friends show team names; Teams list and
+Subject: [PATCH 37/52] WebUI: Friends show team names; Teams list and
  dedicated Edit Team page
 
 - Friends table: Team column (was empty "Online tag") and the team name
@@ -23656,7 +23656,7 @@ index c9c4ce6..3260de7 100644
 From ca3591127cf6eefdfbaa75b23c66047a49fc95dd Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 15:45:17 -0800
-Subject: [PATCH 38/50] Matchmaker: class/free solo-team world links for the
+Subject: [PATCH 38/52] Matchmaker: class/free solo-team world links for the
  regroup wait, experimental cross-world team room
 
 Class match test 15:34-15:41 PT: the winners continued as a class-team duo (world 14) and got the
@@ -23982,7 +23982,7 @@ index ba8286d..bb13f61 100644
 From 3bd275c230781b55e64a42ebcebf0b65d430fc89 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 16:02:56 -0800
-Subject: [PATCH 39/50] Solo pair vs CPU: off by default (cabs stuck after it),
+Subject: [PATCH 39/52] Solo pair vs CPU: off by default (cabs stuck after it),
  add a 4-human regroup guard
 
 Mix test 15:44-15:58 PT on ff9ec8b: room 7 (cabs 2+4, two solo entries teamed vs 2 CPU
@@ -24245,7 +24245,7 @@ index bb13f61..30c20c1 100644
 From e52346f28cf943caf5fb2ed4a178a0c463f12bde Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Sun, 15 Nov 2026 17:08:24 -0800
-Subject: [PATCH 40/50] Matchmaker: pair-keep-searching test (no CPU room for
+Subject: [PATCH 40/52] Matchmaker: pair-keep-searching test (no CPU room for
  waiting duos)
 
 Official cabinets keep a searching pair queued and let the game start a
@@ -25108,7 +25108,7 @@ index 0000000..fd1729d
 From 869f5299d0204d38439265203fc268e215dbcd7b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 00:44:07 -0800
-Subject: [PATCH 41/50] Matchmaker: quarantine cancelled pair nodes until a
+Subject: [PATCH 41/52] Matchmaker: quarantine cancelled pair nodes until a
  clean restart
 
 12:19-12:23 AM PT Nov 16: a searching duo (PCB_03 node 1258, partner 1260)
@@ -25673,7 +25673,7 @@ index 0000000..3d2aeb5
 From e3f47a187efcb2303dfa4446986bbe057ff98d5b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:42:30 -0800
-Subject: [PATCH 42/50] Matchmaker: restore ContinuePairSeconds to 18; document
+Subject: [PATCH 42/52] Matchmaker: restore ContinuePairSeconds to 18; document
  2026-11-16 findings
 
 18 s is the original continue-pair value and stays under the game's ~30 s
@@ -25914,7 +25914,7 @@ index fd1729d..fefda2b 100644
 From b5935193924a0506e10b73987793d316edc4da82 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:47:00 -0800
-Subject: [PATCH 43/50] ONLINE_MATCHMAKING.md: long waits are queue timing, not
+Subject: [PATCH 43/52] ONLINE_MATCHMAKING.md: long waits are queue timing, not
  a slow matchmaker
 
 16 Nov 2026 1:31-1:43 AM PT class test: rooms formed instantly once four
@@ -25965,7 +25965,7 @@ index 3b930aa..2ed09c7 100644
 From 1301615ea0f08e2a2a07517bc4d842d7aa5d7317 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 01:44:05 -0800
-Subject: [PATCH 44/50] Matchmaker: CPU room on the first poll for a pair back
+Subject: [PATCH 44/52] Matchmaker: CPU room on the first poll for a pair back
  from its CPU room
 
 Class match test 2026-11-16 1:27-1:31 AM PT (VPS 54cc909, ContinuePairSeconds 18):
@@ -26401,7 +26401,7 @@ index 193a263..43b298e 100644
 From 29dea63a0d9ee63413f457eb91ca167fddf8129b Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 02:06:17 -0800
-Subject: [PATCH 45/50] ONLINE_MATCHMAKING.md: document
+Subject: [PATCH 45/52] ONLINE_MATCHMAKING.md: document
  ContinuePairAfterCpuSeconds (default 2)
 
 A pair returning from its own humans-vs-CPU room is sent a CPU room on the
@@ -26503,7 +26503,7 @@ index fefda2b..2693be1 100644
 From 17e9d5111c56a60d27e196bf44931696d7195fe7 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 02:07:23 -0800
-Subject: [PATCH 46/50] ONLINE_MATCHMAKING.md: ContinuePairAfterCpuSeconds
+Subject: [PATCH 46/52] ONLINE_MATCHMAKING.md: ContinuePairAfterCpuSeconds
  confirmed on cabinets
 
 16 November 2026 2:04:21 AM PT: a class-team pair got its first CPU room at
@@ -26563,7 +26563,7 @@ index e22dc50..34955a1 100644
 From e441274f45d70a8769c67520ba8cf2d00df8f75a Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 05:02:59 -0800
-Subject: [PATCH 47/50] SaveVsmOnResult: store online battle results like
+Subject: [PATCH 47/52] SaveVsmOnResult: store online battle results like
  offline ones
 
 Online battles (Class, Mix, Fes) only stored the badge and the class
@@ -27671,7 +27671,7 @@ index f0e7bee..2ec895c 100644
 From 805920a20558e9dd0fdc128c60bf3e0e912b6eb9 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 07:31:45 -0800
-Subject: [PATCH 48/50] View Card: Stats tab (VS Mobile style per-card and
+Subject: [PATCH 48/52] View Card: Stats tab (VS Mobile style per-card and
  per-suit stats)
 
 New first tab on View Card, read-only, card owner only (same access code + chip id check as the battle history),
@@ -29208,7 +29208,7 @@ index 3260de7..bf5bf7a 100644
 From a8cd3973541d90b89d7a6de4fc2ef1102df7246c Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 07:34:24 -0800
-Subject: [PATCH 49/50] Matchmaker: rematch cooldown for solo rooms, ROOM-END /
+Subject: [PATCH 49/52] Matchmaker: rematch cooldown for solo rooms, ROOM-END /
  ROOM-SUMMARY log
 
 LA 2026-11-16: room 19 (mix) was an exact rematch of room 18 (same four node ids, same teams) made
@@ -29972,10 +29972,10 @@ index 43b298e..3d184b3 100644
 2.47.3
 
 
-From f593496f2d18b835fea51e3414efa6022e33aa58 Mon Sep 17 00:00:00 2001
+From e2cc83d73e03ab29c46a588e1c5029e530588029 Mon Sep 17 00:00:00 2001
 From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
 Date: Mon, 16 Nov 2026 13:40:51 -0800
-Subject: [PATCH 50/50] Global Class / Mix leaderboards via the matchmaker; IB
+Subject: [PATCH 50/52] Global Class / Mix leaderboards via the matchmaker; IB
  class rate tables
 
 Card servers send salted, secret-free snapshots (name + stats only) to
@@ -32878,6 +32878,710 @@ index 3d184b3..943fcc7 100644
          }
      }
  }
+-- 
+2.47.3
+
+
+From 839165278dd11ec97f6cae4eff012c58c69e1853 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 15:36:28 -0800
+Subject: [PATCH 51/52] WebUI: point homepage update notice at
+ ServerOmega/exvs2-matchmaking
+
+The front-page "Please check for updates on" link went to the upstream
+Chiang-17 repo and showed "www.github.com". It now opens
+https://github.com/ServerOmega/exvs2-matchmaking in a new tab.
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ WebUIInfinite/Client/Pages/Index.razor | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/WebUIInfinite/Client/Pages/Index.razor b/WebUIInfinite/Client/Pages/Index.razor
+index 0b554ed..eabf0b0 100644
+--- a/WebUIInfinite/Client/Pages/Index.razor
++++ b/WebUIInfinite/Client/Pages/Index.razor
+@@ -5,7 +5,7 @@
+ 
+ <MudText Typo="Typo.h3" GutterBottom="true">VS2 Infinite The Nextreme</MudText>
+ <MudStack>
+-	<MudAlert Severity="Severity.Normal">@localizer["index_update"]<MudLink Href="https://github.com/Chiang-17/EXVS2-IB-Server" Typo="Typo.body2" Color="Color.Inherit"><b>www.github.com</b></MudLink></MudAlert>
++	<MudAlert Severity="Severity.Normal">@localizer["index_update"]<MudLink Href="https://github.com/ServerOmega/exvs2-matchmaking" Typo="Typo.body2" Color="Color.Inherit" Target="_blank"><b>github.com/ServerOmega/exvs2-matchmaking</b></MudLink></MudAlert>
+ 	<MudAlert Severity="Severity.Warning" Variant="Variant.Filled">@localizer["index_warn"]</MudAlert>
+ </MudStack>
+ 
+-- 
+2.47.3
+
+
+From f874e5df9e115c08c96c08888057a093b8c4a092 Mon Sep 17 00:00:00 2001
+From: ServerOmega <69215510+ServerOmega@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 16:07:56 -0800
+Subject: [PATCH 52/52] Matchmaker: public read-only GET /status with cabinet
+ totals
+
+GET /status returns {"service","version","online","searching","inMatch",
+"matches","updatedAt","cacheSeconds"} for launchers (player count + ping).
+Totals only: no card ids, access codes, chip ids, names, serials, node ids
+or IP addresses. Cabinets are counted by pcb serial + public IP; searching =
+in the queue now, inMatch = placed in a room within InMatchWindowSeconds and
+not searching again, online = seen within OnlineWindowSeconds.
+
+Security: under PublicMatchmaker the internet may reach exactly /status
+(not sub-paths, which would hit the WebUI fallback); own per-IP token bucket
+(Status.RequestsPerMinute / Burst) and a CacheSeconds reply cache.
+Status.PublicStatus=false answers 404. Defaults apply without config.
+
+Tests: Matchmaking.Tests +15 (472/472).
+
+Co-authored-by: Grok Bot <grok-bot@users.noreply.github.com>
+---
+ ONLINE_MATCHMAKING.md                         |  26 +++
+ Server-Infinite/Configurations/server.json    |   9 +
+ .../Controllers/StatusController.cs           |  35 ++++
+ Server-Infinite/Lobbies/NetworkAccess.cs      |  11 +-
+ Server-Infinite/Matchmaking/Matchmaker.cs     |  67 +++++++
+ .../Matchmaking/MatchmakerStatus.cs           |  68 +++++++
+ .../Middlewares/SecurityGuardMiddleware.cs    |  13 +-
+ .../Models/Config/CardServerConfig.cs         |   3 +
+ .../Models/Config/StatusConfigurations.cs     |  29 +++
+ Server-Infinite/Program.cs                    |  12 ++
+ .../Matchmaking.Tests.csproj                  |   1 +
+ .../Matchmaking.Tests/StatusEndpointTests.cs  | 170 ++++++++++++++++++
+ 12 files changed, 439 insertions(+), 5 deletions(-)
+ create mode 100644 Server-Infinite/Controllers/StatusController.cs
+ create mode 100644 Server-Infinite/Matchmaking/MatchmakerStatus.cs
+ create mode 100644 Server-Infinite/Models/Config/StatusConfigurations.cs
+ create mode 100644 Tests/Matchmaking.Tests/StatusEndpointTests.cs
+
+diff --git a/ONLINE_MATCHMAKING.md b/ONLINE_MATCHMAKING.md
+index c5b313f..e14c689 100644
+--- a/ONLINE_MATCHMAKING.md
++++ b/ONLINE_MATCHMAKING.md
+@@ -674,6 +674,32 @@ Both are untested on a cabinet. The cabinet's own formula has not been reverse e
+   on A, HTML page, secret required, 413 / stale / 400s, WebUI proxy, hide / show name, and no access code / chip id /
+   salt / key in A's public output, files or logs.
+ 
++## Public status endpoint (2026-11-16, branch `status-endpoint`) — unit + local e2e tests, not yet on a VPS
++
++`GET /status` on the matchmaker returns totals only, for launchers and status pages:
++
++```json
++{"service":"exvs2-matchmaking","version":"0.6.0-dev","online":16,"searching":14,"inMatch":2,"matches":1,
++ "updatedAt":"2026-11-17T00:06:39Z","cacheSeconds":5}
++```
++
++* `searching`: human cabinets in the queue now. `inMatch`: cabinets placed in a room in the last
++  `InMatchWindowSeconds` (480) that have not searched again. `matches`: rooms with at least one of those cabinets.
++  `online`: cabinets that searched, polled or were matched in the last `OnlineWindowSeconds` (600), plus the two
++  above. A cabinet is counted by pcb serial + public IP, so a restart on a new node id is not counted twice.
++  These are estimates: a cabinet in menus or practice does not talk to the matchmaker.
++* **Never** in the reply: card ids, access codes, chip ids, names, serials, node ids, IP addresses.
++* Access: with `Security.AccessMode = PublicMatchmaker` the internet may reach exactly `/status` (and `/status/`);
++  `/status/anything` and every other WebUI path stay LAN-only (403). `LanOnly` card servers answer the LAN only.
++* Cost: the totals are computed at most once per `CacheSeconds` (5; `Cache-Control: public, max-age=5`), and each
++  source IP has its own bucket (`RequestsPerMinute` 60, `Burst` 20, 429 above it; loopback exempt like `/match`).
++* `CardServerConfig.Status`: `PublicStatus` (true; false = 404), `CacheSeconds`, `RequestsPerMinute`, `Burst`,
++  `OnlineWindowSeconds`, `InMatchWindowSeconds`, `Version` (empty = built-in `0.6.0-dev`). No config change is
++  needed on an existing VPS: the defaults apply when the section is missing.
++* Tests: Matchmaking.Tests +15 (counts, cache, JSON fields, exact-path access); local e2e on Linux with a
++  PublicMatchmaker build: `/status` 200 from a non-LAN source address, `/status/x`, `/`, `/ui` 403, 429 after the
++  burst; a 16-cabinet fake load test showed searching / in-match moving as rooms formed.
++
+ ## Known gaps / risks
+ * CheckMatching / CancelMatching are not authenticated: anyone who knows a node id can cancel that entry.
+   (`BindMatchNodesToSourceIp` limits Check/Cancel to the IP that entered, but is not a login.)
+diff --git a/Server-Infinite/Configurations/server.json b/Server-Infinite/Configurations/server.json
+index dac6d12..97c8231 100644
+--- a/Server-Infinite/Configurations/server.json
++++ b/Server-Infinite/Configurations/server.json
+@@ -126,6 +126,15 @@
+       "MinMatches": 5,
+       "MaxRows": 100,
+       "PublicPage": true
++    },
++    "Status": {
++      "PublicStatus": true,
++      "CacheSeconds": 5,
++      "RequestsPerMinute": 60,
++      "Burst": 20,
++      "OnlineWindowSeconds": 600,
++      "InMatchWindowSeconds": 480,
++      "Version": ""
+     }
+   }
+ }
+diff --git a/Server-Infinite/Controllers/StatusController.cs b/Server-Infinite/Controllers/StatusController.cs
+new file mode 100644
+index 0000000..241de17
+--- /dev/null
++++ b/Server-Infinite/Controllers/StatusController.cs
+@@ -0,0 +1,35 @@
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.Extensions.Options;
++using ServerInfinite.Matchmaking;
++using ServerInfinite.Models.Config;
++
++namespace ServerInfinite.Controllers;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] Public read-only matchmaker status for launchers: GET /status returns
++/// <c>{"service","version","online","searching","inMatch","matches","updatedAt","cacheSeconds"}</c>, totals only.
++/// Reachable from the internet under Security.AccessMode = PublicMatchmaker when Status.PublicStatus is on (exact
++/// path only), rate-limited per source IP (Status.RequestsPerMinute / Burst) and cached (Status.CacheSeconds).
++/// </summary>
++[ApiController]
++[Route("status")]
++public class StatusController : ControllerBase
++{
++    private readonly MatchmakerStatus _status;
++    private readonly StatusConfigurations _cfg;
++
++    public StatusController(MatchmakerStatus status, IOptions<CardServerConfig> options)
++    {
++        _status = status;
++        _cfg = options.Value.Status;
++    }
++
++    [HttpGet]
++    public IActionResult Get()
++    {
++        if (!_cfg.PublicStatus) return NotFound();
++        var reply = _status.Get();
++        Response.Headers.CacheControl = $"public, max-age={Math.Max(0, reply.CacheSeconds)}";
++        return Ok(reply);
++    }
++}
+diff --git a/Server-Infinite/Lobbies/NetworkAccess.cs b/Server-Infinite/Lobbies/NetworkAccess.cs
+index 4a51844..9ff4f32 100644
+--- a/Server-Infinite/Lobbies/NetworkAccess.cs
++++ b/Server-Infinite/Lobbies/NetworkAccess.cs
+@@ -77,6 +77,12 @@ public static class NetworkAccess
+     /// <summary>[exvs2-lobbies 2026-11-16] The read-only global leaderboard page and its JSON (Leaderboard.PublicPage).</summary>
+     public static bool IsLeaderboardPath(string? path) => Under(path, "/leaderboard");
+ 
++    /// <summary>[exvs2-lobbies 2026-11-16] The read-only status reply (Status.PublicStatus). Exactly <c>/status</c> or
++    /// <c>/status/</c>: sub-paths would reach the WebUI's index.html fallback, so they are not public.</summary>
++    public static bool IsStatusPath(string? path) =>
++        string.Equals(path, "/status", StringComparison.OrdinalIgnoreCase) ||
++        string.Equals(path, "/status/", StringComparison.OrdinalIgnoreCase);
++
+     private static bool Under(string? path, string prefix)
+     {
+         if (string.IsNullOrEmpty(path)) return false;
+@@ -86,12 +92,13 @@ public static class NetworkAccess
+ 
+     /// <summary>Whether a request from <paramref name="ip"/> to <paramref name="path"/> may be served at all.</summary>
+     public static bool IsAllowed(AccessMode mode, string? path, IPAddress? ip, IReadOnlyList<IPNetwork>? extra = null,
+-        bool publicLeaderboard = false)
++        bool publicLeaderboard = false, bool publicStatus = false)
+     {
+         if (mode == AccessMode.Open) return true;
+         if (IsLan(ip, extra)) return true;
+         return mode == AccessMode.PublicMatchmaker &&
+-               (IsMatchPath(path) || IsTagPath(path) || (publicLeaderboard && IsLeaderboardPath(path)));
++               (IsMatchPath(path) || IsTagPath(path) || (publicLeaderboard && IsLeaderboardPath(path)) ||
++                (publicStatus && IsStatusPath(path)));
+     }
+ 
+     /// <summary>
+diff --git a/Server-Infinite/Matchmaking/Matchmaker.cs b/Server-Infinite/Matchmaking/Matchmaker.cs
+index d7e1ec7..5e1a661 100644
+--- a/Server-Infinite/Matchmaking/Matchmaker.cs
++++ b/Server-Infinite/Matchmaking/Matchmaker.cs
+@@ -515,6 +515,12 @@ public sealed class Matchmaker
+         public readonly Dictionary<uint, (double At, string Reason)> Ended = new();
+     }
+     private readonly Dictionary<uint, RoomTrack> _rooms = new();
++
++    // [exvs2-lobbies 2026-11-16] public /status totals: per cabinet (pcb serial + public IP) last contact, and the
++    // cabinets placed in a room (until they search again or the in-match window passes). Never exposed one by one.
++    private readonly Dictionary<string, double> _statusSeen = new();
++    private readonly Dictionary<string, (uint Room, double At)> _statusInMatch = new();
++    private const int StatusTrackMax = 8192;
+     private const int RoomTrackMax = 1024;
+ 
+     public Matchmaker(double fillAfter = 30, bool allowPartial = true, double softWait = 15, int seed = 0,
+@@ -694,6 +700,7 @@ public sealed class Matchmaker
+                 done.LastSeen = now;
+                 return ErrorCode.Success;                              // next CheckMatching returns the same room
+             }
++            foreach (var c in t.Humans) StatusContact(c, now, searching: true);
+             foreach (var n in t.NodeIds)
+             {
+                 _ended.Remove(n);
+@@ -788,6 +795,8 @@ public sealed class Matchmaker
+             {
+                 seen.LastSeen = now;                                        // before Sweep: the poller is alive
+                 if (seen.NodeIds.Contains(nodeId)) seen.SeenByNode[nodeId] = now;
++                var me = seen.Humans.FirstOrDefault(c => c.NodeId == nodeId);
++                if (me != null) StatusContact(me, now, searching: false);
+             }
+             Sweep(now);
+             if (!_byNode.TryGetValue(nodeId, out var t))
+@@ -1633,6 +1642,13 @@ public sealed class Matchmaker
+     private void RememberRoom(Unit u, Room room)
+     {
+         TrackRoom(u, room);
++        foreach (var rc in room.Clients)
++            if (Unit.IsHuman(rc.Client))
++            {
++                var key = StatusKey(rc.Client);
++                _statusInMatch[key] = (room.RoomId, room.At);
++                _statusSeen[key] = Math.Max(room.At, _statusSeen.TryGetValue(key, out var was) ? was : 0);
++            }
+         foreach (var rc in room.Clients)
+             if (Unit.IsHuman(rc.Client)) _lastSideByNode[rc.Client.NodeId] = (room.RoomId, rc.GroupId, room.At);
+         if (_lastSideByNode.Count > LastRoomMax)
+@@ -1838,6 +1854,57 @@ public sealed class Matchmaker
+             _quarantine.Remove(k);
+     }
+ 
++    /// <summary>[exvs2-lobbies 2026-11-16] Totals for the public GET /status (no ids of any kind).</summary>
++    public readonly record struct StatusCounts(int Online, int Searching, int InMatch, int Matches);
++
++    private static string StatusKey(Client c) =>
++        (string.IsNullOrEmpty(c.PcbSerial) ? "node:" + c.NodeId : c.PcbSerial) + "|" + NetDiag.Norm(c.GlobalIpaddress);
++
++    /// <summary>Call under _gate. A search (EntryMatching) ends the cabinet's previous match.</summary>
++    private void StatusContact(Client c, double now, bool searching)
++    {
++        var key = StatusKey(c);
++        _statusSeen[key] = now;
++        if (searching) _statusInMatch.Remove(key);
++        if (_statusSeen.Count > StatusTrackMax)
++            foreach (var k in _statusSeen.OrderBy(kv => kv.Value).Take(_statusSeen.Count - StatusTrackMax / 2)
++                         .Select(kv => kv.Key).ToList())
++                _statusSeen.Remove(k);
++        if (_statusInMatch.Count > StatusTrackMax)
++            foreach (var k in _statusInMatch.OrderBy(kv => kv.Value.At).Take(_statusInMatch.Count - StatusTrackMax / 2)
++                         .Select(kv => kv.Key).ToList())
++                _statusInMatch.Remove(k);
++    }
++
++    /// <summary>
++    /// [exvs2-lobbies 2026-11-16] Cabinet totals for GET /status. Searching = human cabinets in the queue right now;
++    /// in match = cabinets placed in a room within <paramref name="inMatchWindow"/> seconds that have not searched
++    /// again; online = cabinets that searched, polled or were matched within <paramref name="onlineWindow"/> seconds
++    /// (plus the two above). Matches = rooms with at least one cabinet still counted in match. Estimates: a cabinet
++    /// in menus or practice does not talk to the matchmaker.
++    /// </summary>
++    public StatusCounts GetStatusCounts(double now, double onlineWindow = 600, double inMatchWindow = 480)
++    {
++        lock (_gate)
++        {
++            Sweep(now);
++            var searching = new HashSet<string>();
++            foreach (var u in _queue)
++                if (u.Room == null)
++                    foreach (var c in u.Humans) searching.Add(StatusKey(c));
++            foreach (var k in _statusInMatch.Where(kv => now - kv.Value.At > inMatchWindow).Select(kv => kv.Key).ToList())
++                _statusInMatch.Remove(k);
++            foreach (var k in _statusSeen.Where(kv => now - kv.Value > Math.Max(onlineWindow, inMatchWindow)).Select(kv => kv.Key).ToList())
++                _statusSeen.Remove(k);
++            var inMatch = _statusInMatch.Where(kv => !searching.Contains(kv.Key)).ToList();
++            var online = new HashSet<string>(searching);
++            foreach (var kv in _statusSeen)
++                if (now - kv.Value <= onlineWindow) online.Add(kv.Key);
++            foreach (var kv in inMatch) online.Add(kv.Key);
++            return new StatusCounts(online.Count, searching.Count, inMatch.Count, inMatch.Select(kv => kv.Value.Room).Distinct().Count());
++        }
++    }
++
+     /// <summary>Remove a unit. With <paramref name="now"/>, its other human nodes (e.g. the partner of a
+     /// fixed pair) get MATCH_CANCELED on their next poll instead of ERR_MATCH_NOENTRY.</summary>
+     private void Drop(Unit t, double? now = null, uint? except = null, string? reason = null)
+diff --git a/Server-Infinite/Matchmaking/MatchmakerStatus.cs b/Server-Infinite/Matchmaking/MatchmakerStatus.cs
+new file mode 100644
+index 0000000..d9442b5
+--- /dev/null
++++ b/Server-Infinite/Matchmaking/MatchmakerStatus.cs
+@@ -0,0 +1,68 @@
++using System.Text.Json.Serialization;
++
++namespace ServerInfinite.Matchmaking;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] The public GET /status reply. Totals only: never card ids, access codes, chip ids,
++/// names, pcb serials, node ids or IP addresses.
++/// </summary>
++public sealed record MatchmakerStatusReply(
++    [property: JsonPropertyName("service")] string Service,
++    [property: JsonPropertyName("version")] string Version,
++    [property: JsonPropertyName("online")] int Online,
++    [property: JsonPropertyName("searching")] int Searching,
++    [property: JsonPropertyName("inMatch")] int InMatch,
++    [property: JsonPropertyName("matches")] int Matches,
++    [property: JsonPropertyName("updatedAt")] DateTime UpdatedAt,
++    [property: JsonPropertyName("cacheSeconds")] int CacheSeconds);
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] Builds <see cref="MatchmakerStatusReply"/> from the matchmaker at most once per
++/// <c>cacheSeconds</c> (callers in between get the cached reply), so /status costs one lock per few seconds.
++/// </summary>
++public sealed class MatchmakerStatus
++{
++    /// <summary>Matchmaker add-on version reported when Status.Version is empty.</summary>
++    public const string BuiltInVersion = "0.6.0-dev";
++    public const string ServiceName = "exvs2-matchmaking";
++
++    private readonly object _gate = new();
++    private readonly Func<double, Matchmaker.StatusCounts> _counts;
++    private readonly Func<double> _clock;
++    private readonly Func<DateTime> _utcNow;
++    private readonly string _version;
++    private readonly int _cacheSeconds;
++    private MatchmakerStatusReply? _cached;
++    private double _cachedAt;
++
++    public MatchmakerStatus(Func<double, Matchmaker.StatusCounts> counts, Func<double> clock, Func<DateTime>? utcNow = null,
++        string? version = null, int cacheSeconds = 5)
++    {
++        _counts = counts;
++        _clock = clock;
++        _utcNow = utcNow ?? (() => DateTime.UtcNow);
++        _version = string.IsNullOrWhiteSpace(version) ? BuiltInVersion : version.Trim();
++        _cacheSeconds = Math.Max(0, cacheSeconds);
++    }
++
++    public MatchmakerStatus(Matchmaker mm, Func<double> clock, double onlineWindow, double inMatchWindow,
++        string? version = null, int cacheSeconds = 5)
++        : this(now => mm.GetStatusCounts(now, onlineWindow, inMatchWindow), clock, null, version, cacheSeconds) { }
++
++    public int CacheSeconds => _cacheSeconds;
++
++    public MatchmakerStatusReply Get()
++    {
++        lock (_gate)
++        {
++            var now = _clock();
++            if (_cached != null && now - _cachedAt < _cacheSeconds) return _cached;
++            var c = _counts(now);
++            var at = _utcNow();
++            _cached = new MatchmakerStatusReply(ServiceName, _version, c.Online, c.Searching, c.InMatch, c.Matches,
++                new DateTime(at.Ticks - at.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc), _cacheSeconds);
++            _cachedAt = now;
++            return _cached;
++        }
++    }
++}
+diff --git a/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs b/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+index 81331f5..5152f05 100644
+--- a/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
++++ b/Server-Infinite/Middlewares/SecurityGuardMiddleware.cs
+@@ -28,6 +28,8 @@ public sealed class SecurityGuardMiddleware
+     private readonly IpRateLimiter _tagLimiter;
+     private readonly IpRateLimiter _leaderboardLimiter;
+     private readonly bool _publicLeaderboard;
++    private readonly IpRateLimiter _statusLimiter;
++    private readonly bool _publicStatus;
+     private readonly IpRateLimiter _warnLimiter = new(6, 3);   // at most a few "refused" lines per source per minute
+ 
+     public SecurityGuardMiddleware(RequestDelegate next, IOptions<CardServerConfig> options, ILogger<SecurityGuardMiddleware> log)
+@@ -44,6 +46,9 @@ public sealed class SecurityGuardMiddleware
+         // exvs2-lobbies 2026-11-16: public read-only leaderboard page (Leaderboard.PublicPage) and its own bucket
+         _publicLeaderboard = cfg.Leaderboard.Enabled && cfg.Leaderboard.PublicPage;
+         _leaderboardLimiter = new IpRateLimiter(cfg.Leaderboard.PublicRequestsPerMinute, cfg.Leaderboard.PublicBurst);
++        // exvs2-lobbies 2026-11-16: public read-only GET /status (totals only) and its own bucket
++        _publicStatus = cfg.Status.PublicStatus;
++        _statusLimiter = new IpRateLimiter(cfg.Status.RequestsPerMinute, cfg.Status.Burst);
+     }
+ 
+     public AccessMode Mode => _mode;
+@@ -54,7 +59,7 @@ public sealed class SecurityGuardMiddleware
+         var path = context.Request.Path.Value ?? "/";
+         var now = System.Diagnostics.Stopwatch.GetTimestamp() / TickFreq;
+ 
+-        if (!NetworkAccess.IsAllowed(_mode, path, ip, _extra, _publicLeaderboard))
++        if (!NetworkAccess.IsAllowed(_mode, path, ip, _extra, _publicLeaderboard, _publicStatus))
+         {
+             Refuse(context, StatusCodes.Status403Forbidden, ip, "not allowed from this network", now);
+             return;
+@@ -72,13 +77,15 @@ public sealed class SecurityGuardMiddleware
+         }
+ 
+         var limiter = isTag ? _tagLimiter : NetworkAccess.IsMatchPath(path) ? _matchLimiter
+-            : NetworkAccess.IsLeaderboardPath(path) ? _leaderboardLimiter : null;
++            : NetworkAccess.IsLeaderboardPath(path) ? _leaderboardLimiter
++            : NetworkAccess.IsStatusPath(path) ? _statusLimiter : null;
+         if (limiter != null && !(_exemptLoopback && NetworkAccess.IsLoopback(ip)) &&
+             !limiter.TryAcquire(ip?.ToString() ?? "?", now))
+         {
+             context.Response.Headers["Retry-After"] = "5";
+             Refuse(context, StatusCodes.Status429TooManyRequests, ip,
+-                isTag ? "/tag rate limit" : NetworkAccess.IsLeaderboardPath(path) ? "/leaderboard rate limit" : "/match rate limit", now);
++                isTag ? "/tag rate limit" : NetworkAccess.IsLeaderboardPath(path) ? "/leaderboard rate limit"
++                    : NetworkAccess.IsStatusPath(path) ? "/status rate limit" : "/match rate limit", now);
+             return;
+         }
+ 
+diff --git a/Server-Infinite/Models/Config/CardServerConfig.cs b/Server-Infinite/Models/Config/CardServerConfig.cs
+index 7832b25..c42fca4 100644
+--- a/Server-Infinite/Models/Config/CardServerConfig.cs
++++ b/Server-Infinite/Models/Config/CardServerConfig.cs
+@@ -51,6 +51,9 @@ public class CardServerConfig
+     // exvs2-lobbies: source filtering, rate limits and log masking (security hardening 2026-11-15)
+     public SecurityConfigurations Security { get; set; } = new();
+ 
++    // exvs2-lobbies: public read-only matchmaker status (GET /status, totals only), 2026-11-16
++    public StatusConfigurations Status { get; set; } = new();
++
+     public override string ToString()
+     {
+         var options = new JsonSerializerOptions
+diff --git a/Server-Infinite/Models/Config/StatusConfigurations.cs b/Server-Infinite/Models/Config/StatusConfigurations.cs
+new file mode 100644
+index 0000000..214bdea
+--- /dev/null
++++ b/Server-Infinite/Models/Config/StatusConfigurations.cs
+@@ -0,0 +1,29 @@
++namespace ServerInfinite.Models.Config;
++
++/// <summary>
++/// [exvs2-lobbies 2026-11-16] Public read-only matchmaker status (GET /status) for launchers and status pages.
++/// The reply holds totals only (cabinets online / searching / in a match, matches, version): no card ids, access
++/// codes, chip ids, names, serials, node ids or IP addresses. With Security.AccessMode = PublicMatchmaker the
++/// internet may reach exactly <c>/status</c> (not sub-paths) when <see cref="PublicStatus"/> is on.
++/// </summary>
++public class StatusConfigurations
++{
++    /// <summary>Serve GET /status. false = 404 (and the path stays LAN-only like the WebUI).</summary>
++    public bool PublicStatus { get; set; } = true;
++
++    /// <summary>The totals are computed at most once per this many seconds; repeated requests get the cached reply.</summary>
++    public int CacheSeconds { get; set; } = 5;
++
++    /// <summary>Per source IP token bucket for /status (0 = off). A launcher refreshes about every 15 s.</summary>
++    public int RequestsPerMinute { get; set; } = 60;
++    public int Burst { get; set; } = 20;
++
++    /// <summary>A cabinet counts as online for this many seconds after its last search / poll / match.</summary>
++    public double OnlineWindowSeconds { get; set; } = 600;
++
++    /// <summary>A matched cabinet counts as "in a match" for at most this many seconds, or until it searches again.</summary>
++    public double InMatchWindowSeconds { get; set; } = 480;
++
++    /// <summary>Version text in the reply. Empty = the built-in matchmaker version.</summary>
++    public string Version { get; set; } = "";
++}
+diff --git a/Server-Infinite/Program.cs b/Server-Infinite/Program.cs
+index 7684453..c7cb142 100644
+--- a/Server-Infinite/Program.cs
++++ b/Server-Infinite/Program.cs
+@@ -242,6 +242,15 @@ try
+             BindNodesToSource = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Security.BindMatchNodesToSourceIp
+         };
+     });
++    // exvs2-lobbies 2026-11-16: public read-only GET /status (totals only, cached), Status.*
++    builder.Services.AddSingleton(sp =>
++    {
++        var st = sp.GetRequiredService<IOptions<CardServerConfig>>().Value.Status;
++        return new ServerInfinite.Matchmaking.MatchmakerStatus(
++            sp.GetRequiredService<ServerInfinite.Matchmaking.Matchmaker>(),
++            () => System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency,
++            st.OnlineWindowSeconds, st.InMatchWindowSeconds, st.Version, st.CacheSeconds);
++    });
+     // exvs2-lobbies post-match trace (logging only, default on): OnlineMatching.LogPostMatchTraffic
+     builder.Services.AddSingleton(sp => new ServerInfinite.Matchmaking.MmsTrace
+     {
+@@ -279,6 +288,9 @@ try
+         config.Leaderboard.SubmitAfterResultSeconds, string.IsNullOrEmpty(inviteUrl) ? "in-process" : "http /tag/leaderboard",
+         config.Leaderboard.AcceptSubmissions, config.Leaderboard.MinMatches, config.Leaderboard.PublicPage,
+         string.IsNullOrWhiteSpace(config.Leaderboard.RegionName) ? "-" : config.Leaderboard.RegionName);
++    Log.Information("Status: PublicStatus={Public} cache {Cache}s rate {Rate}/min burst {Burst} windows online {Online}s / in match {InMatch}s",
++        config.Status.PublicStatus, config.Status.CacheSeconds, config.Status.RequestsPerMinute, config.Status.Burst,
++        config.Status.OnlineWindowSeconds, config.Status.InMatchWindowSeconds);
+     Log.Information("Security: AccessMode={Mode} ExtraAllowedCidrs={Extra} rate /match={MatchRate}/min burst {MatchBurst}, " +
+                     "/tag={TagRate}/min burst {TagBurst}, BindMatchNodesToSourceIp={Bind}, MaskNetworkInLog={Mask}, " +
+                     "partner codes expire open {OpenDays}d / joined idle {JoinedDays}d",
+diff --git a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+index 823ad34..79283e3 100644
+--- a/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
++++ b/Tests/Matchmaking.Tests/Matchmaking.Tests.csproj
+@@ -14,6 +14,7 @@
+     <Compile Include="..\..\Server-Infinite\Models\Config\OnlineTagConfigurations.cs" Link="Config\OnlineTagConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\SecurityConfigurations.cs" Link="Config\SecurityConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Models\Config\OnlineMatchingConfigurations.cs" Link="Config\OnlineMatchingConfigurations.cs" />
++    <Compile Include="..\..\Server-Infinite\Models\Config\StatusConfigurations.cs" Link="Config\StatusConfigurations.cs" />
+     <Compile Include="..\..\Server-Infinite\Lobbies\Serilog\*.cs" Link="Lobbies\Serilog\%(Filename)%(Extension)" />
+     <!-- exvs2-lobbies 2026-11-15: WebUI Teams tab helpers (pure, no Blazor) -->
+     <Compile Include="..\..\WebUIInfinite\Shared\Dto\Common\Team.cs" Link="WebUI\Team.cs" />
+diff --git a/Tests/Matchmaking.Tests/StatusEndpointTests.cs b/Tests/Matchmaking.Tests/StatusEndpointTests.cs
+new file mode 100644
+index 0000000..496dd3f
+--- /dev/null
++++ b/Tests/Matchmaking.Tests/StatusEndpointTests.cs
+@@ -0,0 +1,170 @@
++using System.Net;
++using System.Text.Json;
++using nue.protocol.mms;
++using ServerInfinite.Lobbies;
++using ServerInfinite.Matchmaking;
++using Xunit;
++
++namespace Matchmaking.Tests;
++
++// exvs2-lobbies 2026-11-16: public GET /status (totals only). All data is fake (documentation IP ranges).
++public class StatusEndpointTests
++{
++    private uint _node = 500;
++
++    private static Client Cl(uint node, string ip, string? serial = null)
++    {
++        var c = new Client
++        {
++            NodeId = node, PcbSerial = serial ?? $"P{node}", LocId = $"L{node}", PrefCode = 13, GlobalIpaddress = ip,
++            NatMappingType = NatMappingType.NmEndpointIndependent, NatFilteringType = NatFilteringType.NfEndpointIndependent
++        };
++        c.Properties.Add(new Client.Property { PropertyId = 0, PropertyValue = "Y" });
++        return c;
++    }
++
++    private Request.EntryMatching Entry(uint world, string ip = "203.0.113.5", string? serial = null, uint? node = null)
++    {
++        var me = node ?? ++_node;
++        var e = new Request.EntryMatching
++        {
++            ApplyId = 1, Myclient = Cl(me, ip, serial), MatchingTimeout = 150,
++            Myplayer = new Player { BanapassportAmId = me },
++            World = new World { MuchaGameId = "GIB1", Version = 1, WorldId = world }
++        };
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 1, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 2, parameter = 0 });
++        e.Myplayer.Parameters.Add(new Player.Parameter { AttributeId = 4, parameter = 0 });
++        return e;
++    }
++
++    private static Matchmaker New() => new(fillAfter: 30, allowPartial: true, softWait: 15, seed: 1) { StaleAfter = 1e6 };
++
++    [Fact]
++    public void EmptyMatchmakerReportsZeros()
++    {
++        var c = New().GetStatusCounts(0);
++        Assert.Equal(new Matchmaker.StatusCounts(0, 0, 0, 0), c);
++    }
++
++    [Fact]
++    public void SearchingCabinetsAreCountedAndOnline()
++    {
++        var mm = New();
++        mm.Entry(Entry(23), 0);
++        mm.Entry(Entry(23), 0);
++        var c = mm.GetStatusCounts(1);
++        Assert.Equal(2, c.Searching);
++        Assert.Equal(0, c.InMatch);
++        Assert.Equal(2, c.Online);
++    }
++
++    [Fact]
++    public void MatchedCabinetsMoveToInMatchUntilTheySearchAgainOrTheWindowPasses()
++    {
++        var mm = New();
++        var es = Enumerable.Range(0, 4).Select(_ => Entry(23)).ToList();
++        es.ForEach(e => mm.Entry(e, 0));
++        Assert.NotNull(mm.Check(es[0].Myclient.NodeId, 1).Room);
++        var c = mm.GetStatusCounts(2);
++        Assert.Equal(0, c.Searching);
++        Assert.Equal(4, c.InMatch);
++        Assert.Equal(1, c.Matches);
++        Assert.Equal(4, c.Online);
++
++        // one cabinet searches again after its match (new apply id): it is searching, the others stay in the match
++        var again = Entry(23, serial: es[0].Myclient.PcbSerial, node: es[0].Myclient.NodeId);
++        again.ApplyId = 2;
++        mm.Entry(again, 200);
++        c = mm.GetStatusCounts(201, onlineWindow: 600, inMatchWindow: 480);
++        Assert.Equal(1, c.Searching);
++        Assert.Equal(3, c.InMatch);
++        Assert.Equal(4, c.Online);
++
++        // after the in-match window the three are just "online" (seen recently), then gone after the online window
++        c = mm.GetStatusCounts(500, onlineWindow: 600, inMatchWindow: 480);
++        Assert.Equal(0, c.InMatch);
++        Assert.Equal(0, c.Matches);
++        Assert.True(c.Online >= 3);
++        c = mm.GetStatusCounts(5000, onlineWindow: 600, inMatchWindow: 480);
++        Assert.Equal(0, c.InMatch);
++        Assert.Equal(0, c.Online - c.Searching);
++    }
++
++    [Fact]
++    public void ACabinetOnANewNodeIdIsCountedOnce()
++    {
++        var mm = New();
++        mm.Entry(Entry(23, serial: "PCB_X", node: 900), 0);
++        mm.Cancel(900, 1);
++        mm.Entry(Entry(23, serial: "PCB_X", node: 901), 2);
++        var c = mm.GetStatusCounts(3);
++        Assert.Equal(1, c.Online);
++        Assert.Equal(1, c.Searching);
++    }
++
++    [Fact]
++    public void TheSameSerialAtTwoSitesIsTwoCabinets()
++    {
++        var mm = New();
++        mm.Entry(Entry(23, ip: "203.0.113.5", serial: "PCB_03"), 0);
++        mm.Entry(Entry(23, ip: "198.51.100.7", serial: "PCB_03"), 0);
++        Assert.Equal(2, mm.GetStatusCounts(1).Searching);
++    }
++
++    [Fact]
++    public void ReplyIsCachedForCacheSeconds()
++    {
++        var calls = 0;
++        double clock = 100;
++        var st = new MatchmakerStatus(_ => { calls++; return new Matchmaker.StatusCounts(calls, 0, 0, 0); },
++            () => clock, () => new DateTime(2026, 11, 16, 12, 0, 0, DateTimeKind.Utc), version: null, cacheSeconds: 5);
++        Assert.Equal(1, st.Get().Online);
++        clock = 104;
++        Assert.Equal(1, st.Get().Online);
++        Assert.Equal(1, calls);
++        clock = 105.5;
++        Assert.Equal(2, st.Get().Online);
++        Assert.Equal(MatchmakerStatus.BuiltInVersion, st.Get().Version);
++    }
++
++    [Fact]
++    public void ReplyJsonHasTotalsOnly()
++    {
++        var mm = New();
++        mm.Entry(Entry(23, ip: "203.0.113.77", serial: "PCB_SECRET1"), 0);
++        var st = new MatchmakerStatus(mm, () => 1, 600, 480, version: "test-1", cacheSeconds: 5);
++        var json = JsonSerializer.Serialize(st.Get());
++        using var doc = JsonDocument.Parse(json);
++        var names = doc.RootElement.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
++        Assert.Equal(new[] { "cacheSeconds", "inMatch", "matches", "online", "searching", "service", "updatedAt", "version" }, names);
++        Assert.DoesNotContain("203.0.113", json);
++        Assert.DoesNotContain("PCB_SECRET1", json);
++        Assert.Equal("test-1", doc.RootElement.GetProperty("version").GetString());
++        Assert.Equal(1, doc.RootElement.GetProperty("searching").GetInt32());
++    }
++
++    // ---- access: exactly /status is public on a PublicMatchmaker, nothing else new ----
++
++    [Theory]
++    [InlineData("/status", true)]
++    [InlineData("/STATUS", true)]
++    [InlineData("/status/", true)]
++    [InlineData("/status/x", false)]
++    [InlineData("/statusx", false)]
++    [InlineData("/", false)]
++    [InlineData("/ui", false)]
++    [InlineData("/index.html", false)]
++    public void OnlyTheExactStatusPathIsPublic(string path, bool allowed)
++    {
++        var internet = IPAddress.Parse("203.0.113.9");
++        Assert.Equal(allowed, NetworkAccess.IsAllowed(AccessMode.PublicMatchmaker, path, internet, null,
++            publicLeaderboard: true, publicStatus: true));
++        // switched off: LAN-only like the WebUI
++        if (NetworkAccess.IsStatusPath(path))
++            Assert.False(NetworkAccess.IsAllowed(AccessMode.PublicMatchmaker, path, internet, null, true, publicStatus: false));
++        // a LanOnly card server never serves it to the internet
++        Assert.False(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, internet, null, true, publicStatus: true));
++        Assert.True(NetworkAccess.IsAllowed(AccessMode.LanOnly, path, IPAddress.Parse("192.168.1.72"), null, true, true));
++    }
++}
 -- 
 2.47.3
 
